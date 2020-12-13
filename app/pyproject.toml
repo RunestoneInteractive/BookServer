@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = "A new Runestone Server Framework"
+authors = ["Brad Miller <bonelake@mac.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.62.0"
+FastAPI-SQLAlchemy = "^0.2.1"
+
+[tool.poetry.dev-dependencies]
+black = "^20.8b1"
+pytest = "^6.2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
