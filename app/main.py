@@ -1,8 +1,11 @@
 from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
+from .routers import rslogging
 
 app = FastAPI()
+
+app.include_router(rslogging.router)
 
 class Item(BaseModel):
     name: str
