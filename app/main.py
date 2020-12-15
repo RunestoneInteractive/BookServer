@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from .routers import rslogging
+from .routers import books
 from .database import engine
 from app.models import Base
 
@@ -7,6 +8,7 @@ from app.models import Base
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.include_router(rslogging.router)
+app.include_router(books.router)
 
 
 @app.get("/")
