@@ -7,12 +7,14 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     google_ga: str = ""
-    config: str = "production"
-    dburl: str = "./test_database.db"
-    dev_dburl: str = "./dev_database.db"
+    config: str = "development"  # production or test
+    prod_dburl: str = "sqlite:///./prod_database.db"
+    dev_dburl: str = "sqlite:///./dev_database.db"
+    test_dburl: str = "sqlite:///./test_database.db"
     adsenseid: str = ""
     num_banners: int = 0
     serve_ad: bool = False
+    library_path: str = "/Users/bmiller/Runestone"
 
 
 settings = Settings()

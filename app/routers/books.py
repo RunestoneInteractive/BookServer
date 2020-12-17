@@ -28,7 +28,7 @@ router = APIRouter(
     tags=["books"],  # groups all logger tags together in the docs
 )
 
-# Static Asset renderer
+# Static Asset renderers
 # https://fastapi.tiangolo.com/tutorial/static-files/?h=+staticfiles#use-staticfiles
 # https://fastapi.tiangolo.com/advanced/custom-response/?h=+filere#fileresponse
 # for paths like: /books/published/basecourse/_static/rest
