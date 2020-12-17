@@ -1,6 +1,7 @@
 #
 # Set up database configuration in this file
 #
+import databases
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -25,6 +26,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # This creates the base class we will use to create models
 Base = declarative_base()
 
+database = databases.Database(DATABASE_URL)
 
 # Dependency
 def get_db():
