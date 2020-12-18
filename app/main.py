@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from .routers import rslogging
 from .routers import books
-from .database import engine, database
-from app.models import Base
+from .db import engine, database
+from app.models import metadata
 
 # This should be moved to an Alembic function for migration
-Base.metadata.create_all(bind=engine)
+metadata.create_all(bind=engine)
+
 app = FastAPI()
 app.include_router(rslogging.router)
 app.include_router(books.router)

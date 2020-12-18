@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 
 from ..schemas import LogItem, LogItemIncoming
 from ..crud import create_useinfo_entry
-from ..database import get_db
+from ..db import database as db
 from config import settings
 
 logger = logging.getLogger()

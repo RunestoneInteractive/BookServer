@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..schemas import LogItem, LogItemIncoming
 from ..crud import create_useinfo_entry
-from ..database import database as db
+from ..db import database as db
 
 #
 # Setup the router object for the endpoints defined in this file.  These will
@@ -17,7 +17,7 @@ router = APIRouter(
 
 
 @router.post("/bookevent")
-async def log_book_event(entry: LogItemIncoming): #, db: Session = Depends(get_db)):
+async def log_book_event(entry: LogItemIncoming):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the `LogItem` object to define the JSON payload it gets from a page of a book.
