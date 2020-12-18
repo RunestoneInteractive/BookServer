@@ -5,3 +5,4 @@ __pycache__
 # ignore sqllite db files
 *.db
 .nova
+alembic/versions/*.py
