@@ -28,6 +28,7 @@ router = APIRouter(
     tags=["books"],  # groups all logger tags together in the docs
 )
 
+
 # Static Asset renderers
 # https://fastapi.tiangolo.com/tutorial/static-files/?h=+staticfiles#use-staticfiles
 # https://fastapi.tiangolo.com/advanced/custom-response/?h=+filere#fileresponse
@@ -37,16 +38,18 @@ router = APIRouter(
 # Note the use of the path type for filepath in the decoration.  If you don't use path it
 # seems to only get you the `next` part of the path /pre/vious/next/the/rest
 @router.get("/published/{course:str}/_static/{filepath:path}")
-async def get_static(course:str, filepath:str):
+async def get_static(course: str, filepath: str):
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"
     logger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
-    
+
+
 @router.get("/published/{course:str}/_images/{filepath:path}")
-async def get_image(course:str, filepath:str):
+async def get_image(course: str, filepath: str):
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_images/{filepath}"
     logger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
+
 
 # Basic page renderer
 # http://localhost:8080/books/published/overview/index.html
@@ -80,6 +83,6 @@ async def serve_page(request: Request, course: str, pagepath: str):
         settings=settings,
         is_logged_in="false",
         is_instructor="true",
-        readings = [],
+        readings=[],
     )
     return templates.TemplateResponse(pagepath, context)

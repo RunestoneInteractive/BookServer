@@ -8,7 +8,6 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.9"
 fastapi = "^0.62.0"
-FastAPI-SQLAlchemy = "^0.2.1"
 uvicorn = "^0.13.1"
 Jinja2 = "^2.11.2"
 aiofiles = "^0.6.0"
