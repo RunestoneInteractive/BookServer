@@ -2,10 +2,23 @@
 
 from datetime import datetime  # time, date, timedelta
 
-from sqlalchemy.orm import Session
 from databases import Database
+from sqlalchemy import and_
+from sqlalchemy.sql import select
 
 from . import models, schemas
+
+EVENT2TABLE = {
+    "clickableArea": "clickablearea_answers",
+    "codelens1": "codelens_answers",
+    "dragNdrop": "dragndrop_answers",
+    "fillb": "fitb_answers",
+    "lp": "lp_answers",
+    "mChoice": "mchoice_answers",
+    "parsons": "parsons_answers",
+    "shortanswer": "shortanswer_answers",
+    "unittest": "unittest_answers ",
+}
 
 
 async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming):
@@ -19,3 +32,29 @@ async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming)
     query = models.logitem.insert()
     await db.execute(query=query, values=new_log)
     return new_log
+
+
+async def create_answer_table_entry():
+    pass
+
+
+async def fetch_assessment_result(
+    db: Database, event: str, course: str, sid: str, div_id: str
+):
+    assessment = EVENT2TABLE[event]
+    tbl = models.answer_tables[assessment]
+    query = (
+        select([tbl])
+        .where(
+            and_(
+                tbl.c.div_id == div_id,
+                tbl.c.course_name == course,
+                tbl.c.sid == sid,
+            )
+        )
+        .order_by(tbl.c.timestamp.desc())
+    )
+
+    res = await db.fetch_one(query)
+
+    return res
