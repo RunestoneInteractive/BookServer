@@ -3,7 +3,7 @@ from .routers import rslogging
 from .routers import books
 from .routers import assessment
 from .db import engine, database
-from app.models import metadata
+from .models import metadata
 
 # This should be moved to an Alembic function for migration
 metadata.create_all(bind=engine)
@@ -27,3 +27,8 @@ async def shutdown():
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port="8080")

@@ -26,7 +26,7 @@ from ..db import database as db
 #
 router = APIRouter(
     prefix="/assessment",  # shortcut so we don't have to repeat this part
-    tags=["logger"],  # groups all logger tags together in the docs
+    tags=["assessment"],  # groups all logger tags together in the docs
 )
 
 

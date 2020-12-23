@@ -24,9 +24,9 @@ async def log_book_event(entry: LogItemIncoming):
     """
     idx = await create_useinfo_entry(db, entry)
     if entry.event in EVENT2TABLE:
-        create_answer_table_entry(db, entry)
+        ans_idx = await create_answer_table_entry(db, entry)
 
-    if idx:
+    if idx and ans_idx:
         return {"status": "OK", "idx": idx}
     else:
         return {"status": "FAIL"}
