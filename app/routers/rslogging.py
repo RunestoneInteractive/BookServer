@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..schemas import LogItem, LogItemIncoming
-from ..crud import create_useinfo_entry
+from ..crud import EVENT2TABLE, create_useinfo_entry, create_answer_table_entry
 from ..db import database as db
 
 #
@@ -23,6 +23,9 @@ async def log_book_event(entry: LogItemIncoming):
     It uses the `LogItem` object to define the JSON payload it gets from a page of a book.
     """
     idx = await create_useinfo_entry(db, entry)
+    if entry.event in EVENT2TABLE:
+        create_answer_table_entry(db, entry)
+
     if idx:
         return {"status": "OK", "idx": idx}
     else:

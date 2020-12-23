@@ -34,8 +34,12 @@ async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming)
     return new_log
 
 
-async def create_answer_table_entry():
-    pass
+async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
+    values = {k: v for k, v in log_entry.dict().items() if v is not None}
+    tbl = models.answer_tables[EVENT2TABLE[log_entry.event]]
+    query = tbl.insert()
+    res = await db.execute(query=query, values=values)
+    return res
 
 
 async def fetch_assessment_result(

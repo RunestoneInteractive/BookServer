@@ -23,6 +23,7 @@ class LogItemIncoming(BaseModel):
     correct: Optional[bool]
     chapter: Optional[str]
     subchapter: Optional[str]
+    source: Optional[str]  # used by parsons
 
 
 class LogItem(LogItemIncoming):
