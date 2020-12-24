@@ -1,8 +1,8 @@
 # *********************************
 # |docname| - Define the BookServer
 # *********************************
-# TODO notes on this design
-
+# :index:`docs to write`: notes on this design. :index:`question`: Why is there an empty module named ``dependencies.py``?
+#
 # Imports
 # =======
 # These are listed in the order prescribed by `PEP 8`_.
@@ -15,19 +15,18 @@
 # -------------------
 from fastapi import FastAPI
 
-
 # Local application imports
 # -------------------------
 from .routers import rslogging
 from .routers import books
 from .routers import assessment
 from .db import engine, database
-from app.models import metadata
+from .models import metadata
 
 
-# Code
-# ====
-# This should be moved to an Alembic function for migration
+# FastAPI setup
+# =============
+# :index:`todo`: This should be moved to a Alembic function for migration.
 metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -36,6 +35,8 @@ app.include_router(books.router)
 app.include_router(assessment.router)
 
 
+# Routing
+# -------
 @app.on_event("startup")
 async def startup():
     await database.connect()

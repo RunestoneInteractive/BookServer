@@ -1,16 +1,30 @@
-# *********************************
-# |docname|- Alembic configuration?
-# *********************************
-# TODO: Better description...
+# ********************************
+# |docname|- Alembic configuration
+# ********************************
+# :index:`docs to write`: Better description...
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
 from logging.config import fileConfig
 
+# Third-party imports
+# -------------------
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
 
+# Local application imports
+# -------------------------
 from app import models
 
+
+# Configuration
+# =============
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

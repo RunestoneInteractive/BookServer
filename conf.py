@@ -33,7 +33,6 @@
 # * All configuration values have a default; values that are commented out serve
 #   to show the default.
 #
-import sys, os
 import CodeChat.CodeToRest
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -46,8 +45,8 @@ import CodeChat.CodeToRest
 # `project <http://sphinx-doc.org/config.html#confval-project>`_  and
 # `copyright <http://sphinx-doc.org/config.html#confval-copyright>`_:
 # General information about the project. **Change this** for your project.
-project = "Project Name"
-copyright = "2020, Author"
+project = "Runestone BookServer"
+copyright = "2020, Brad Miller"
 
 # The version info for the project you're documenting, acts as replacement for
 # ``|version|`` and ``|release|``, also used in various other places throughout
@@ -71,7 +70,7 @@ release = "version 0.0"
 
 # `highlight_language <http://sphinx-doc.org/config.html#confval-highlight_language>`_:
 # The default language to highlight source code in.
-highlight_language = "python3"
+highlight_language = "python"
 
 # `pygments_style <http://sphinx-doc.org/config.html#confval-pygments_style>`_:
 # The style name to use for Pygments highlighting of source code.
@@ -106,7 +105,7 @@ pygments_style = "sphinx"
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones. **CodeChat
 # note:** The ``CodeChat.CodeToRestSphinx`` extension is mandatory; without it,
 # CodeChat will not translate source code to reST and then (via Sphinx) to html.
-extensions = ["CodeChat.CodeToRestSphinx"]
+extensions = ["CodeChat.CodeToRestSphinx", "sphinx.ext.intersphinx"]
 
 # `templates_path <http://sphinx-doc.org/config.html#confval-templates_path>`_:
 # Add any paths that contain templates here, relative to this directory.
@@ -298,3 +297,19 @@ html_sourcelink_suffix = ""
 # `html_file_suffix <http://sphinx-doc.org/config.html#confval-html_file_suffix>`_:
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 ##html_file_suffix = None
+
+
+# `Intersphinx <https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html>`_
+# =======================================================================================
+# `intersphinx_mapping <https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#confval-intersphinx_mapping>`_:
+# This config value contains the locations and names of other projects that should be linked to in this documentation.
+intersphinx_mapping = {
+    "RunestoneComponents": (
+        "https://runestonecomponents.readthedocs.io/en/latest/",
+        (
+            None,
+            # An optional local file location -- useful when updating both Sphinx builds before the updates are pushed to the server.
+            ##"C:/Users/bjones/Documents/git/RunestoneComponents/build/RunestoneComponents/objects.inv",
+        ),
+    )
+}

@@ -2,25 +2,36 @@
 # |docname| - Runestone API
 # *************************
 # This module implements the API that the Runestone Components use to get results from assessment components
-# * multiple choice
-# * fill in the blank
-# * parsons problems
-# * drag and dorp
-# * clickable area
-# *
-
+#
+# *     multiple choice
+# *     fill in the blank
+# *     parsons problems
+# *     drag and dorp
+# *     clickable area
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
 import datetime
 
+# Third-party imports
+# -------------------
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 
+# Local application imports
+# -------------------------
 from ..schemas import LogItem, LogItemIncoming
 from ..crud import create_useinfo_entry, fetch_assessment_result
 from ..db import database as db
 
-#
+# Setup
+# =====
 # Setup the router object for the endpoints defined in this file.  These will
 # be connected to the main application in main.py
 #

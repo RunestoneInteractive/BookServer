@@ -1,10 +1,13 @@
 ************************
 BookServer documentation
 ************************
-TODO: The BookServer is a next-generation server for the Runestone platform...
+:index:`docs to write`: The BookServer is a next-generation server for the Runestone platform...
+
 
 Core web application
 ====================
+See the `genindex` for todo, fixme, etc. items.
+
 .. toctree::
     :maxdepth: 1
 
@@ -13,7 +16,6 @@ Core web application
     app/toctree
     alembic/toctree
     test/toctree
-
 
 
 Development support
@@ -45,6 +47,6 @@ License
     LICENSE
 
 Indices and tables
-------------------
-* :ref:`genindex`
-* :ref:`search`
+==================
+*   `genindex`
+*   `search`

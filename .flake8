@@ -29,3 +29,7 @@ builtins=settings,
   cache,
   gluon,
   verifyInstructorStatus
+
+exclude =
+  # Ignore Sphinx build output.
+  _build/

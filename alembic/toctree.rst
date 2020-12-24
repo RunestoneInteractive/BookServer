@@ -1,12 +1,7 @@
 ********************************
 Database migration using Alembic
 ********************************
-TODO overall approach/use. This is a generic, single-database configuration.
-
-Questions:
-
-#.  Is ``env.py`` editable, or machine-generated? I assume it's editable.
-#.  Is ``script.py.mako`` editable, or machine-generated? I assume it's editable.
+:index:`docs to write`: overall approach/use. This is a generic, single-database configuration.
 
 .. toctree::
     :maxdepth: 1
