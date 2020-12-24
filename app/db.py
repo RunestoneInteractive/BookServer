@@ -16,10 +16,8 @@ elif settings.config == "production":
     DATABASE_URL = settings.prod_dburl
 else:
     DATABASE_URL = settings.test_dburl
-    
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
+
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 # This creates the SessionLocal class.  An actual session is an instance of this class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

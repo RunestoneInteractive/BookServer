@@ -150,5 +150,5 @@ courses = Table(
     Column("student_price", Integer),
     Column("downloads_enabled", Boolean),
     Column("courselevel", String),
-    UniqueConstraint("course_name", name="unique_course_name")
+    UniqueConstraint("course_name", name="unique_course_name"),
 )

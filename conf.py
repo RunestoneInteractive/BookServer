@@ -121,7 +121,6 @@ rst_epilog = (
 
 .. |docname| replace:: :docname:`name`
 """
-
     # A commonly-used link.
     """
 .. _PEP 8: http://www.python.org/dev/peps/pep-0008/#imports
