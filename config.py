@@ -1,4 +1,6 @@
-#
+# ************************************
+# |docname| - BookServer configuration
+# ************************************
 # Configure settings here.
 # Settings not set explicitly will be inherited from the environment
 #

@@ -6,8 +6,8 @@
 # ----------
 # We use `Alembic <https://alembic.sqlalchemy.org/en/latest/>`_ for tracking database migration information.
 # To create a new migration automatically after you have made changes to this file run
-# `alembic revision --autogenerate -m "simple message"`
-# this will generate a new file in `alembic/versions`
+# ``alembic revision --autogenerate -m "simple message"```
+# this will generate a new file in ``alembic/versions```
 # To apply changes to the database run `alembic upgrade head`
 # It is also possible
 
@@ -135,7 +135,7 @@ code = Table(
 # -------
 #
 # Every Course in the runestone system must have an entry in this table
-# the id column is really an artifact of the original web2py/pydal implementation of 
+# the id column is really an artifact of the original web2py/pydal implementation of
 # Runestone.  The 'real' primary key of this table is the course_name
 courses = Table(
     "courses",

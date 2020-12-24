@@ -70,10 +70,11 @@ async def getAssessResults(
     # construct the return value from the result
     res = dict(row)
 
-    # TODO: port the serverside grading code
-    # do_server_feedback, feedback = is_server_feedback(div_id, course)
-    # if do_server_feedback:
-    #     correct, res_update = fitb_feedback(rows.answer, feedback)
-    #     res.update(res_update)
+    # TODO: port the serverside grading code::
+    #
+    #   do_server_feedback, feedback = is_server_feedback(div_id, course)
+    #   if do_server_feedback:
+    #       correct, res_update = fitb_feedback(rows.answer, feedback)
+    #       res.update(res_update)
 
     return res

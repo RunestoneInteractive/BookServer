@@ -1,13 +1,20 @@
+# ********************************
+# |docname| - Flake8 configuration
+# ********************************
+# Docs todo: provide nice hyperlinks to docs on these configuration settings, and perhaps some rationale (why 88 characters, etc.).
 [flake8]
 max-line-length=88
 ignore=F821,
   W503,
-  E203,  # space before :
+  # space before ``:``
+  E203,
   E501,
   E265,
-  E266,   # too many #
+  # too many ``#``
+  E266,
   E711,
-  E712    # web2py needs to compare to == True or == False for queries
+  # web2py needs to compare to ``== True`` or ``== False`` for queries.
+  E712
 
 builtins=settings,
   request,

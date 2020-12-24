@@ -36,7 +36,7 @@ router = APIRouter(
 # If it is fast and efficient to handle it here it would be great.  We currently avoid
 # any static file contact with web2py and handle static files upstream with nginx directly
 # Note the use of the path type for filepath in the decoration.  If you don't use path it
-# seems to only get you the `next` part of the path /pre/vious/next/the/rest
+# seems to only get you the ``next`` part of the path /pre/vious/next/the/rest
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"

@@ -1,3 +1,7 @@
+# *********************************
+# |docname|- Alembic configuration?
+# *********************************
+# TODO: Better description...
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config

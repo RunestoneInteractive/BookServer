@@ -1,6 +1,7 @@
-# This file is for testing the logging API
-# simply run `pytest` fastapi takes care of starting up a server!
-#
+# ********************************
+# |docname| - test the logging API
+# ********************************
+
 from fastapi.testclient import TestClient
 from app.schemas import LogItemIncoming
 from app.main import app
