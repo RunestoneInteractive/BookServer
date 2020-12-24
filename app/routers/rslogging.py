@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..schemas import LogItem, LogItemIncoming
-from ..crud import EVENT2TABLE, create_useinfo_entry, create_answer_table_entry
+from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..db import database as db
+from ..schemas import LogItem, LogItemIncoming
 
 #
 # Setup the router object for the endpoints defined in this file.  These will

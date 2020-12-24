@@ -37,3 +37,12 @@ class LogItem(LogItemIncoming):
     class Config:
         orm_mode = True
         # this tells pydantic to try read anything with attributes we give it as a model
+
+
+class AssessmentRequest(BaseModel):
+    course: str
+    div_id: str
+    event: str
+    sid: Optional[str] = None
+    deadline: Optional[str] = None
+

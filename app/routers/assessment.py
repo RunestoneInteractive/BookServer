@@ -11,14 +11,16 @@
 
 import datetime
 
+from dateutil.parser import parse
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional
 
-from ..schemas import LogItem, LogItemIncoming
-from ..crud import create_useinfo_entry, fetch_assessment_result
+from ..crud import fetch_last_answer_table_entry
 from ..db import database as db
+from ..internal import canonicalize_tz
+from ..schemas import AssessmentRequest, LogItem, LogItemIncoming
+from .applogger import rslogger
 
 #
 # Setup the router object for the endpoints defined in this file.  These will
@@ -30,17 +32,11 @@ router = APIRouter(
 )
 
 
-@router.get("/results")
 # getAssessResults
 # ----------------
 #
-async def getAssessResults(
-    course: str,
-    div_id: str,
-    event: str,
-    sid: Optional[str] = None,
-    deadline: Optional[str] = None,
-):
+@router.get("/results")
+async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     # if (
     #     verifyInstructorStatus(auth.user.course_name, auth.user) and request.vars.sid
     # ):  # retrieving results for grader
@@ -49,21 +45,21 @@ async def getAssessResults(
     #     sid = auth.user.username
 
     # TODO This whole thing is messy - get the deadline from the assignment in the db
-    if deadline:
+    if request_data.deadline:
         try:
-            deadline = parse(_canonicalize_tz(request.vars.deadline))
+            deadline = parse(canonicalize_tz(request_data.deadline))
             tzoff = session.timezoneoffset if session.timezoneoffset else 0
             deadline = deadline + datetime.timedelta(hours=float(tzoff))
             deadline = deadline.replace(tzinfo=None)
         except Exception:
-            logger.error("Bad Timezone - {}".format(request.vars.deadline))
+            rslogger.error(f"Bad Timezone - {request_data.deadline}")
             deadline = datetime.datetime.utcnow()
     else:
-        deadline = datetime.datetime.utcnow()
+        request_data.deadline = datetime.datetime.utcnow()
 
     # Identify the correct event and query the database so we can load it from the server
 
-    row = await fetch_assessment_result(db, event, course, sid, div_id)
+    row = await fetch_last_answer_table_entry(db, request_data)
     if not row:
         return ""  # server doesn't have it so we load from local storage instead
 

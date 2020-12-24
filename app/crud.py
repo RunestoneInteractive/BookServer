@@ -20,6 +20,8 @@ EVENT2TABLE = {
 }
 
 
+# useinfo
+# -------
 async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming):
     new_log = dict(
         sid="current_user",
@@ -34,10 +36,16 @@ async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming)
     return new_log
 
 
+# xxx_answers
+# -----------
 async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
-    values = {k: v for k, v in log_entry.dict().items() if v is not None and k not in ['event', 'act']}
-    values['timestamp'] = datetime.utcnow()
-    values['sid'] = "current_user"
+    values = {
+        k: v
+        for k, v in log_entry.dict().items()
+        if v is not None and k not in ["event", "act"]
+    }
+    values["timestamp"] = datetime.utcnow()
+    values["sid"] = "current_user"
     rslogger.debug(f"hello from create at {values}")
     tbl = models.answer_tables[EVENT2TABLE[log_entry.event]]
     query = tbl.insert()
@@ -45,18 +53,18 @@ async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
     return res
 
 
-async def fetch_assessment_result(
-    db: Database, event: str, course: str, sid: str, div_id: str
+async def fetch_last_answer_table_entry(
+    db: Database, query_data: schemas.AssessmentRequest
 ):
-    assessment = EVENT2TABLE[event]
+    assessment = EVENT2TABLE[query_data.event]
     tbl = models.answer_tables[assessment]
     query = (
         select([tbl])
         .where(
             and_(
-                tbl.c.div_id == div_id,
-                tbl.c.course_name == course,
-                tbl.c.sid == sid,
+                tbl.c.div_id == query_data.div_id,
+                tbl.c.course_name == query_data.course,
+                tbl.c.sid == query_data.sid,
             )
         )
         .order_by(tbl.c.timestamp.desc())

@@ -26,7 +26,6 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
 
 
 # this object is a container for the table objects and can be used by alembic to autogenerate
@@ -135,7 +134,7 @@ code = Table(
 # -------
 #
 # Every Course in the runestone system must have an entry in this table
-# the id column is really an artifact of the original web2py/pydal implementation of 
+# the id column is really an artifact of the original web2py/pydal implementation of
 # Runestone.  The 'real' primary key of this table is the course_name
 courses = Table(
     "courses",
@@ -150,5 +149,5 @@ courses = Table(
     Column("student_price", Integer),
     Column("downloads_enabled", Boolean),
     Column("courselevel", String),
-    UniqueConstraint("course_name", name="unique_course_name")
+    UniqueConstraint("course_name", name="unique_course_name"),
 )

@@ -4,17 +4,17 @@
 import logging
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from ..schemas import LogItem, LogItemIncoming
+from config import settings
+
 from ..crud import create_useinfo_entry
 from ..db import database as db
-from config import settings
+from ..schemas import LogItem, LogItemIncoming
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

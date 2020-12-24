@@ -420,7 +420,7 @@ standard = ["websockets (>=8.0.0,<9.0.0)", "watchgod (>=0.6,<0.7)", "python-dote
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "a6fb1a34ace70eaa2a9afe45380932aa983a9da9dee8e75143df8d12d2cdfa83"
+content-hash = "152bf0ecbcec37900304ba54b3836dfa35558b99fa7e677561a12febe175bae1"
 
 [metadata.files]
 aiofiles = [
