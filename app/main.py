@@ -29,13 +29,20 @@ from .models import metadata
 metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Routing
+# -------
+#
+# .. _included routing:
+#
+# Included
+# ^^^^^^^^
 app.include_router(rslogging.router)
 app.include_router(books.router)
 app.include_router(assessment.router)
 
-
-# Routing
-# -------
+# Defined here
+# ^^^^^^^^^^^^
 @app.on_event("startup")
 async def startup():
     await database.connect()

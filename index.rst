@@ -3,16 +3,26 @@ BookServer documentation
 ************************
 :index:`docs to write`: The BookServer is a next-generation server for the Runestone platform...
 
-
-Core web application
-====================
 See the `genindex` for todo, fixme, etc. items.
 
+
+Documentation
+=============
 .. toctree::
     :maxdepth: 1
 
     docs/installation
     docs/goals
+    docs/design
+    docs/dev_guide
+
+
+Web application
+===============
+
+.. toctree::
+    :maxdepth: 1
+
     app/toctree
     alembic/toctree
     test/toctree
@@ -30,8 +40,6 @@ Development support
 
 Documentation generation
 ========================
-To build the documentation, execute ``sphinx-build . _build`` from the project's root directory. For a GUI alternative, this project is configured for the `CodeChat system <https://codechat-system.readthedocs.io/en/latest/>`_.
-
 .. toctree::
     :maxdepth: 1
 

@@ -1,23 +1,10 @@
-# .. Copyright (C) 2012-2020 Bryan A. Jones.
-#
-#    This file is part of CodeChat.
-#
-#    CodeChat is free software: you can redistribute it and/or modify it under
-#    the terms of the GNU General Public License as published by the Free
-#    Software Foundation, either version 3 of the License, or (at your option)
-#    any later version.
-#
-#    CodeChat is distributed in the hope that it will be useful, but WITHOUT ANY
-#    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-#    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-#    details.
-#
-#    You should have received a copy of the GNU General Public License along
-#    with CodeChat.  If not, see <http://www.gnu.org/licenses/>.
-#
 # ***********************************************************
 # |docname| - Configuration file for BookServer documentation
 # ***********************************************************
+# To build the documentation, execute ``sphinx-build . _build`` from the project's root directory. For a GUI alternative, this project is configured for the `CodeChat system <https://codechat-system.readthedocs.io/en/latest/>`_.
+#
+# Introduction
+# ============
 # This file configures Sphinx, which transforms restructured text (reST) into
 # html. See Sphinx `build configuration file docs
 # <http://sphinx-doc.org/config.html>`_ for more information on the settings
@@ -33,7 +20,22 @@
 # * All configuration values have a default; values that are commented out serve
 #   to show the default.
 #
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
+# None.
+#
+# Third-party imports
+# -------------------
 import CodeChat.CodeToRest
+
+# Local application imports
+# -------------------------
+# None.
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

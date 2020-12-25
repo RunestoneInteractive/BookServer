@@ -1,15 +1,35 @@
+# ******************************************************
+# |docname| - Provide the ``hsblog`` (kind of) endpoint?
+# ******************************************************
+# :index:`docs to write`: **Description here...**
+#
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
+# None. (Or the imports.)
+#
+# Third-party imports
+# -------------------
+# :index:`todo`: **Lots of unused imports...can we deletet these?**
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+# Local application imports
+# -------------------------
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..db import database as db
 from ..schemas import LogItem, LogItemIncoming
 
-#
-# Setup the router object for the endpoints defined in this file.  These will
-# be connected to the main application in main.py
-#
+
+# Routing
+# =======
+# Setup the router object for the endpoints defined in this file.  These are
+# `connected <included routing>` to the main application in `../main.py`.
 router = APIRouter(
     prefix="/logger",  # shortcut so we don't have to repeat this part
     tags=["logger"],  # groups all logger tags together in the docs
@@ -26,6 +46,7 @@ async def log_book_event(entry: LogItemIncoming):
     if entry.event in EVENT2TABLE:
         ans_idx = await create_answer_table_entry(db, entry)
 
+    # :index:`bug`: **Note that** ``ans_idx`` is not always defined here.
     if idx and ans_idx:
         return {"status": "OK", "idx": idx}
     else:

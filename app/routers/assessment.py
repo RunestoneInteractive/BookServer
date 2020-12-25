@@ -19,6 +19,7 @@ import datetime
 
 # Third-party imports
 # -------------------
+# :index:`todo`: **Lots of unused imports here...**
 from dateutil.parser import parse
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -32,11 +33,10 @@ from ..db import database as db
 from ..internal import canonicalize_tz
 from ..schemas import AssessmentRequest, LogItem, LogItemIncoming
 
-# Setup
-# =====
-# Setup the router object for the endpoints defined in this file.  These will
-# be connected to the main application in main.py
-#
+# Routing
+# =======
+# Setup the router object for the endpoints defined in this file.  These are
+# `connected <included routing>` to the main application in `../main.py`.
 router = APIRouter(
     prefix="/assessment",  # shortcut so we don't have to repeat this part
     tags=["assessment"],  # groups all logger tags together in the docs
@@ -45,7 +45,6 @@ router = APIRouter(
 
 # getAssessResults
 # ----------------
-#
 @router.get("/results")
 async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     # if (
@@ -55,7 +54,7 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     # else:
     #     sid = auth.user.username
 
-    # TODO This whole thing is messy - get the deadline from the assignment in the db
+    # :index:`todo`: **This whole thing is messy - get the deadline from the assignment in the db.**
     if request_data.deadline:
         try:
             deadline = parse(canonicalize_tz(request_data.deadline))
@@ -77,7 +76,7 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     # construct the return value from the result
     res = dict(row)
 
-    # TODO: port the serverside grading code::
+    # :index:`todo``: **port the serverside grading** code::
     #
     #   do_server_feedback, feedback = is_server_feedback(div_id, course)
     #   if do_server_feedback:
