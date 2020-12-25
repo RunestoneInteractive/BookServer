@@ -1,8 +1,15 @@
 #
 # Serve book pages from their template
 #
-import logging
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
 
+# Third-party imports
+# -------------------
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,14 +17,14 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+# Local application imports
+# -------------------------
 from config import settings
 
+from ..applogger import rslogger
 from ..crud import create_useinfo_entry
 from ..db import database as db
 from ..schemas import LogItem, LogItemIncoming
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
 
 #
 # Setup the router object for the endpoints defined in this file.  These will
@@ -36,18 +43,18 @@ router = APIRouter(
 # If it is fast and efficient to handle it here it would be great.  We currently avoid
 # any static file contact with web2py and handle static files upstream with nginx directly
 # Note the use of the path type for filepath in the decoration.  If you don't use path it
-# seems to only get you the `next` part of the path /pre/vious/next/the/rest
+# seems to only get you the ``next`` part of the path /pre/vious/next/the/rest
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"
-    logger.debug(f"GETTING: {filepath}")
+    rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
 
 
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_images/{filepath}"
-    logger.debug(f"GETTING: {filepath}")
+    rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
 
 

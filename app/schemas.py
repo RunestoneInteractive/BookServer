@@ -1,14 +1,34 @@
+# ******************************
+# |docname| -- Database schemas?
+# ******************************
+# :index:`question`: This seems to be a different approach than `models.py`. Why are there two approaches?
+#
 # This file contains the models we use for post requests and for type checking throughout the application.
 # These object models should be used wherever possible to ensure consistency
 
-from datetime import datetime  # time, date, timedelta
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
+# For ``time`, ``date``, and ``timedelta``.
+from datetime import datetime
+# For ``List``.
+from typing import Optional
 
+# Third-party imports
+# -------------------
 # See: https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for field types
-
-from typing import Optional  # List
 from pydantic import BaseModel
 
-
+# Local application imports
+# -------------------------
+# None.
+#
+#
+# Schemas?
+# ========
 class LogItemIncoming(BaseModel):
     """
     This class defines the schema for what we can expect to get from a logging event.

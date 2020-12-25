@@ -1,4 +1,6 @@
-#
+# ************************************
+# |docname| - BookServer configuration
+# ************************************
 # Configure settings here.
 # Settings not set explicitly will be inherited from the environment
 #
@@ -7,6 +9,7 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     google_ga: str = ""
+    # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`.
     config: str = "development"  # production or test
     prod_dburl: str = "sqlite:///./runestone.db"
     dev_dburl: str = "sqlite:///./runestone_dev.db"

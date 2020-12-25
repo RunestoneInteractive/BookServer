@@ -1,9 +1,26 @@
-# Reusable functions for our data model
+# *************************************************
+# |docname| - reusable functions for our data model
+# *************************************************
+# :index:`question`: Why is this named crud? It seems more like a db_utils.
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
+# For ``time`, ``date``, and ``timedelta``.
+from datetime import datetime
 
-from datetime import datetime  # time, date, timedelta
+#
+# Third-party imports
+# -------------------
 from databases import Database
 from sqlalchemy import and_
 from sqlalchemy.sql import select
+
+# Local application imports
+# -------------------------
 from .applogger import rslogger
 from . import models, schemas
 

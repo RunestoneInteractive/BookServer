@@ -2,27 +2,38 @@
 # |docname| - Runestone API
 # *************************
 # This module implements the API that the Runestone Components use to get results from assessment components
-# * multiple choice
-# * fill in the blank
-# * parsons problems
-# * drag and dorp
-# * clickable area
-# *
-
+#
+# *     multiple choice
+# *     fill in the blank
+# *     parsons problems
+# *     drag and dorp
+# *     clickable area
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
 import datetime
 
+# Third-party imports
+# -------------------
 from dateutil.parser import parse
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..crud import fetch_last_answer_table_entry
+# Local application imports
+# -------------------------
+from ..applogger import rslogger
+from ..crud import create_useinfo_entry, fetch_last_answer_table_entry
 from ..db import database as db
 from ..internal import canonicalize_tz
 from ..schemas import AssessmentRequest, LogItem, LogItemIncoming
-from .applogger import rslogger
 
-#
+# Setup
+# =====
 # Setup the router object for the endpoints defined in this file.  These will
 # be connected to the main application in main.py
 #
@@ -66,10 +77,11 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     # construct the return value from the result
     res = dict(row)
 
-    # TODO: port the serverside grading code
-    # do_server_feedback, feedback = is_server_feedback(div_id, course)
-    # if do_server_feedback:
-    #     correct, res_update = fitb_feedback(rows.answer, feedback)
-    #     res.update(res_update)
+    # TODO: port the serverside grading code::
+    #
+    #   do_server_feedback, feedback = is_server_feedback(div_id, course)
+    #   if do_server_feedback:
+    #       correct, res_update = fitb_feedback(rows.answer, feedback)
+    #       res.update(res_update)
 
     return res
