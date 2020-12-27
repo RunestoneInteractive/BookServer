@@ -23,6 +23,7 @@ from typing import Optional
 # See: https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for field types
 from pydantic import BaseModel
 
+
 # Local application imports
 # -------------------------
 # None.
