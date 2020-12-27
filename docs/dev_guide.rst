@@ -21,16 +21,19 @@ Documentation
 Coding standards
 ================
 
+.. _pull requests:
+
 Pull requests
 -------------
-:index:`todo`: **Write a Python script that does all this with one command.**
-
-Before submitting code in a pull request:
+Before submitting code in a pull request, execute `../pre_commit_check.py`. This program will:
 
 *   Verify that `pytest <https://docs.pytest.org/en/stable/>`_ passes. See `../test/toctree` to run the tests.
 *   Format your code with `Black <https://github.com/psf/black>`_. From the root directory of the project, run ``black .``.
 *   Check that `Flake8 <https://flake8.pycqa.org/en/latest/index.html>`_ finds no problems. See `../.flake8` for directions.
 *   `Build the documentation <../conf.py>`, verifying the build produces no errors.
+
+When this passes:
+
 *   Pull from upstream, then `rebase your pull request <https://www.atlassian.com/git/tutorials/merging-vs-rebasing>`_ if necessary to ensure there will be no merge conflicts.
 *   Submit your pull request, then verify that CI tests pass.
 

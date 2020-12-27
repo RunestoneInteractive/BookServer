@@ -22,6 +22,8 @@ Development support
 .. toctree::
     :maxdepth: 1
 
+    pre_commit_check.py
+    ci_utils/ci_utils.py
     .gitignore
     .flake8
     pyproject.toml
