@@ -14,6 +14,7 @@
 # ----------------
 # For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
+
 # For ``List``.
 from typing import Optional
 
@@ -65,4 +66,3 @@ class AssessmentRequest(BaseModel):
     event: str
     sid: Optional[str] = None
     deadline: Optional[str] = None
-
