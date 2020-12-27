@@ -22,23 +22,28 @@ import sys
 # -------------------------
 # This isn't in the path, since it's used only for development.
 sys.path.insert(0, str(Path(__file__).parent / "ci_utils"))
-from ci_utils import xqt, pushd
+from ci_utils import xqt, pushd  # noqa: E402
 
 
 # Checks
 # ======
 def checks():
-    with pushd("test"):
-        pass  # xqt("pytest")
     xqt(
+        # Run this first, since it's quick and should always succeed.
         "black .",
+        # Do this next -- it should be easy to fix most of these.
         "flake8 .",
+        # Next, check the docs. Again, these only require fixes to comments, and should still be relatively easy to correct.
+        #
         # Force a `full build <https://www.sphinx-doc.org/en/master/man/sphinx-build.html>`_:
         #
         # -E    Don’t use a saved environment (the structure caching all cross-references), but rebuild it completely.
         # -a    If given, always write all output files.
         "sphinx-build -E -a . _build",
     )
+    # Finally, unit tests -- the hardest to get right.
+    with pushd("test"):
+        xqt("pytest")
 
 
 if __name__ == "__main__":
