@@ -14,5 +14,6 @@ The FastAPI-based BookServer web application
     schemas.py
     db.py
     routers/toctree
+    internal/toctree
     ../config.py
     __init__.py
