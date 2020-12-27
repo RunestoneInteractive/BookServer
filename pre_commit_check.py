@@ -3,8 +3,8 @@
 # |docname| - Run a series of checks that should all pass before submitting a pull request
 # ****************************************************************************************
 # In a perfect world, these would also pass before every commit. The checks are detailed in `pull requests`.
-
-
+#
+#
 # Imports
 # =======
 # These are listed in the order prescribed by `PEP 8`_.
@@ -17,7 +17,7 @@ import sys
 # Third-party imports
 # -------------------
 # None.
-
+#
 # Local application imports
 # -------------------------
 # This isn't in the path, since it's used only for development.
