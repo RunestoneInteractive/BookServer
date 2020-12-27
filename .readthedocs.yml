@@ -1,0 +1,18 @@
+# |docname| - Read the Docs configuration file
+# ********************************************
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+#
+# .. toctree::
+#   :hidden:
+#
+#   docs/requirements-rtd.txt
+#
+# Required
+version: 2
+
+# Set the version of Python and requirements required to build your docs
+python:
+  version: 3.8
+  install:
+    # See `docs/requirements-rtd.txt`.
+    - requirements: docs/requirements-rtd.txt

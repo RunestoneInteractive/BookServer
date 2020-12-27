@@ -36,6 +36,7 @@ Documentation generation
 
     conf.py
     codechat_config.json
+    .readthedocs.yml
 
 
 License

@@ -1,0 +1,8 @@
+# ***********************************************
+# |docname| - Requirements for ReadTheDocs builds
+# ***********************************************
+# This is a ``pip`` requirements file used to install prerequisites for ReadTheDocs builds.
+
+CodeChat
+Sphinx
+recommonmark
