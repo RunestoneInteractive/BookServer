@@ -28,11 +28,10 @@ from ..schemas import LogItem, LogItemIncoming
 
 # Routing
 # =======
-# Setup the router object for the endpoints defined in this file.  These are
-# `connected <included routing>` to the main application in `../main.py`.
+# See `APIRouter config` for an explanation of this approach.
 router = APIRouter(
-    prefix="/logger",  # shortcut so we don't have to repeat this part
-    tags=["logger"],  # groups all logger tags together in the docs
+    prefix="/logger",
+    tags=["logger"],
 )
 
 

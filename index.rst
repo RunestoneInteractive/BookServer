@@ -6,17 +6,6 @@ BookServer documentation
 See the `genindex` for todo, fixme, etc. items.
 
 
-Documentation
-=============
-.. toctree::
-    :maxdepth: 1
-
-    docs/installation
-    docs/goals
-    docs/design
-    docs/dev_guide
-
-
 Web application
 ===============
 

@@ -30,6 +30,8 @@ from ..crud import create_useinfo_entry
 from ..db import database as db
 from ..schemas import LogItem, LogItemIncoming
 
+# .. _APIRouter config:
+#
 # Routing
 # =======
 # Setup the router object for the endpoints defined in this file.  These will
@@ -56,7 +58,7 @@ router = APIRouter(
 # :index:`todo`: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
-    # :index:`fixme`: **Find a way to avoid a hard-coded path.** This fix is needed for the route below as well.
+    # :index:`FIXME`: **Find a way to avoid a hard-coded path.** This fix is needed for the route below as well.
     #
     # :index:`todo`: **Are there any security concerns?** Could a malicious user pass a "path" of ``../../../private_files`` and access anything on the server?
     filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"
