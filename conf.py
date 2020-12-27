@@ -36,7 +36,9 @@ import CodeChat.CodeToRest
 # Local application imports
 # -------------------------
 # None.
-
+#
+# Path additions
+# --------------
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, as shown here.
@@ -140,10 +142,10 @@ source_suffix = ".rst"
 CodeChat_lexer_for_glob = {
     # The codechat_config.json file is composed of Python literals, though its suffix suggests JSON.
     "codechat_config.json": "Python",
-    # These files also use ``#`` for comments, but the non-comments aren't valid Python. Call these Perl instead.
-    ".gitignore": "Perl",
-    # More odd files names to known parsers.
+    # These files also use ``#`` for comments, but the non-comments aren't valid Python. Call these an INI file instead.
+    ".gitignore": "INI",
     ".flake8": "INI",
+    "requirements-rtd.txt": "INI",
 }
 
 # `source_encoding <http://sphinx-doc.org/config.html#confval-source_encoding>`_:

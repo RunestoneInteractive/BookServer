@@ -14,6 +14,7 @@
 # ----------------
 # For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
+
 # For ``List``.
 from typing import Optional
 
@@ -21,6 +22,7 @@ from typing import Optional
 # -------------------
 # See: https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for field types
 from pydantic import BaseModel
+
 
 # Local application imports
 # -------------------------
@@ -65,4 +67,3 @@ class AssessmentRequest(BaseModel):
     event: str
     sid: Optional[str] = None
     deadline: Optional[str] = None
-

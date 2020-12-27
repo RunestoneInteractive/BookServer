@@ -35,11 +35,10 @@ from ..schemas import AssessmentRequest, LogItem, LogItemIncoming
 
 # Routing
 # =======
-# Setup the router object for the endpoints defined in this file.  These are
-# `connected <included routing>` to the main application in `../main.py`.
+# See `APIRouter config` for an explanation of this approach.
 router = APIRouter(
-    prefix="/assessment",  # shortcut so we don't have to repeat this part
-    tags=["assessment"],  # groups all logger tags together in the docs
+    prefix="/assessment",
+    tags=["assessment"],
 )
 
 

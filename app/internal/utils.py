@@ -1,6 +1,26 @@
+# *****************************
+# |docname| - Utility functions
+# *****************************
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
 import re
 
+# Third-party imports
+# -------------------
+# None.
+#
+# Local application imports
+# -------------------------
+# None.
 
+
+# Functions
+# =========
 def canonicalize_tz(tstring: str) -> str:
     """
     Browsers are not consistent with how they format times with timezones for example

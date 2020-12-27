@@ -18,21 +18,6 @@ ignore=F821,
   # web2py needs to compare to ``== True`` or ``== False`` for queries.
   E712
 
-# :index:`question`: **Why are these here?** I thought that moving away from web2py means we can get rid of this horrible stuff...
-builtins=settings,
-  request,
-  response,
-  db,
-  auth,
-  redirect,
-  XML,
-  URL,
-  T,
-  HTTP,
-  cache,
-  gluon,
-  verifyInstructorStatus
-
 exclude =
   # Ignore Sphinx build output.
   _build/

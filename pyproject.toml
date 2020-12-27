@@ -14,17 +14,16 @@ fastapi = "^0.62.0"
 uvicorn = "^0.13.1"
 Jinja2 = "^2.11.2"
 aiofiles = "^0.6.0"
-# :index:`fixme`: shouldn't we install a `backend <https://www.encode.io/databases/#installation>`_?
-databases = "^0.4.1"
-aiosqlite = "^0.16.0"
 alembic = "^1.4.3"
 python-dateutil = "^2.8.1"
+databases = {extras = ["sqlite", "postgresql"], version = "^0.4.1"}
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 pytest = "^6.2.0"
 flake8 = "^3.8.4"
 CodeChat_Server = "^0.0.15"
+recommonmark = "^0.7.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

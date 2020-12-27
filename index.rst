@@ -6,17 +6,6 @@ BookServer documentation
 See the `genindex` for todo, fixme, etc. items.
 
 
-Documentation
-=============
-.. toctree::
-    :maxdepth: 1
-
-    docs/installation
-    docs/goals
-    docs/design
-    docs/dev_guide
-
-
 Web application
 ===============
 
@@ -33,6 +22,8 @@ Development support
 .. toctree::
     :maxdepth: 1
 
+    pre_commit_check.py
+    ci_utils/ci_utils.py
     .gitignore
     .flake8
     pyproject.toml
@@ -45,6 +36,7 @@ Documentation generation
 
     conf.py
     codechat_config.json
+    .readthedocs.yml
 
 
 License
