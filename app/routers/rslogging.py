@@ -44,6 +44,8 @@ async def log_book_event(entry: LogItemIncoming):
     idx = await create_useinfo_entry(db, entry)
     if entry.event in EVENT2TABLE:
         ans_idx = await create_answer_table_entry(db, entry)
+    else:
+        ans_idx = True
 
     # :index:`bug`: **Note that** ``ans_idx`` is not always defined here.
     if idx and ans_idx:
