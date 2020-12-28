@@ -9,8 +9,8 @@
 #
 # Standard library
 # ----------------
-# None.
-#
+import os.path
+
 # Third-party imports
 # -------------------
 # :index:`todo`: **Lots of unused imports here...can we remove them?***
@@ -58,17 +58,18 @@ router = APIRouter(
 # :index:`todo`: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
-    # :index:`FIXME`: **Find a way to avoid a hard-coded path.** This fix is needed for the route below as well.
-    #
-    # :index:`todo`: **Are there any security concerns?** Could a malicious user pass a "path" of ``../../../private_files`` and access anything on the server?
-    filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"
+    filepath = safe_join(
+        settings.book_path, course, "build", course, "_static", filepath
+    )
     rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
 
 
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
-    filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_images/{filepath}"
+    filepath = safe_join(
+        settings.book_path, course, "build", course, "_images", filepath
+    )
     rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
 
@@ -113,3 +114,31 @@ async def serve_page(request: Request, course: str, pagepath: str):
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
     return templates.TemplateResponse(pagepath, context)
+
+
+# Utilities
+# =========
+# This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L30.
+_os_alt_seps = list(
+    sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
+)
+
+
+# This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L216.
+def safe_join(directory, *pathnames):
+    """Safely join `directory` and one or more untrusted `pathnames`.  If this
+    cannot be done, this function returns ``None``.
+    :param directory: the base directory.
+    :param pathnames: the untrusted pathnames relative to that directory.
+    """
+    parts = [directory]
+    for filename in pathnames:
+        if filename != "":
+            filename = posixpath.normpath(filename)
+        for sep in _os_alt_seps:
+            if sep in filename:
+                return None
+        if os.path.isabs(filename) or filename == ".." or filename.startswith("../"):
+            return None
+        parts.append(filename)
+    return posixpath.join(*parts)
