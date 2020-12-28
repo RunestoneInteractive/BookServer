@@ -20,8 +20,8 @@ from pydantic import BaseSettings
 # Local application imports
 # -------------------------
 # None.
-#
-#
+
+
 # Settings
 # ========
 class Settings(BaseSettings):
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     num_banners: int = 0
     serve_ad: bool = False
 
-    # :index:`docs to write` **What's this?**
+    # :index:`docs to write`: **What's this?**
     library_path: str = "/Users/bmiller/Runestone"
 
     # Specify the directory to serve books from.
