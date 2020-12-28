@@ -16,7 +16,10 @@ def test_main():
 
 def test_add_log():
     item = LogItemIncoming(
-        event="page", act="view", div_id="/runestone/fopp/index.html"
+        event="page",
+        act="view",
+        div_id="/runestone/fopp/index.html",
+        course_name="fopp",
     )
     response = client.post(
         "/logger/bookevent",
