@@ -15,7 +15,7 @@ import os.path
 # -------------------
 # :index:`todo`: **Lots of unused imports here...can we remove them?***
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -58,20 +58,28 @@ router = APIRouter(
 # :index:`todo`: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
-    filepath = safe_join(
+    fullpath = safe_join(
         settings.book_path, course, "build", course, "_static", filepath
     )
-    rslogger.debug(f"GETTING: {filepath}")
+    rslogger.debug(f"GETTING: {fullpath}")
+    if not fullpath:
+        raise HTTPException(
+            status_code=404, detail=f"Invalid course {course} and path {filepath}."
+        )
     return FileResponse(filepath)
 
 
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
-    filepath = safe_join(
+    fullpath = safe_join(
         settings.book_path, course, "build", course, "_images", filepath
     )
-    rslogger.debug(f"GETTING: {filepath}")
-    return FileResponse(filepath)
+    rslogger.debug(f"GETTING: {fullpath}")
+    if not fullpath:
+        raise HTTPException(
+            status_code=404, detail=f"Invalid course {course} and path {filepath}."
+        )
+    return FileResponse(fullpath)
 
 
 # Basic page renderer
