@@ -122,10 +122,11 @@ _os_alt_seps = list(
 
 # This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L216.
 def safe_join(directory, *pathnames):
-    """Safely join `directory` and one or more untrusted `pathnames`.  If this
+    """Safely join ``directory`` and one or more untrusted ``pathnames``.  If this
     cannot be done, this function returns ``None``.
-    :param directory: the base directory.
-    :param pathnames: the untrusted pathnames relative to that directory.
+
+    :directory: the base directory.
+    :pathnames: the untrusted pathnames relative to that directory.
     """
     parts = [directory]
     for filename in pathnames:
