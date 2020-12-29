@@ -9,26 +9,22 @@
 #
 # Standard library
 # ----------------
-import os.path
-
+# None.
+#
 # Third-party imports
 # -------------------
 # :index:`todo`: **Lots of unused imports here...can we remove them?***
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request  # noqa F401
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
 # Local application imports
 # -------------------------
 from bookserver.config import settings
 from ..applogger import rslogger
-from ..crud import create_useinfo_entry
-from ..db import database as db
-from ..schemas import LogItem, LogItemIncoming
+from ..crud import create_useinfo_entry  # noqa F401
+from ..schemas import LogItem, LogItemIncoming  # noqa F401
 
 # .. _APIRouter config:
 #
@@ -58,28 +54,19 @@ router = APIRouter(
 # :index:`todo`: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
-    fullpath = safe_join(
-        settings.book_path, course, "build", course, "_static", filepath
-    )
-    rslogger.debug(f"GETTING: {fullpath}")
-    if not fullpath:
-        raise HTTPException(
-            status_code=404, detail=f"Invalid course {course} and path {filepath}."
-        )
+    # :index:`FIXME`: **Find a way to avoid a hard-coded path.** This fix is needed for the route below as well.
+    #
+    # :index:`todo`: **Are there any security concerns?** Could a malicious user pass a "path" of ``../../../private_files`` and access anything on the server?
+    filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_static/{filepath}"
+    rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)
 
 
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
-    fullpath = safe_join(
-        settings.book_path, course, "build", course, "_images", filepath
-    )
-    rslogger.debug(f"GETTING: {fullpath}")
-    if not fullpath:
-        raise HTTPException(
-            status_code=404, detail=f"Invalid course {course} and path {filepath}."
-        )
-    return FileResponse(fullpath)
+    filepath = f"/Users/bmiller/Runestone/{course}/build/{course}/_images/{filepath}"
+    rslogger.debug(f"GETTING: {filepath}")
+    return FileResponse(filepath)
 
 
 # Basic page renderer
@@ -122,32 +109,3 @@ async def serve_page(request: Request, course: str, pagepath: str):
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
     return templates.TemplateResponse(pagepath, context)
-
-
-# Utilities
-# =========
-# This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L30.
-_os_alt_seps = list(
-    sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
-)
-
-
-# This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L216.
-def safe_join(directory, *pathnames):
-    """Safely join ``directory`` and one or more untrusted ``pathnames``.  If this
-    cannot be done, this function returns ``None``.
-
-    :directory: the base directory.
-    :pathnames: the untrusted pathnames relative to that directory.
-    """
-    parts = [directory]
-    for filename in pathnames:
-        if filename != "":
-            filename = posixpath.normpath(filename)
-        for sep in _os_alt_seps:
-            if sep in filename:
-                return None
-        if os.path.isabs(filename) or filename == ".." or filename.startswith("../"):
-            return None
-        parts.append(filename)
-    return posixpath.join(*parts)

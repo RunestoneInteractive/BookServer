@@ -21,3 +21,4 @@ ignore=F821,
 exclude =
   # Ignore Sphinx build output.
   _build/
+  alembic/

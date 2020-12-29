@@ -30,7 +30,7 @@ from ci_utils import xqt, pushd  # noqa: E402
 def checks():
     xqt(
         # Run this first, since it's quick and should always succeed.
-        "black .",
+        "black --check .",
         # Do this next -- it should be easy to fix most of these.
         "flake8 .",
         # Next, check the docs. Again, these only require fixes to comments, and should still be relatively easy to correct.

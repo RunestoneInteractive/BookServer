@@ -10,20 +10,18 @@
 #
 # Standard library
 # ----------------
-# None.
+# None. (Or the imports.)
 #
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports...can we delete these?**
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
+# :index:`todo`: **Lots of unused imports...can we deletet these?**
+from fastapi import APIRouter, Depends  # noqa F401
 
 # Local application imports
 # -------------------------
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..db import database as db
-from ..schemas import LogItem, LogItemIncoming
+from ..schemas import LogItem, LogItemIncoming  # noqa F401
 
 
 # Routing

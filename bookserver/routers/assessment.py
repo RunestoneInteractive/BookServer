@@ -22,16 +22,14 @@ import datetime
 # :index:`todo`: **Lots of unused imports here...**
 from dateutil.parser import parse
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
-from ..crud import create_useinfo_entry, fetch_last_answer_table_entry
+from ..crud import create_useinfo_entry, fetch_last_answer_table_entry  # noqa F401
 from ..db import database as db
-from ..internal import canonicalize_tz
-from ..schemas import AssessmentRequest, LogItem, LogItemIncoming
+from ..internal.utils import canonicalize_tz
+from ..schemas import AssessmentRequest, LogItem, LogItemIncoming  # noqa F401
 
 # Routing
 # =======
