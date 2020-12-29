@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 # Local application imports
 # -------------------------
 # See `../config.py`.
-from config import settings
+from bookserver.config import settings
 
 # :index:`question`: does this belong in `../config.py`?  Or does it just describe the format of a database URL for two databases?
 #
@@ -39,7 +39,12 @@ elif settings.config == "test":
 else:
     assert False
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if settings.dbserver == "sqlite":
+    connect_args = {"check_same_thread": False}
+else:
+    connect_args = {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 # This creates the SessionLocal class.  An actual session is an instance of this class.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

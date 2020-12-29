@@ -43,6 +43,7 @@ class Settings(BaseSettings):
 
     # :index:`docs to write`: **What's this?**
     library_path: str = "/Users/bmiller/Runestone"
+    dbserver: str = "sqlite"
 
     # Specify the directory to serve books from.
     book_path: Path = Path(__file__).parents[1] / "books"

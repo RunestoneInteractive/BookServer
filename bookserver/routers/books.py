@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 
 # Local application imports
 # -------------------------
-from config import settings
+from bookserver.config import settings
 from ..applogger import rslogger
 from ..crud import create_useinfo_entry
 from ..db import database as db
