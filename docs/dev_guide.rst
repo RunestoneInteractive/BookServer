@@ -37,6 +37,14 @@ When this passes:
 *   Pull from upstream, then `rebase your pull request <https://www.atlassian.com/git/tutorials/merging-vs-rebasing>`_ if necessary to ensure there will be no merge conflicts.
 *   Submit your pull request, then verify that CI tests pass.
 
+1. No committing to main directly. Mostly a reminder for myself 
+
+1. In principle I like the idea of rebasing a branch I'm working on locally.
+But after I publish that branch and make it a PR, no more rebasing after the branch is public.
+2. The main branch should be protected on GitHub so that tests must pass and have an approving review from at least one committer. Ideally this would be someone other than the person who makes the PR but in practice this is hard when people get busy and don't have time to review. Plus I think its fine for self review in small simple cases or emergency bug fixes.
+3. Are a required part of a PR -- we have the opportunity to get our coverage at 100% in these early stages and keep it there as we build out this new server.
+4. I like using semantic versioning, and I've found that doing a weekly release for runestone components works well.  We will strive to follow the same schedule here.
+
 Imports
 -------
 Use the following template at the top of each Python source file. Use absolute imports instead of relative imports.
