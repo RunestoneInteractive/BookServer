@@ -3,8 +3,8 @@
 # ********************************
 
 from fastapi.testclient import TestClient
-from app.schemas import LogItemIncoming
-from app.main import app
+from bookserver.schemas import LogItemIncoming
+from bookserver.main import app
 
 client = TestClient(app)
 

@@ -12,7 +12,15 @@ __pycache__
 # Output from a Sphinx build.
 _build
 
+# Output from poetry build
+dist
+
 # ignore sqllite db files
 *.db
-.nova
+
 alembic/versions/*.py
+
+# Typical IDE settings folders
+.vscode
+.nova
+.idea

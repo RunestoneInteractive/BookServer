@@ -82,7 +82,7 @@ The `../app/models.py` file defines all of the tables used in Runestone. If you 
 
 The `alembic <https://alembic.sqlalchemy.org/en/latest/>`_ folder is used for database migrations.
 
-The `../app/main.py` file pulls everything together. For development purposes you can run the book server with the command ``uvicorn app.main:app --reload --port 8080``.  This looks in the app module for main and loads the app object into the uvicorn ASGI server.
+The `../app/main.py` file pulls everything together. For development purposes you can run the book server with the command ``uvicorn bookserver.main:app --reload --port 8080``.  This looks in the app module for main and loads the app object into the uvicorn ASGI server.
 
 
 The Structure of a Runestone Book
