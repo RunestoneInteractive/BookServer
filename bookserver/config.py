@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     num_banners: int = 0
     serve_ad: bool = False
     library_path: str = "/Users/bmiller/Runestone"
+    dbserver: str = "sqlite"
 
 
 settings = Settings()
