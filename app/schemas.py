@@ -1,8 +1,6 @@
-# ******************************
-# |docname| -- Database schemas?
-# ******************************
-# :index:`question`: This seems to be a different approach than `models.py`. Why are there two approaches?
-#
+# ************************************************************
+# |docname| -- Define validation for endpoint query parameters
+# ************************************************************
 # This file contains the models we use for post requests and for type checking throughout the application.
 # These object models should be used wherever possible to ensure consistency
 
@@ -23,14 +21,13 @@ from typing import Optional
 # See: https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for field types
 from pydantic import BaseModel
 
-
 # Local application imports
 # -------------------------
 # None.
-#
-#
-# Schemas?
-# ========
+
+
+# Schemas
+# =======
 class LogItemIncoming(BaseModel):
     """
     This class defines the schema for what we can expect to get from a logging event.
@@ -38,6 +35,7 @@ class LogItemIncoming(BaseModel):
     to add additional constraints we can do so.
     """
 
+    # :index:`TODO`: Is there any way to specify max string lengths? The database has fixed-length fields for some of these.
     event: str
     act: str
     div_id: str
@@ -46,7 +44,8 @@ class LogItemIncoming(BaseModel):
     correct: Optional[bool]
     chapter: Optional[str]
     subchapter: Optional[str]
-    source: Optional[str]  # used by parsons
+    # used by parsons
+    source: Optional[str]
 
 
 class LogItem(LogItemIncoming):

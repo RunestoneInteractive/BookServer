@@ -33,15 +33,42 @@ from sqlalchemy import (
     MetaData,
     Table,
     UniqueConstraint,
+    types,
 )
 
 # Local application imports
 # -------------------------
 # None.
 
-# Local application imports
-# -------------------------
-# None.
+
+# Web2Py boolean type
+# ===================
+# Define a web2py-compatible Boolean type. See `custom types <http://docs.sqlalchemy.org/en/latest/core/custom_types.html>`_.
+class Web2PyBoolean(types.TypeDecorator):
+    impl = types.CHAR(1)
+
+    def process_bind_param(self, value, dialect):
+        if value:
+            return "T"
+        elif value is None:
+            return None
+        elif not value:
+            return "F"
+        else:
+            assert False
+
+    def process_result_value(self, value, dialect):
+        if value == "T":
+            return True
+        elif value == "F":
+            return False
+        elif value is None:
+            return None
+        else:
+            assert False
+
+    def copy(self, **kw):
+        return Web2PyBoolean(self.impl.length)
 
 
 # Schema Definition

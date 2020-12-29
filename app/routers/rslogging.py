@@ -10,11 +10,11 @@
 #
 # Standard library
 # ----------------
-# None. (Or the imports.)
+# None.
 #
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports...can we deletet these?**
+# :index:`todo`: **Lots of unused imports...can we delete these?**
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session

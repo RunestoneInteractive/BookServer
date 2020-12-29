@@ -12,7 +12,6 @@
 # For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
 
-#
 # Third-party imports
 # -------------------
 from databases import Database
@@ -24,6 +23,8 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import models, schemas
 
+
+# Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
     "clickableArea": "clickablearea_answers",
     "codelens1": "codelens_answers",
@@ -59,9 +60,11 @@ async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
     values = {
         k: v
         for k, v in log_entry.dict().items()
+        # :index:`question`: **Why exclude** ``act``? Some types (clickablearea, shortanswer, etc) use this field. There's probably more conditional logic needed here based on the event type.
         if v is not None and k not in ["event", "act"]
     }
     values["timestamp"] = datetime.utcnow()
+    # :index:`TODO`
     values["sid"] = "current_user"
     rslogger.debug(f"hello from create at {values}")
     tbl = models.answer_tables[EVENT2TABLE[log_entry.event]]
@@ -70,6 +73,7 @@ async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
     return res
 
 
+# :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(
     db: Database, query_data: schemas.AssessmentRequest
 ):
