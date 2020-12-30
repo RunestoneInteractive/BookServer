@@ -1,4 +1,4 @@
-#!/bin/csh python3
+#!/usr/bin/env python3
 # ****************************************************************************************
 # |docname| - Run a series of checks that should all pass before submitting a pull request
 # ****************************************************************************************
