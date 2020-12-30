@@ -35,4 +35,4 @@ jobs:
         poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run the Pre Commit Check Script
       run: |
-        poetry run pre_commit_check.py
+        poetry run ./pre_commit_check.py
