@@ -23,7 +23,6 @@
 # Third-party imports
 # -------------------
 from sqlalchemy import (
-    Boolean,
     Column,
     ForeignKey,
     Integer,
@@ -136,7 +135,7 @@ for tbl in ANSWER_TABLE_NAMES:
             index=True,
         ),  # unique identifier for a component
         Column("course_name", String, index=True),
-        Column("correct", Boolean),
+        Column("correct", Web2PyBoolean),
         Column("answer", String),
     )
 
@@ -184,10 +183,10 @@ courses = Table(
     Column("term_start_date", Date, index=False),
     Column("institution", String),
     Column("base_course", String, ForeignKey("courses.course_name"), nullable=False),
-    Column("login_required", Boolean, default=False),
-    Column("allow_pairs", Boolean),
+    Column("login_required", Web2PyBoolean, default=False),
+    Column("allow_pairs", Web2PyBoolean),
     Column("student_price", Integer),
-    Column("downloads_enabled", Boolean),
+    Column("downloads_enabled", Web2PyBoolean),
     Column("courselevel", String),
     UniqueConstraint("course_name", name="unique_course_name"),
 )
