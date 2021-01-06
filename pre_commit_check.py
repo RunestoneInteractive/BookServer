@@ -43,7 +43,7 @@ def checks():
     )
     # Finally, unit tests -- the hardest to get right.
     with pushd("test"):
-        xqt("pytest")
+        xqt("pytest --cov=bookserver")
 
 
 if __name__ == "__main__":

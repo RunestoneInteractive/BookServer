@@ -1,0 +1,8 @@
+[run]
+omit =
+    _build
+    docs
+    ci_utils
+
+[html]
+directory = test/htmlcov
