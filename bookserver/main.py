@@ -13,7 +13,7 @@
 #
 # Third-party imports
 # -------------------
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 # Local application imports
 # -------------------------
@@ -52,6 +52,13 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
+
+
+@app.middleware("http")
+async def get_session_object(request: Request, call_next):
+    request.state.session = {"sessionid": 1234567}
+    response = await call_next(request)
+    return response
 
 
 @app.get("/")
