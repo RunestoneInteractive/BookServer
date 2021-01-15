@@ -66,7 +66,7 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
 
     # Identify the correct event and query the database so we can load it from the server
 
-    row = await fetch_last_answer_table_entry(db, request_data)
+    row = await fetch_last_answer_table_entry(request_data)
     if not row:
         return ""  # server doesn't have it so we load from local storage instead
 

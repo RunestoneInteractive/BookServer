@@ -10,12 +10,13 @@
 # Standard library
 # ----------------
 import os.path
+import posixpath
 
 # Third-party imports
 # -------------------
 # :index:`todo`: **Lots of unused imports here...can we remove them?***
 
-from fastapi import APIRouter, Depends, Request  # noqa F401
+from fastapi import APIRouter, Depends, Request, HTTPException  # noqa F401
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -23,7 +24,7 @@ from fastapi.templating import Jinja2Templates
 # -------------------------
 from bookserver.config import settings
 from ..applogger import rslogger
-from ..crud import create_useinfo_entry  # noqa F401
+from ..crud import create_useinfo_entry, fetch_course  # noqa F401
 from ..schemas import LogItem, LogItemIncoming  # noqa F401
 
 # .. _APIRouter config:
@@ -78,8 +79,13 @@ async def get_image(course: str, filepath: str):
     response_class=HTMLResponse,
 )
 async def serve_page(request: Request, course: str, pagepath: str):
+    rslogger.debug(f"session = {request.state.session}")
+    course_row = await fetch_course(course)
+    if not course_row:
+        raise HTTPException(status_code=404, detail=f"Course {course} not found")
+
     templates = Jinja2Templates(
-        directory=f"/Users/bmiller/Runestone/{course}/build/{course}"
+        directory=safe_join(settings.book_path, course_row.base_course, "build", course)
     )
     # :index:`todo`: **Fill in this from the database...**
     #
@@ -94,6 +100,9 @@ async def serve_page(request: Request, course: str, pagepath: str):
     #   allow_pairs
     #   activity_info
     #   settings.google_ga
+    await create_useinfo_entry(
+        LogItemIncoming(event="page", act="view", div_id=pagepath, course_name=course)
+    )
     context = dict(
         request=request,
         course_name=course,

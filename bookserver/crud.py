@@ -1,7 +1,10 @@
 # *************************************************
 # |docname| - reusable functions for our data model
 # *************************************************
-# :index:`question`: Why is this named crud? It seems more like a db_utils.
+# Create Retrieve Update and Delete functions for database tables
+#
+# Rather than litter the code with raw html queries the vast majority should be
+# turned into reusable functions that are defined in this file.
 #
 # Imports
 # =======
@@ -15,6 +18,8 @@ from datetime import datetime
 # Third-party imports
 # -------------------
 from databases import Database
+from .db import database as db
+import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 
@@ -40,7 +45,7 @@ EVENT2TABLE = {
 
 # useinfo
 # -------
-async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming):
+async def create_useinfo_entry(log_entry: schemas.LogItemIncoming):
     new_log = dict(
         sid="current_user",
         event=log_entry.event,
@@ -56,12 +61,13 @@ async def create_useinfo_entry(db: Database, log_entry: schemas.LogItemIncoming)
 
 # xxx_answers
 # -----------
-async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
+async def create_answer_table_entry(log_entry: schemas.LogItem):
     values = {
         k: v
         for k, v in log_entry.dict().items()
-        # :index:`question`: **Why exclude** ``act``? Some types (clickablearea, shortanswer, etc) use this field. There's probably more conditional logic needed here based on the event type.
-        if v is not None and k not in ["event", "act"]
+        # filter out fields that do not go in an answer table
+        if v is not None
+        and k not in ["event", "act", "timezoneoffset", "clientLoginStatus"]
     }
     values["timestamp"] = datetime.utcnow()
     # :index:`TODO`
@@ -75,8 +81,8 @@ async def create_answer_table_entry(db: Database, log_entry: schemas.LogItem):
 
 # :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(
-    db: Database, query_data: schemas.AssessmentRequest
-):
+    query_data: schemas.AssessmentRequest,
+) -> list[sqlalchemy.engine.RowProxy]:
     assessment = EVENT2TABLE[query_data.event]
     tbl = models.answer_tables[assessment]
     query = (
@@ -91,6 +97,13 @@ async def fetch_last_answer_table_entry(
         .order_by(tbl.c.timestamp.desc())
     )
 
+    res = await db.fetch_one(query)
+
+    return res
+
+
+async def fetch_course(course_name: str) -> sqlalchemy.engine.RowProxy:
+    query = select([models.courses]).where(models.courses.c.course_name == course_name)
     res = await db.fetch_one(query)
 
     return res

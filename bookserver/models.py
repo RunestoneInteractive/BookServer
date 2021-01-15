@@ -33,6 +33,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     types,
+    Float,
 )
 
 # Local application imports
@@ -136,6 +137,7 @@ for tbl in ANSWER_TABLE_NAMES:
         ),  # unique identifier for a component
         Column("course_name", String, index=True),
         Column("correct", Web2PyBoolean),
+        Column("percent", Float),
         Column("answer", String),
     )
 

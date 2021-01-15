@@ -46,5 +46,13 @@ def checks():
         xqt("pytest --cov=bookserver")
 
 
+# .. attention:: Coverage Reports
+#
+#     The command ``coverage html`` will generate a test coverage report showing
+#     the lines of code that were executed (or not) by the tests. This is a great
+#     report to help figure out what new tests should be written to keep our coverage
+#     near 100%  You can view the report by opening ``test/htmlcov/index.html`` in
+#     your browser.
+
 if __name__ == "__main__":
     checks()

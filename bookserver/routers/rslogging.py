@@ -39,9 +39,9 @@ async def log_book_event(entry: LogItemIncoming):
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItem`` object to define the JSON payload it gets from a page of a book.
     """
-    idx = await create_useinfo_entry(db, entry)
+    idx = await create_useinfo_entry(entry)
     if entry.event in EVENT2TABLE:
-        ans_idx = await create_answer_table_entry(db, entry)
+        ans_idx = await create_answer_table_entry(entry)
     else:
         ans_idx = True
 

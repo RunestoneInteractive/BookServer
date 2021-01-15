@@ -42,6 +42,9 @@ class LogItemIncoming(BaseModel):
     course_name: str
     answer: Optional[str]
     correct: Optional[bool]
+    percent: Optional[float]
+    clientLoginStatus: Optional[bool]
+    timezoneoffset: Optional[int]
     chapter: Optional[str]
     subchapter: Optional[str]
     # used by parsons
