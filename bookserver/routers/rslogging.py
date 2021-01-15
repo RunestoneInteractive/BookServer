@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends  # noqa F401
 # Local application imports
 # -------------------------
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
-from ..db import database as db
 from ..schemas import LogItem, LogItemIncoming  # noqa F401
 
 

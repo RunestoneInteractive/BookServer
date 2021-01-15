@@ -1,9 +1,9 @@
 # *************************************************
 # |docname| - reusable functions for our data model
 # *************************************************
-# Create Retrieve Update and Delete functions for database tables
+# Create Retrieve Update and Delete (CRUD) functions for database tables
 #
-# Rather than litter the code with raw html queries the vast majority should be
+# Rather than litter the code with raw database queries the vast majority should be
 # turned into reusable functions that are defined in this file.
 #
 # Imports
@@ -17,7 +17,6 @@ from datetime import datetime
 
 # Third-party imports
 # -------------------
-from databases import Database
 from .db import database as db
 import sqlalchemy
 from sqlalchemy import and_

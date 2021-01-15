@@ -27,7 +27,6 @@ from fastapi import APIRouter, Depends
 # -------------------------
 from ..applogger import rslogger
 from ..crud import create_useinfo_entry, fetch_last_answer_table_entry  # noqa F401
-from ..db import database as db
 from ..internal.utils import canonicalize_tz
 from ..schemas import AssessmentRequest, LogItem, LogItemIncoming  # noqa F401
 
