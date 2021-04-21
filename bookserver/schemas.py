@@ -69,3 +69,13 @@ class AssessmentRequest(BaseModel):
     event: str
     sid: Optional[str] = None
     deadline: Optional[str] = None
+
+
+class User(BaseModel):
+    username: str
+    course_name: str
+    course_id: int
+    first_name: str
+    last_name: str
+    email: str
+    password_hash: str

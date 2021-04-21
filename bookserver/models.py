@@ -117,7 +117,7 @@ ANSWER_TABLE_NAMES = [
     "unittest_answers",
 ]
 
-answer_columns = []
+answer_columns = [str]
 
 # This should make working with answer tables much easier across the board as we can now just access them by name instead of duplicating code for each case.
 answer_tables = {}
@@ -191,4 +191,25 @@ courses = Table(
     Column("downloads_enabled", Web2PyBoolean),
     Column("courselevel", String),
     UniqueConstraint("course_name", name="unique_course_name"),
+)
+
+auth_user = Table(
+    "auth_user",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True, autoincrement=True),
+    Column("username", String, unique=True, index=True),
+    Column("first_name", String),
+    Column("last_name", String),
+    Column("email", String, nullable=False),
+    Column("password", String, nullable=False),
+    Column("created_on", DateTime),
+    Column("modified_on", DateTime),
+    Column("registration_key", String),
+    Column("reset_password_key", String),
+    Column("registration_id", String),
+    Column("course_id", Integer),
+    Column("course_name", String),
+    Column("active", Web2PyBoolean),
+    Column("donated", Web2PyBoolean),
+    Column("accept_tcp", Web2PyBoolean),
 )

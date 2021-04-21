@@ -17,9 +17,10 @@ from fastapi import FastAPI, Request
 
 # Local application imports
 # -------------------------
-from .routers import rslogging
-from .routers import books
 from .routers import assessment
+from .routers import auth
+from .routers import books
+from .routers import rslogging
 from .db import engine, database
 from .models import metadata
 
@@ -40,6 +41,7 @@ app = FastAPI()
 app.include_router(rslogging.router)
 app.include_router(books.router)
 app.include_router(assessment.router)
+app.include_router(auth.router)
 
 
 # Defined here

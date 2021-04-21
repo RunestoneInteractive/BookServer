@@ -48,5 +48,7 @@ class Settings(BaseSettings):
     # Specify the directory to serve books from.
     book_path: Path = Path(__file__).parents[1] / "books"
 
+    secret = "supersecret"
+
 
 settings = Settings()

@@ -106,3 +106,10 @@ async def fetch_course(course_name: str) -> sqlalchemy.engine.RowProxy:
     res = await db.fetch_one(query)
 
     return res
+
+
+async def fetch_user(user_name: str) -> sqlalchemy.engine.RowProxy:
+    query = select([models.auth_user]).where(models.auth_user.c.username == user_name)
+    res = await db.fetch_one(query)
+
+    return res
