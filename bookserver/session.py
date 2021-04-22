@@ -6,13 +6,15 @@ from bookserver.config import settings
 from fastapi_login import LoginManager
 from . import schemas
 from .crud import fetch_user
+from .applogger import rslogger
 
 
 def get_session():
     pass
 
 
-auth_manager = LoginManager(settings.secret, "/login", use_cookie=True)
+auth_manager = LoginManager(settings.secret, "/auth/login", use_cookie=True)
+auth_manager.cookie_name = "access_token"
 
 
 @auth_manager.user_loader
@@ -22,6 +24,7 @@ async def load_user(user_id: str) -> schemas.User:
     original web2py auth_user schema but make it easier to migrate to a new
     database by simply returning a user object.
     """
+    rslogger.debug(f"Going to fetch {user_id}")
     user = await fetch_user(user_id)
     if user:
         return schemas.User(

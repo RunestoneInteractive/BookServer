@@ -26,6 +26,7 @@ from bookserver.config import settings
 from ..applogger import rslogger
 from ..crud import create_useinfo_entry, fetch_course  # noqa F401
 from ..schemas import LogItem, LogItemIncoming  # noqa F401
+from ..session import auth_manager
 
 # .. _APIRouter config:
 #
@@ -78,8 +79,11 @@ async def get_image(course: str, filepath: str):
     "/published/{course:str}/{pagepath:path}",
     response_class=HTMLResponse,
 )
-async def serve_page(request: Request, course: str, pagepath: str):
+async def serve_page(
+    request: Request, course: str, pagepath: str, user=Depends(auth_manager)
+):
     rslogger.debug(f"session = {request.state.session}")
+    rslogger.debug(f"user = {user}")
     course_row = await fetch_course(course)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course} not found")

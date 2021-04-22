@@ -25,7 +25,14 @@ from pydantic import BaseSettings
 # Settings
 # ========
 class Settings(BaseSettings):
-    # :index:`docs to write`: **What's this?**
+    # Pydantic provides a wonderful utility to handle settings.  The beauty of it
+    # is that you can specify variables with or without default values, and Pydantic
+    # will check your environment variables, in a case insensitive way. So that
+    # if you have PROD_DBURL set in the environment it will be set as the value
+    # for prod_dburl in settings.
+    # This is a really nice way to keep from
+    # committing any data you want to keep private.
+
     google_ga: str = ""
 
     # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`.
@@ -48,7 +55,8 @@ class Settings(BaseSettings):
     # Specify the directory to serve books from.
     book_path: Path = Path(__file__).parents[1] / "books"
 
-    secret = "supersecret"
+    secret: str = "supersecret"
+    web2py_private_key: str
 
 
 settings = Settings()

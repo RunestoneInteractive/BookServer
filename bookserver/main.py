@@ -13,7 +13,8 @@
 #
 # Third-party imports
 # -------------------
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, Cookie
+from typing import Optional
 
 # Local application imports
 # -------------------------
@@ -23,6 +24,8 @@ from .routers import books
 from .routers import rslogging
 from .db import engine, database
 from .models import metadata
+from .session import auth_manager
+from bookserver.applogger import rslogger
 
 # FastAPI setup
 # =============
@@ -61,6 +64,21 @@ async def get_session_object(request: Request, call_next):
     request.state.session = {"sessionid": 1234567}
     response = await call_next(request)
     return response
+
+
+@app.get("/protected")
+async def protected_route(request: Request, access_token: Optional[str] = Cookie(None)):
+
+    rslogger.debug(access_token)
+    res = await auth_manager.get_current_user(access_token)
+    rslogger.debug(res)
+    return {"user": res}
+
+
+@app.get("/protected2")
+async def protected_route2(request: Request, user=Depends(auth_manager)):
+    rslogger.debug("here")
+    return {"user": user}
 
 
 @app.get("/")

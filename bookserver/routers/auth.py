@@ -27,6 +27,8 @@ from fastapi.templating import Jinja2Templates
 from ..session import load_user, auth_manager
 from ..schemas import LogItem, LogItemIncoming  # noqa F401
 from pydal.validators import CRYPT
+from ..applogger import rslogger
+from ..config import settings
 
 # Routing
 # =======
@@ -59,19 +61,29 @@ def login_form(request: Request):
 async def login(
     response: Response, data: OAuth2PasswordRequestForm = Depends()
 ) -> dict:
+    """
+    This is called as the result of a login form being submitted.
+
+    """
     username = data.username
     password = data.password
 
+    rslogger.debug(f"username = {username}")
     user = await load_user(username)
-    um = UserManagerWeb2Py()
-
+    # um = UserManagerWeb2Py()
+    rslogger.debug(f"{user.username}")
     if not user:
         raise InvalidCredentialsException
     else:
-        if not um.verify_password(user.password, password):
+        salt = user.password_hash.split("$")[1]
+        crypt = CRYPT(key=settings.web2py_private_key, salt=salt)
+        if str(crypt(password)[0]) != user.password_hash:
             raise InvalidCredentialsException
 
     access_token = auth_manager.create_access_token(data={"sub": user.username})
     auth_manager.set_cookie(response, access_token)
 
+    # todo: I would really rather not return a token here. I would prefer to redirect to
+    # the next page.  Not sure if it is possible, this may have to return a token in
+    # order for fastapi_login to work.
     return {"token": access_token}
