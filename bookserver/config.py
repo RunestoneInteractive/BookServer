@@ -60,8 +60,9 @@ class Settings(BaseSettings):
     # This is the secret key used for generating the JWT token
     secret: str = "supersecret"
 
-    # This is the private key web2py uses for hashing passwords
-    web2py_private_key: str
+    # This is the private key web2py uses for hashing passwords.
+    # For CI purposes this matches my private dev server.
+    web2py_private_key: str = "sha512:16492eda-ba33-48d4-8748-98d9bbdf8d33"
 
 
 settings = Settings()
