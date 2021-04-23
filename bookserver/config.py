@@ -1,8 +1,10 @@
-# ************************************
-# |docname| - BookServer configuration
-# ************************************
-# Configure settings here.
-# Default provided here may be `overridden by environment variables <https://fastapi.tiangolo.com/advanced/settings/>`_.
+# ********************************************
+# |docname| - Configuring Runestone BookServer
+# ********************************************
+# Many thing about Runestone BookServer are configurable. This is the place to change
+# the configuration for most things.  **Private** things should be configured in the
+# environment so they are not accidentally committed to Github.
+# Defaults provided here may be overridden by environment variables `Per <https://fastapi.tiangolo.com/advanced/settings/>`_.
 #
 #
 # Imports

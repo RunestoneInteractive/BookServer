@@ -50,7 +50,7 @@ import CodeChat.CodeToRest
 # `copyright <http://sphinx-doc.org/config.html#confval-copyright>`_:
 # General information about the project. **Change this** for your project.
 project = "Runestone BookServer"
-copyright = "2020, Brad Miller"
+copyright = "2020, 2021, Runestone Interactive LLC"
 
 # The version info for the project you're documenting, acts as replacement for
 # ``|version|`` and ``|release|``, also used in various other places throughout
@@ -58,7 +58,7 @@ copyright = "2020, Brad Miller"
 #
 # `version <http://sphinx-doc.org/config.html#confval-version>`_: The short X.Y
 # version.
-version = "0.0"
+version = "0.1"
 # `release <http://sphinx-doc.org/config.html#confval-release>`_: The full
 # version, including alpha/beta/rc tags.
 release = "version 0.0"
@@ -109,7 +109,7 @@ pygments_style = "sphinx"
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones. **CodeChat
 # note:** The ``CodeChat.CodeToRestSphinx`` extension is mandatory; without it,
 # CodeChat will not translate source code to reST and then (via Sphinx) to html.
-extensions = ["CodeChat.CodeToRestSphinx", "sphinx.ext.intersphinx"]
+extensions = ["CodeChat.CodeToRestSphinx", "sphinx.ext.intersphinx", "sphinx_rtd_theme"]
 
 # `templates_path <http://sphinx-doc.org/config.html#confval-templates_path>`_:
 # Add any paths that contain templates here, relative to this directory.
@@ -208,12 +208,17 @@ keep_warnings = True
 # ======================================================================================
 # `html_theme <http://sphinx-doc.org/config.html#confval-html_theme>`_: The
 # theme to use for HTML and HTML Help pages.
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # `html_theme_options <http://sphinx-doc.org/config.html#confval-html_theme_options>`_:
 # Theme options are theme-specific and customize the look and feel of a theme
-# further.
-##html_theme_options = {}
+# further. For `Read the docs <https://sphinx-rtd-theme.readthedocs.io/en/latest/configuring.html>`_
+
+html_theme_options = {
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "titles_only": True,
+}
 
 # `html_style <http://sphinx-doc.org/config.html#confval-html_style>`_: The
 # style sheet to use for HTML pages.

@@ -1,6 +1,6 @@
-********************************************
-The FastAPI-based BookServer web application
-********************************************
+**************************
+BookServer web application
+**************************
 
 .. toctree::
     :maxdepth: 1

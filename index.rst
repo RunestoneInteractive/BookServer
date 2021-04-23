@@ -1,6 +1,6 @@
-************************
-BookServer documentation
-************************
+**************************************
+FastAPI Based BookServer documentation
+**************************************
 :index:`docs to write`: The BookServer is a next-generation server for the Runestone platform...
 
 See the `genindex` for todo, fixme, etc. items.
@@ -14,7 +14,7 @@ Web application
 
     bookserver/toctree
     alembic/toctree
-    test/toctree
+
 
 
 Development support
@@ -22,11 +22,11 @@ Development support
 .. toctree::
     :maxdepth: 1
 
+    test/toctree
     pre_commit_check.py
-    ci_utils/ci_utils.py
+    pyproject.toml
     .gitignore
     .flake8
-    pyproject.toml
 
 
 Documentation generation

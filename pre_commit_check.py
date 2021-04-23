@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-# ****************************************************************************************
-# |docname| - Run a series of checks that should all pass before submitting a pull request
-# ****************************************************************************************
+# *******************************************
+# |docname| - Formatting, Lint, and Unittests
+# *******************************************
+# This script runs a series of checks that should all pass before submitting a pull request.
 # In a perfect world, these would also pass before every commit. The checks are detailed in `pull requests`.
 #
 #
