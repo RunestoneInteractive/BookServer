@@ -57,7 +57,10 @@ class Settings(BaseSettings):
     # Specify the directory to serve books from.
     book_path: Path = Path(__file__).parents[1] / "books"
 
+    # This is the secret key used for generating the JWT token
     secret: str = "supersecret"
+
+    # This is the private key web2py uses for hashing passwords
     web2py_private_key: str
 
 
