@@ -14,6 +14,7 @@
 # ----------------
 # For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
+from typing import List
 
 # Third-party imports
 # -------------------
@@ -81,7 +82,7 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
 # :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(
     query_data: schemas.AssessmentRequest,
-) -> list[sqlalchemy.engine.RowProxy]:
+) -> List[sqlalchemy.engine.RowProxy]:
     assessment = EVENT2TABLE[query_data.event]
     tbl = models.answer_tables[assessment]
     query = (
