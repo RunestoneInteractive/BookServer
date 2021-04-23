@@ -19,7 +19,7 @@
 from fastapi import APIRouter, Depends, Request, Response  # noqa F401
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse  # , RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 # Local application imports
@@ -87,3 +87,4 @@ async def login(
     # the next page.  Not sure if it is possible, this may have to return a token in
     # order for fastapi_login to work.
     return {"token": access_token}
+    # return RedirectResponse("http://localhost:8080/books/published/overview/index.html")

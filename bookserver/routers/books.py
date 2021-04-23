@@ -75,8 +75,9 @@ async def get_image(course: str, filepath: str):
 # Basic page renderer
 # ===================
 # To see the output of this endpoint, see http://localhost:8080/books/published/overview/index.html.
-@router.get(
+@router.api_route(
     "/published/{course:str}/{pagepath:path}",
+    methods=["GET", "POST"],
     response_class=HTMLResponse,
 )
 async def serve_page(

@@ -13,7 +13,7 @@ def get_session():
     pass
 
 
-auth_manager = LoginManager(settings.secret, "/auth/login", use_cookie=True)
+auth_manager = LoginManager(settings.secret, "/auth/validate", use_cookie=True)
 auth_manager.cookie_name = "access_token"
 
 
