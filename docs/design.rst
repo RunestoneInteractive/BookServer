@@ -72,17 +72,17 @@ The API for the runestone books is organized as follows:
 
 The best way to see this structure and documentation for each endpoint is to start the book server and go to /docs
 
-The `../app/applogger.py` file configures a logger for debug and error output.  Please use ``from applogger import rslogger`` and use ``rslogger.debug()`` rather than print statements for debugging.
+The `../bookserver/applogger.py` file configures a logger for debug and error output.  Please use ``from applogger import rslogger`` and use ``rslogger.debug()`` rather than print statements for debugging.
 
-The `../app/crud.py` file contains functions for CRUD (Create, Retrieve, Update, and Delete) operations on the major database tables. Using functions defined in this file should always be preferred to writing your own ad hoc query for accessing the database.
+The `../bookserver/crud.py` file contains functions for CRUD (Create, Retrieve, Update, and Delete) operations on the major database tables. Using functions defined in this file should always be preferred to writing your own ad hoc query for accessing the database.
 
-The `../app/db.py` file sets up an interface between SQLAlchemy and the databases package.  The ``databases`` package is used to provide asynchronous access to the database with queries built up using SQLAlchemy.
+The `../bookserver/db.py` file sets up an interface between SQLAlchemy and the databases package.  The ``databases`` package is used to provide asynchronous access to the database with queries built up using SQLAlchemy.
 
-The `../app/models.py` file defines all of the tables used in Runestone. If you add a table please be sure to declare any indexes and constraints as part of the model definition.
+The `../bookserver/models.py` file defines all of the tables used in Runestone. If you add a table please be sure to declare any indexes and constraints as part of the model definition.
 
 The `alembic <https://alembic.sqlalchemy.org/en/latest/>`_ folder is used for database migrations.
 
-The `../app/main.py` file pulls everything together. For development purposes you can run the book server with the command ``uvicorn bookserver.main:app --reload --port 8080``.  This looks in the app module for main and loads the app object into the uvicorn ASGI server.
+The `../bookserver/main.py` file pulls everything together. For development purposes you can run the book server with the command ``uvicorn bookserver.main:app --reload --port 8080``.  This looks in the app module for main and loads the app object into the uvicorn ASGI server.
 
 
 The Structure of a Runestone Book

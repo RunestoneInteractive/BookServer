@@ -173,7 +173,8 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     # Pytest files.
-    "test/.pytest_cache",
+    "**/.pytest_cache",
+    ".pytest_cache",
     # Poetry files.
     "poetry.lock",
     # **CodeChat notes:**
@@ -185,6 +186,10 @@ exclude_patterns = [
     # The ``CodeToRestSphinx`` extension creates a file named
     # ``sphinx-enki-info.txt``, which should be ignored by Sphinx.
     "sphinx-enki-info.txt",
+    "test/htmlcov",
+    "alembic/versions",
+    "**/.mypy_cache",
+    "bookserver/templates",
 ]
 
 # `default_role <http://sphinx-doc.org/config.html#confval-default_role>`_: The

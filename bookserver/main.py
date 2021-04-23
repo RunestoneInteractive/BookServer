@@ -59,6 +59,8 @@ async def shutdown():
     await database.disconnect()
 
 
+# this is just a simple example of adding a middleware
+# it does not do anything useful.
 @app.middleware("http")
 async def get_session_object(request: Request, call_next):
     request.state.session = {"sessionid": 1234567}

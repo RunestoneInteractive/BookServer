@@ -7,5 +7,6 @@ Routers
     :maxdepth: 2
 
     assessment.py
+    auth.py
     books.py
     rslogging.py

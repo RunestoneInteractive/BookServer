@@ -1,16 +1,19 @@
 # ******************************
 # |docname| - Session Management
 # ******************************
-
+# The main thing in this file is to create the auth manager and to provide a ``user_loader``
+# The auth manager uses the ``user_loader`` on every route that requires authentication
+# The way we do protected routes in FastAPI is to include a parameter on the endpoint
+# ``user=Depends(auth_manager)`` This will cause the JWT token (provided in a cookie)
+# OR in a header to be validated.  If the token is valid then the user will be looked
+# up in the database using the ``load_user`` function in this file.
+# see `./routers/auth.py` for more detail.
+#
 from bookserver.config import settings
 from fastapi_login import LoginManager
 from . import schemas
 from .crud import fetch_user
 from .applogger import rslogger
-
-
-def get_session():
-    pass
 
 
 auth_manager = LoginManager(settings.secret, "/auth/validate", use_cookie=True)

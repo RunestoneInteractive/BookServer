@@ -83,7 +83,6 @@ async def get_image(course: str, filepath: str):
 async def serve_page(
     request: Request, course: str, pagepath: str, user=Depends(auth_manager)
 ):
-    rslogger.debug(f"session = {request.state.session}")
     rslogger.debug(f"user = {user}")
     course_row = await fetch_course(course)
     if not course_row:

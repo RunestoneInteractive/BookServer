@@ -13,10 +13,11 @@ The FastAPI-based BookServer web application
     models.py
     schemas.py
     db.py
+    session.py
     applogger.py
     crud.py
     dependencies.py
     routers/toctree
     internal/toctree
-    ../config.py
+    config.py
     __init__.py

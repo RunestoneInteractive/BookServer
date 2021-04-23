@@ -10,4 +10,3 @@ Database migration using Alembic
 
     ../alembic.ini
     env.py
-    versions/.gitignore

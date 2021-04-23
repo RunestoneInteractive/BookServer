@@ -1,9 +1,12 @@
 # ******************************************************
-# |docname| -
+# |docname| - Validation and Authentication
 # ******************************************************
-# :index:`docs to write`: **Description here...**
+# Provide a login page and validation endpoint to allow a student to login to the
+# Runestone book server.  This assumes that a student has registered using the
+# old web2py registration system.  So we provide validation of the user name and
+# password.
 #
-# See:  `FastAPI Login <https://fastapi-login.readthedocs.io/advanced_usage/>_`
+# See:  `FastAPI Login <https://fastapi-login.readthedocs.io/advanced_usage/>`_
 #
 # Imports
 # =======
@@ -19,7 +22,7 @@
 from fastapi import APIRouter, Depends, Request, Response  # noqa F401
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse  # , RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 # Local application imports
@@ -41,17 +44,6 @@ router = APIRouter(
 templates = Jinja2Templates(directory=f"bookserver/templates{router.prefix}")
 
 
-class UserManagerWeb2Py:
-    def init_app(self):
-        self.crypt = CRYPT(key=settings.WEB2PY_PRIVATE_KEY, salt=settings.WEB2PY_SALT)
-
-    def hash_password(self, password):
-        return str(self.crypt(password)[0])
-
-    def verify_password(self, password, user):
-        return self.hash_password(password) == self.get_password(user)
-
-
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -59,11 +51,14 @@ def login_form(request: Request):
 
 @router.post("/validate")
 async def login(
-    response: Response, data: OAuth2PasswordRequestForm = Depends()
-) -> dict:
+    data: OAuth2PasswordRequestForm = Depends(), response_class=RedirectResponse
+):
     """
     This is called as the result of a login form being submitted.
-
+    If authentication is successful an access token is created and stored
+    in a session cookie.  This session cookie is used for all protected routes.
+    The ``auth_manager`` is provided by `../session.py` which also explains how
+    to setup a protected route.
     """
     username = data.username
     password = data.password
@@ -75,16 +70,23 @@ async def login(
     if not user:
         raise InvalidCredentialsException
     else:
+        # The password in the web2py database is formatted as follows:
+        # alg$salt$hash
+        # We need to grab the salt and provide that to the CRYPT function
+        # which we import from pydal for now.  Once we are completely off of
+        # web2py then this will change.  The ``web2py_private_key`` is an environment
+        # variable that comes from the ``private/auth.key`` file.
         salt = user.password_hash.split("$")[1]
         crypt = CRYPT(key=settings.web2py_private_key, salt=salt)
         if str(crypt(password)[0]) != user.password_hash:
             raise InvalidCredentialsException
 
     access_token = auth_manager.create_access_token(data={"sub": user.username})
+    response = RedirectResponse(
+        "http://localhost:8080/books/published/overview/index.html"
+    )
+    # *Important* We need to set the cookie here for the redirect in order for
+    # the next page to validate.  This will also set the cookie in the browser
+    # for future pages.
     auth_manager.set_cookie(response, access_token)
-
-    # todo: I would really rather not return a token here. I would prefer to redirect to
-    # the next page.  Not sure if it is possible, this may have to return a token in
-    # order for fastapi_login to work.
-    return {"token": access_token}
-    # return RedirectResponse("http://localhost:8080/books/published/overview/index.html")
+    return response

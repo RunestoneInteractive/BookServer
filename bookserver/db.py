@@ -21,10 +21,10 @@ from sqlalchemy.orm import sessionmaker
 
 # Local application imports
 # -------------------------
-# See `../config.py`.
+# See `./config.py`.
 from bookserver.config import settings
 
-# :index:`question`: does this belong in `../config.py`?  Or does it just describe the format of a database URL for two databases?
+# :index:`question`: does this belong in `./config.py`?  Or does it just describe the format of a database URL for two databases?
 #
 ## SQLALCHEMY_DATABASE_URL = "sqlite:///./bookserver.db"
 ## SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
