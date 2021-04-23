@@ -8,3 +8,10 @@ To run the tests, execute ``pytest`` from this subdirectory. FastAPI takes care 
 
     test_rslogging.py
     __init__.py
+
+## Continuous Integration
+
+.. toctree::
+    :maxdepth: 1
+
+    ../.github/workflows/python-package.yml

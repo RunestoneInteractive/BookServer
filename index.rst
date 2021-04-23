@@ -12,7 +12,7 @@ Web application
 .. toctree::
     :maxdepth: 1
 
-    app/toctree
+    bookserver/toctree
     alembic/toctree
     test/toctree
 
