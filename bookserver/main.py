@@ -14,6 +14,7 @@
 # Third-party imports
 # -------------------
 from fastapi import FastAPI, Request, Depends, Cookie
+from fastapi.responses import RedirectResponse
 from typing import Optional
 
 # Local application imports
@@ -86,6 +87,21 @@ async def protected_route2(request: Request, user=Depends(auth_manager)):
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+class NotAuthenticatedException(Exception):
+    pass
+
+
+auth_manager.not_authenticated_exception = NotAuthenticatedException
+
+
+@app.exception_handler(NotAuthenticatedException)
+def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
+    """
+    Redirect the user to the login page if not logged in
+    """
+    return RedirectResponse(url="/auth/login")
 
 
 if __name__ == "__main__":

@@ -47,7 +47,7 @@ EVENT2TABLE = {
 # -------
 async def create_useinfo_entry(log_entry: schemas.LogItemIncoming):
     new_log = dict(
-        sid="current_user",
+        sid=log_entry.sid,
         event=log_entry.event,
         act=log_entry.act,
         div_id=log_entry.div_id,

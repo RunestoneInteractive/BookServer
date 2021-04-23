@@ -39,6 +39,7 @@ class LogItemIncoming(BaseModel):
     event: str
     act: str
     div_id: str
+    sid: str
     course_name: str
     answer: Optional[str]
     correct: Optional[bool]

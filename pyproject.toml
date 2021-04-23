@@ -2,7 +2,7 @@
 # |docname| - Poetry configuration
 # ********************************
 #
-# See https://python-poetry.org/docs/dependency-specification/ to get an understanding of 
+# See https://python-poetry.org/docs/dependency-specification/ to get an understanding of
 # how poetry does specifies dependencies
 #
 [tool.poetry]
@@ -11,6 +11,8 @@ version = "0.1.0"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>"]
 license = "MIT"
+readme = "README.md"
+documentation = "https://bookserver.readthedocs.io/en/latest/"
 
 [tool.poetry.dependencies]
 python = "^3.7"

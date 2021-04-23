@@ -19,6 +19,7 @@ def test_add_log():
         event="page",
         act="view",
         div_id="/runestone/fopp/index.html",
+        sid="testuser",
         course_name="fopp",
     )
     response = client.post(

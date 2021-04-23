@@ -105,7 +105,13 @@ async def serve_page(
     #   activity_info
     #   settings.google_ga
     await create_useinfo_entry(
-        LogItemIncoming(event="page", act="view", div_id=pagepath, course_name=course)
+        LogItemIncoming(
+            event="page",
+            act="view",
+            div_id=pagepath,
+            course_name=course,
+            sid=user.username,
+        )
     )
     context = dict(
         request=request,

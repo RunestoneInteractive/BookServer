@@ -14,7 +14,8 @@
 #
 # Standard library
 # ----------------
-# None. (Or the imports.)
+from datetime import timedelta
+
 #
 # Third-party imports
 # -------------------
@@ -32,6 +33,7 @@ from ..schemas import LogItem, LogItemIncoming  # noqa F401
 from pydal.validators import CRYPT
 from ..applogger import rslogger
 from ..config import settings
+
 
 # Routing
 # =======
@@ -68,7 +70,8 @@ async def login(
     # um = UserManagerWeb2Py()
     rslogger.debug(f"{user.username}")
     if not user:
-        raise InvalidCredentialsException
+        # raise InvalidCredentialsException
+        return RedirectResponse("/auth/login")
     else:
         # The password in the web2py database is formatted as follows:
         # alg$salt$hash
@@ -81,7 +84,9 @@ async def login(
         if str(crypt(password)[0]) != user.password_hash:
             raise InvalidCredentialsException
 
-    access_token = auth_manager.create_access_token(data={"sub": user.username})
+    access_token = auth_manager.create_access_token(
+        data={"sub": user.username}, expires=timedelta(hours=12)
+    )
     response = RedirectResponse(
         "http://localhost:8080/books/published/overview/index.html"
     )
