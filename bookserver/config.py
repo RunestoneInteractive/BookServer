@@ -41,9 +41,9 @@ class Settings(BaseSettings):
     config: str = "development"  # production or test
 
     # `Database setup <setting.dev_dburl>`.
-    prod_dburl: str = "sqlite:///./runestone.db"
-    dev_dburl: str = "sqlite:///./runestone_dev.db"
-    test_dburl: str = "sqlite:///./runestone_test.db"
+    prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
+    dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
+    test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
 
     # Configure ads.
     adsenseid: str = ""

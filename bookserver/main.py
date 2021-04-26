@@ -23,15 +23,14 @@ from .routers import assessment
 from .routers import auth
 from .routers import books
 from .routers import rslogging
-from .db import engine, database
-from .models import metadata
+from .db import init_models
 from .session import auth_manager
 from bookserver.applogger import rslogger
 
 # FastAPI setup
 # =============
 # :index:`todo`: This should be moved to a Alembic function for migration.
-metadata.create_all(bind=engine)
+# Base.metadata.create_all()
 
 app = FastAPI()
 
@@ -52,12 +51,12 @@ app.include_router(auth.router)
 # ^^^^^^^^^^^^
 @app.on_event("startup")
 async def startup():
-    await database.connect()
+    await init_models()
 
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+# @app.on_event("shutdown")
+# async def shutdown():
+#     await database.disconnect()
 
 
 # this is just a simple example of adding a middleware
