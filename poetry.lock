@@ -208,25 +208,6 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 toml = ["toml"]
 
 [[package]]
-name = "databases"
-version = "0.4.2"
-description = "Async database support for Python."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-aiosqlite = {version = "*", optional = true, markers = "extra == \"sqlite\""}
-asyncpg = {version = "*", optional = true, markers = "extra == \"postgresql\""}
-sqlalchemy = "*"
-
-[package.extras]
-mysql = ["aiomysql"]
-postgresql = ["asyncpg"]
-postgresql_aiopg = ["aiopg"]
-sqlite = ["aiosqlite"]
-
-[[package]]
 name = "docutils"
 version = "0.16"
 description = "Docutils -- Python Documentation Utilities"
@@ -956,7 +937,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "eaeff19403debcab1a6244f798d619f4a2ee0788247cfd4a0a1b7d71c49128ab"
+content-hash = "d2ed98aacbe0d410755ffb50eb2ae0f12188e2450d7ce8c138dfcbdb1d38159f"
 
 [metadata.files]
 aiofiles = [
@@ -1092,10 +1073,6 @@ coverage = [
     {file = "coverage-5.5-pp36-none-any.whl", hash = "sha256:f030f8873312a16414c0d8e1a1ddff2d3235655a2174e3648b4fa66b3f2f1079"},
     {file = "coverage-5.5-pp37-none-any.whl", hash = "sha256:2a3859cb82dcbda1cfd3e6f71c27081d18aa251d20a17d87d26d4cd216fb0af4"},
     {file = "coverage-5.5.tar.gz", hash = "sha256:ebe78fe9a0e874362175b02371bdfbee64d8edc42a044253ddf4ee7d3c15212c"},
-]
-databases = [
-    {file = "databases-0.4.2-py3-none-any.whl", hash = "sha256:44788f6fd344f27baa2be9b42c3926222932000a3ba7dce5a305167a2cb1f6bb"},
-    {file = "databases-0.4.2.tar.gz", hash = "sha256:2ca1b72f0209744e25fababc44c183e5fb6f7dd7af4274379f2ec6f14c00432a"},
 ]
 docutils = [
     {file = "docutils-0.16-py2.py3-none-any.whl", hash = "sha256:0c5b78adfbf7762415433f5515cd5c9e762339e23369dbe8000d84a4bf4ab3af"},
