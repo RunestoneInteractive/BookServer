@@ -30,10 +30,11 @@ from sqlalchemy import (
     Date,
     DateTime,
     MetaData,
-    Table,
+    Text,
     types,
     Float,
 )
+from sqlalchemy.ext.declarative import declared_attr
 
 # Local application imports
 # -------------------------
@@ -77,6 +78,14 @@ class Web2PyBoolean(types.TypeDecorator):
 # the migration information.
 metadata = MetaData()
 
+answer_tables = {}
+
+
+def register_answer_table(cls):
+    global answer_tables
+    answer_tables[cls.__tablename__] = cls
+    return cls
+
 
 # IdMixin
 # -------
@@ -111,76 +120,168 @@ class Useinfo(Base, IdMixin):
     sub_chapter = Column(String, unique=False, index=False)
 
 
-# Answer Tables
-# -------------
-# Each gradable Runestone component has its own answer table.  Most of them are identical.
-# This table contains correctness information.
-ANSWER_TABLE_NAMES = [
-    "mchoice_answers",
-    "clickablearea_answers",
-    "codelens_answers",
-    "dragndrop_answers",
-    "fitb_answers",
-    "lp_answers",
-    "parsons_answers",
-    "shortanswer_answers",
-    "unittest_answers",
-]
+# Questions
+# ---------
+# A question in the book; this data is provided by Sphinx.
+class Questions(Base, IdMixin):
+    __tablename__ = "questions"
+    # The base_course_ this question is in.
+    base_course = Column(String(512), nullable=False)
+    # The div_id_ for this question. TODO: Rename this!
+    name = Column(String(512), nullable=False)
+    # matches chapter_label, not name
+    chapter = Column(String(512))
+    # matches sub_chapter_label, not name
+    subchapter = Column(String(512))
+    author = Column(String(512))
+    difficulty = Column(Integer)
+    question = Column(Text)
+    timestamp = (Column(DateTime),)
+    question_type = Column(String(512))
+    is_private = Column(Web2PyBoolean)
+    htmlsrc = Column(Text)
+    autograde = Column(String(512))
 
-answer_columns = [str]
 
-# This should make working with answer tables much easier across the board as we can now just access them by name instead of duplicating code for each case.
-answer_tables = {}
+# Answers to specific question types
+# ----------------------------------
+# Many of the tables containing answers are always accessed by sid, div_id and course_name. Provide this as a default query. TODO: Obviously, this is poor database design -- there should be a single key, rather than using all three as a key. Refactor.
+class AnswerMixin(IdMixin):
+    # TODO: these entries duplicate Useinfo.timestamp. Why not just have a timestamp_id field?
+    #
+    # See timestamp_.
+    timestamp = Column(DateTime)
+    # See div_id_.
+    div_id = Column(String(512))
+    # See sid_.
+    sid = Column(String(512))
 
-for tbl in ANSWER_TABLE_NAMES:
-    answer_tables[tbl] = Table(
-        tbl,
-        metadata,
-        Column("id", Integer, primary_key=True, index=True, autoincrement=True),
-        Column("timestamp", DateTime, unique=False, index=True),
-        Column("sid", String, unique=False, index=True),
-        Column(
-            "div_id",
-            String,
-            unique=False,
-            index=True,
-        ),  # unique identifier for a component
-        Column("course_name", String, index=True),
-        Column("correct", Web2PyBoolean),
-        Column("percent", Float),
-        Column("answer", String),
-    )
+    # See course_name_. Mixins with foreign keys need `special treatment <http://docs.sqlalchemy.org/en/latest/orm/extensions/declarative/mixins.html#mixing-in-columns>`_.
+    @declared_attr
+    def course_name(cls):
+        return Column(String(512), ForeignKey("courses.course_name"))
 
-# The parsons_answers table is the only outlier in that it adds a source column to keep
-# track of which blocks were not used in the answer.
-answer_tables["parsons_answers"] = Table(
-    "parsons_answers", metadata, Column("source", String), extend_existing=True
-)
+
+class TimedExam(Base, AnswerMixin):
+    __tablename__ = "timed_exam"
+    # See the `timed exam endpoint parameters <timed exam>` for documenation on these columns.
+    correct = Column(Integer)
+    incorrect = Column(Integer)
+    skipped = Column(Integer)
+    time_taken = Column(Integer)
+    # True if the ``act`` endpoint parameter was ``'reset'``; otherwise, False.
+    reset = Column(Web2PyBoolean)
+
+    # Define a default query: the username if provided a string. Otherwise, automatically fall back to the id.
+    @classmethod
+    def default_query(cls, key):
+        if isinstance(key, str):
+            return cls.sid == key
+
+
+# Like an AnswerMixin, but also has a boolean correct_ field.
+class CorrectAnswerMixin(AnswerMixin):
+    # _`correct`: True if this answer is correct.
+    correct = Column(Web2PyBoolean)
+    percent = Column(Float)
+
+
+# An answer to a multiple-choice question.
+@register_answer_table
+class MchoiceAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "mchoice_answers"
+    # _`answer`: The answer to this question. TODO: what is the format?
+    answer = Column(String(50))
+
+
+# An answer to a fill-in-the-blank question.
+@register_answer_table
+class FitbAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "fitb_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+
+
+# An answer to a drag-and-drop question.
+@register_answer_table
+class DragndropAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "dragndrop_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+
+
+# An answer to a drag-and-drop question.
+@register_answer_table
+class ClickableareaAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "clickablearea_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+
+
+# An answer to a Parsons problem.
+@register_answer_table
+class ParsonsAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "parsons_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+    # _`source`: The source code provided by a student? TODO.
+    source = Column(String(512))
+
+
+# An answer to a Code Lens problem.
+@register_answer_table
+class CodelensAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "codelens_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+    # See source_.
+    source = Column(String(512))
+
+
+@register_answer_table
+class ShortanswerAnswers(Base, AnswerMixin):
+    __tablename__ = "shortanswer_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(String(512))
+
+
+@register_answer_table
+class UnittestAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "unittest_answers"
+    answer = Column(Text)
+    passed = Column(Integer)
+    failed = Column(Integer)
+
+
+@register_answer_table
+class LpAnswers(Base, AnswerMixin):
+    __tablename__ = "lp_answers"
+    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me.
+    answer = Column(String(512))
+    # A grade between 0 and 100.
+    correct = Column(Float())
+
 
 # Code
 # ----
 # The code table captures every run/change of the students code.  It is used to load
 # the history slider of the activecode component.
 #
-code = Table(
-    "code",
-    metadata,
-    Column("id", Integer, primary_key=True, index=True, autoincrement=True),
-    Column("timestamp", DateTime, unique=False, index=True),
-    Column("sid", String, unique=False, index=True),
-    Column(
-        "acid",
-        String,
+class Code(Base, IdMixin):
+    __tablename__ = "code"
+    timestamp = Column(DateTime, unique=False, index=True)
+    sid = (Column(String(512), unique=False, index=True),)
+    acid = Column(
+        String(512),
         unique=False,
         index=True,
-    ),  # unique identifier for a component
-    Column("course_name", String, index=True),
-    Column("course_id", Integer, index=False),
-    Column("code", String, index=False),
-    Column("language", String, index=False),
-    Column("emessage", String, index=False),
-    Column("comment", String, index=False),
-)
+    )  # unique identifier for a component
+    course_name = Column(String, index=True)
+    course_id = Column(Integer, index=False)
+    code = Column(Text, index=False)
+    language = Column(Text, index=False)
+    emessage = Column(Text, index=False)
+    comment = Column(Text, index=False)
 
 
 # Courses
