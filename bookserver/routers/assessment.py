@@ -22,7 +22,6 @@ import datetime
 # :index:`todo`: **Lots of unused imports here...**
 from dateutil.parser import parse
 from fastapi import APIRouter
-from sqlalchemy import inspect
 
 # Local application imports
 # -------------------------
@@ -72,7 +71,7 @@ async def get_assessment_results(request_data: AssessmentRequest):
 
     # construct the return value from the XXXAnswer class
     # TODO: Seems like something like this should be built in to sqlalchemy?
-    res = {c.key: getattr(row, c.key) for c in inspect(row).mapper.column_attrs}
+    res = row.to_dict()
 
     # :index:`todo``: **port the serverside grading** code::
     #
