@@ -54,7 +54,7 @@ def test_add_mchoice():
         assert response.json()["status"] == "OK"
 
     req = AssessmentRequest(
-        course="fopp", div_id="test_mchoice_1", event="mChoice", sid="current_user"
+        course="fopp", div_id="test_mchoice_1", event="mChoice", sid="testuser"
     )
 
     with TestClient(app) as client:
