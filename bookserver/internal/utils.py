@@ -30,10 +30,12 @@ def canonicalize_tz(tstring: str) -> str:
     is more compatible with other time/date functions
     """
     x = re.search(r"\((.*)\)", tstring)
-    x = x.group(1)
-    y = x.split()
-    if len(y) == 1:
-        return tstring
-    else:
-        zstring = "".join([i[0] for i in y])
-        return re.sub(r"(.*)\((.*)\)", r"\1({})".format(zstring), tstring)
+    if x:
+        x = x.group(1)
+        y = x.split()
+        if len(y) == 1:
+            return tstring
+        else:
+            zstring = "".join([i[0] for i in y])
+            return re.sub(r"(.*)\((.*)\)", r"\1({})".format(zstring), tstring)
+    return tstring

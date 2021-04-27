@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from bookserver.schemas import LogItemIncoming
 from bookserver.main import app
 from bookserver.schemas import AssessmentRequest
+from bookserver.applogger import rslogger
 
 
 def test_main():
@@ -30,6 +31,7 @@ def test_add_log():
         )
         assert response.status_code == 200
         assert response.json()["status"] == "OK"
+        rslogger.debug(response.json())
 
 
 def test_add_mchoice():
