@@ -197,7 +197,7 @@ class MchoiceAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "mchoice_answers"
     # _`answer`: The answer to this question. TODO: what is the format?
     answer = Column(String(50))
-    __table_args__ = (Index(f"idx_div_sid_course_mc", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_mc", "sid", "div_id", "course_name"),)
 
 
 # An answer to a fill-in-the-blank question.
@@ -206,7 +206,7 @@ class FitbAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "fitb_answers"
     # See answer_. TODO: what is the format?
     answer = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_fb", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_fb", "sid", "div_id", "course_name"),)
 
 
 # An answer to a drag-and-drop question.
@@ -215,7 +215,7 @@ class DragndropAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "dragndrop_answers"
     # See answer_. TODO: what is the format?
     answer = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_dd", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_dd", "sid", "div_id", "course_name"),)
 
 
 # An answer to a drag-and-drop question.
@@ -224,7 +224,7 @@ class ClickableareaAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "clickablearea_answers"
     # See answer_. TODO: what is the format?
     answer = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_ca", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_ca", "sid", "div_id", "course_name"),)
 
 
 # An answer to a Parsons problem.
@@ -235,7 +235,7 @@ class ParsonsAnswers(Base, CorrectAnswerMixin):
     answer = Column(String(512))
     # _`source`: The source code provided by a student? TODO.
     source = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_pp", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_pp", "sid", "div_id", "course_name"),)
 
 
 # An answer to a Code Lens problem.
@@ -246,7 +246,7 @@ class CodelensAnswers(Base, CorrectAnswerMixin):
     answer = Column(String(512))
     # See source_.
     source = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_cl", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_cl", "sid", "div_id", "course_name"),)
 
 
 @register_answer_table
@@ -254,7 +254,7 @@ class ShortanswerAnswers(Base, AnswerMixin):
     __tablename__ = "shortanswer_answers"
     # See answer_. TODO: what is the format?
     answer = Column(String(512))
-    __table_args__ = (Index(f"idx_div_sid_course_sa", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_sa", "sid", "div_id", "course_name"),)
 
 
 @register_answer_table
@@ -263,7 +263,7 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
     answer = Column(Text)
     passed = Column(Integer)
     failed = Column(Integer)
-    __table_args__ = (Index(f"idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
 
 
 @register_answer_table
@@ -273,7 +273,7 @@ class LpAnswers(Base, AnswerMixin):
     answer = Column(String(512))
     # A grade between 0 and 100.
     correct = Column(Float())
-    __table_args__ = (Index(f"idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
 
 
 # Code
