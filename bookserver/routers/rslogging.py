@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends  # noqa F401
 # -------------------------
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..schemas import LogItem, LogItemIncoming  # noqa F401
-
+from ..applogger import rslogger
 
 # Routing
 # =======
@@ -44,7 +44,7 @@ async def log_book_event(entry: LogItemIncoming):
     else:
         ans_idx = True
 
-    # :index:`bug`: **Note that** ``ans_idx`` is not always defined here.
+    rslogger.debug(ans_idx)
     if idx and ans_idx:
         return {"status": "OK", "idx": idx}
     else:

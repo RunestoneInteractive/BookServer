@@ -136,7 +136,7 @@ class Questions(Base, IdMixin):
     author = Column(String(512))
     difficulty = Column(Integer)
     question = Column(Text)
-    timestamp = (Column(DateTime),)
+    timestamp = Column(DateTime)
     question_type = Column(String(512))
     is_private = Column(Web2PyBoolean)
     htmlsrc = Column(Text)
@@ -270,7 +270,7 @@ class LpAnswers(Base, AnswerMixin):
 class Code(Base, IdMixin):
     __tablename__ = "code"
     timestamp = Column(DateTime, unique=False, index=True)
-    sid = (Column(String(512), unique=False, index=True),)
+    sid = Column(String(512), unique=False, index=True)
     acid = Column(
         String(512),
         unique=False,

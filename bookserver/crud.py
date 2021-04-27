@@ -29,7 +29,7 @@ from sqlalchemy.sql import select
 # -------------------------
 from .applogger import rslogger
 from . import schemas
-from .models import Useinfo, AuthUser, Courses
+from .models import Useinfo, AuthUser, Courses, answer_tables
 
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
@@ -64,9 +64,9 @@ async def create_useinfo_entry(log_entry: schemas.LogItemIncoming):
             rslogger.debug(f"session = {session}")
             r = session.add(new_entry)
             rslogger.debug(r)
-            return new_entry
 
-        session.commit()
+        await session.commit()
+    return new_entry
 
 
 # xxx_answers
@@ -80,34 +80,37 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
         and k not in ["event", "act", "timezoneoffset", "clientLoginStatus"]
     }
     values["timestamp"] = datetime.utcnow()
-    # :index:`TODO`
-    values["sid"] = "current_user"
     rslogger.debug(f"hello from create at {values}")
-    tbl = models.answer_tables[EVENT2TABLE[log_entry.event]]
-    query = tbl.insert()
-    res = await db.execute(query=query, values=values)
-    return res
+    tbl = answer_tables[EVENT2TABLE[log_entry.event]]
+    new_entry = tbl(**values)
+    async with async_session() as session:
+        async with session.begin():
+            session.add(new_entry)
+        await session.commit()
+    rslogger.debug(f"returning {new_entry}")
+    return new_entry
 
 
 # :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
     assessment = EVENT2TABLE[query_data.event]
-    tbl = models.answer_tables[assessment]
+    tbl = answer_tables[assessment]
     query = (
-        select([tbl])
+        select(tbl)
         .where(
             and_(
-                tbl.c.div_id == query_data.div_id,
-                tbl.c.course_name == query_data.course,
-                tbl.c.sid == query_data.sid,
+                tbl.div_id == query_data.div_id,
+                tbl.course_name == query_data.course,
+                tbl.sid == query_data.sid,
             )
         )
-        .order_by(tbl.c.timestamp.desc())
+        .order_by(tbl.timestamp.desc())
     )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"res = {res}")
 
-    res = await db.fetch_one(query)
-
-    return res
+    return res.scalars().first()
 
 
 async def fetch_course(course_name: str):
