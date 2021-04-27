@@ -117,7 +117,7 @@ async def serve_page(
         request=request,
         course_name=course,
         base_course=course,
-        user_id="bmiller",
+        user_id=user.username,
         user_email="bonelake@mac.com",
         downloads_enabled="false",
         allow_pairs="false",

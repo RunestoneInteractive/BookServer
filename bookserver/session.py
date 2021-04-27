@@ -29,6 +29,7 @@ async def load_user(user_id: str) -> schemas.User:
     """
     rslogger.debug(f"Going to fetch {user_id}")
     user = await fetch_user(user_id)
+    rslogger.debug(f"user = {str(user)}")
     if user:
         return schemas.User(
             username=user.username,

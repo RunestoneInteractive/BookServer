@@ -14,10 +14,11 @@
 # Third-party imports
 # -------------------
 # Enable asyncio for SQLAlchemy -- see `databases <https://www.encode.io/databases/>`_.
-import databases
-from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 
 # Local application imports
 # -------------------------
@@ -44,11 +45,21 @@ if settings.dbserver == "sqlite":
 else:
     connect_args = {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_async_engine(DATABASE_URL, connect_args=connect_args, echo=True)
 # This creates the SessionLocal class.  An actual session is an instance of this class.
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # This creates the base class we will use to create models
 Base = declarative_base()
 
-database = databases.Database(DATABASE_URL)
+
+async def init_models():
+    async with engine.begin() as conn:
+        # await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+# Dependency
+async def get_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session

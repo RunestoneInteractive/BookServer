@@ -14,19 +14,22 @@
 # ----------------
 # For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
-from typing import List
+
+# from typing import List
 
 # Third-party imports
 # -------------------
-from .db import database as db
-import sqlalchemy
+from .db import async_session
+
+# import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 
 # Local application imports
 # -------------------------
 from .applogger import rslogger
-from . import models, schemas
+from . import schemas
+from .models import Useinfo, AuthUser, Courses, answer_tables
 
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
@@ -45,7 +48,7 @@ EVENT2TABLE = {
 
 # useinfo
 # -------
-async def create_useinfo_entry(log_entry: schemas.LogItemIncoming):
+async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
     new_log = dict(
         sid=log_entry.sid,
         event=log_entry.event,
@@ -54,9 +57,16 @@ async def create_useinfo_entry(log_entry: schemas.LogItemIncoming):
         timestamp=datetime.utcnow(),
         course_id=log_entry.course_name,
     )
-    query = models.logitem.insert()
-    await db.execute(query=query, values=new_log)
-    return new_log
+    async with async_session() as session:
+        async with session.begin():
+            new_entry = Useinfo(**new_log)
+            rslogger.debug(f"New Entry = {new_entry}")
+            rslogger.debug(f"session = {session}")
+            r = session.add(new_entry)
+            rslogger.debug(r)
+
+        await session.commit()
+    return new_entry
 
 
 # xxx_answers
@@ -70,47 +80,52 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
         and k not in ["event", "act", "timezoneoffset", "clientLoginStatus"]
     }
     values["timestamp"] = datetime.utcnow()
-    # :index:`TODO`
-    values["sid"] = "current_user"
     rslogger.debug(f"hello from create at {values}")
-    tbl = models.answer_tables[EVENT2TABLE[log_entry.event]]
-    query = tbl.insert()
-    res = await db.execute(query=query, values=values)
-    return res
+    tbl = answer_tables[EVENT2TABLE[log_entry.event]]
+    new_entry = tbl(**values)
+    async with async_session() as session:
+        async with session.begin():
+            session.add(new_entry)
+        await session.commit()
+    rslogger.debug(f"returning {new_entry}")
+    return new_entry
 
 
 # :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
-async def fetch_last_answer_table_entry(
-    query_data: schemas.AssessmentRequest,
-) -> List[sqlalchemy.engine.RowProxy]:
+async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
     assessment = EVENT2TABLE[query_data.event]
-    tbl = models.answer_tables[assessment]
+    tbl = answer_tables[assessment]
     query = (
-        select([tbl])
+        select(tbl)
         .where(
             and_(
-                tbl.c.div_id == query_data.div_id,
-                tbl.c.course_name == query_data.course,
-                tbl.c.sid == query_data.sid,
+                tbl.div_id == query_data.div_id,
+                tbl.course_name == query_data.course,
+                tbl.sid == query_data.sid,
             )
         )
-        .order_by(tbl.c.timestamp.desc())
+        .order_by(tbl.timestamp.desc())
     )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"res = {res}")
 
-    res = await db.fetch_one(query)
-
-    return res
-
-
-async def fetch_course(course_name: str) -> sqlalchemy.engine.RowProxy:
-    query = select([models.courses]).where(models.courses.c.course_name == course_name)
-    res = await db.fetch_one(query)
-
-    return res
+    return res.scalars().first()
 
 
-async def fetch_user(user_name: str) -> sqlalchemy.engine.RowProxy:
-    query = select([models.auth_user]).where(models.auth_user.c.username == user_name)
-    res = await db.fetch_one(query)
+async def fetch_course(course_name: str):
+    query = select(Courses).where(Courses.course_name == course_name)
+    async with async_session() as session:
+        res = await session.execute(query)
+    # When selecting ORM entries it is useful to use the ``scalars`` method
+    # This modifies the result so that you are getting the ORM object
+    # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
+    return res.scalars().first()
 
-    return res
+
+async def fetch_user(user_name: str):
+    query = select(AuthUser).where(AuthUser.username == user_name)
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"res = {res}")
+    return res.scalars().first()

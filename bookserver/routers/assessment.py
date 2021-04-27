@@ -21,7 +21,7 @@ import datetime
 # -------------------
 # :index:`todo`: **Lots of unused imports here...**
 from dateutil.parser import parse
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 # Local application imports
 # -------------------------
@@ -41,8 +41,8 @@ router = APIRouter(
 
 # getAssessResults
 # ----------------
-@router.get("/results")
-async def get_assessment_results(request_data: AssessmentRequest = Depends()):
+@router.post("/results")
+async def get_assessment_results(request_data: AssessmentRequest):
     # if (
     #     verifyInstructorStatus(auth.user.course_name, auth.user) and request.vars.sid
     # ):  # retrieving results for grader
@@ -69,8 +69,9 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     if not row:
         return ""  # server doesn't have it so we load from local storage instead
 
-    # construct the return value from the result
-    res = dict(row)
+    # construct the return value from the XXXAnswer class
+    # TODO: Seems like something like this should be built in to sqlalchemy?
+    res = row.to_dict()
 
     # :index:`todo``: **port the serverside grading** code::
     #
@@ -78,5 +79,5 @@ async def get_assessment_results(request_data: AssessmentRequest = Depends()):
     #   if do_server_feedback:
     #       correct, res_update = fitb_feedback(rows.answer, feedback)
     #       res.update(res_update)
-
+    rslogger.debug(f"Returning {res}")
     return res
