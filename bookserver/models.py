@@ -37,6 +37,7 @@ from sqlalchemy import (
     inspect,
 )
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.sql.schema import UniqueConstraint
 
 # Local application imports
 # -------------------------
@@ -107,17 +108,18 @@ class IdMixin:
 class Useinfo(Base, IdMixin):
     __tablename__ = "useinfo"
     # _`timestamp`: when this entry was recorded by this webapp.
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, index=True)
     # _`sid`: TODO: The student id? (user) which produced this row.
-    sid = Column(String(512))
+    sid = Column(String(512), index=True)
     # The type of question (timed exam, fill in the blank, etc.).
-    event = Column(String(512))
+    event = Column(String(512), index=True)
     # TODO: What is this? The action associated with this log entry?
     act = Column(String(512))
     # _`div_id`: the ID of the question which produced this entry.
-    div_id = Column(String(512))
+    div_id = Column(String(512), index=True)
     # _`course_id`: the Courses ``course_name`` **NOT** the ``id`` this row refers to. TODO: Use the ``id`` instead!
-    course_id = Column(String(512), ForeignKey("courses.course_name"))
+    course_id = Column(String(512), ForeignKey("courses.course_name"), index=True)
+    # These are not currently in web2py but I'm going to add them
     chapter = Column(String, unique=False, index=False)
     sub_chapter = Column(String, unique=False, index=False)
 
@@ -130,7 +132,7 @@ class Questions(Base, IdMixin):
     # The base_course_ this question is in.
     base_course = Column(String(512), nullable=False)
     # The div_id_ for this question. TODO: Rename this!
-    name = Column(String(512), nullable=False)
+    name = Column(String(512), nullable=False, index=True)
     # matches chapter_label, not name
     chapter = Column(String(512))
     # matches sub_chapter_label, not name
@@ -143,6 +145,10 @@ class Questions(Base, IdMixin):
     is_private = Column(Web2PyBoolean)
     htmlsrc = Column(Text)
     autograde = Column(String(512))
+    __table_args__ = (
+        Index("idx_quests_chap_subchap", "chapter", "subchapter"),
+        UniqueConstraint("name", "base_course", name="const_uniq_name_bc"),
+    )
 
 
 # Answers to specific question types
