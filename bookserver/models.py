@@ -154,9 +154,9 @@ class AnswerMixin(IdMixin):
     # See timestamp_.
     timestamp = Column(DateTime)
     # See div_id_.
-    div_id = Column(String(512))
+    div_id = Column(String(512), index=True)
     # See sid_.
-    sid = Column(String(512))
+    sid = Column(String(512), index=True)
 
     # See course_name_. Mixins with foreign keys need `special treatment <http://docs.sqlalchemy.org/en/latest/orm/extensions/declarative/mixins.html#mixing-in-columns>`_.
     @declared_attr
