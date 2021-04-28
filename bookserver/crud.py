@@ -58,12 +58,11 @@ async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
         course_id=log_entry.course_name,
     )
     async with async_session() as session:
-        async with session.begin():
-            new_entry = Useinfo(**new_log)
-            rslogger.debug(f"New Entry = {new_entry}")
-            rslogger.debug(f"session = {session}")
-            r = session.add(new_entry)
-            rslogger.debug(r)
+        new_entry = Useinfo(**new_log)
+        rslogger.debug(f"New Entry = {new_entry}")
+        rslogger.debug(f"session = {session}")
+        r = session.add(new_entry)
+        rslogger.debug(r)
 
         await session.commit()
     return new_entry
@@ -84,8 +83,7 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
     tbl = answer_tables[EVENT2TABLE[log_entry.event]]
     new_entry = tbl(**values)
     async with async_session() as session:
-        async with session.begin():
-            session.add(new_entry)
+        session.add(new_entry)
         await session.commit()
     rslogger.debug(f"returning {new_entry}")
     return new_entry
