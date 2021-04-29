@@ -101,9 +101,3 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     Redirect the user to the login page if not logged in
     """
     return RedirectResponse(url="/auth/login")
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port="8080")
