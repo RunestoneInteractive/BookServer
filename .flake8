@@ -1,22 +1,21 @@
 # ********************************
 # |docname| - Flake8 configuration
 # ********************************
-# Docs todo: provide nice hyperlinks to docs on these configuration settings, and perhaps some rationale (why 88 characters, etc.).
+# To run, execute ``flake8`` from the root directory of the project.
 #
-# To run, execute ``flake8 .`` from the root directory of the project.
 [flake8]
+# Use `Black's default <https://black.readthedocs.io/en/stable/compatible_configs.html#flake8>`_ of 88 charaters per line.
 max-line-length=88
-ignore=F821,
+ignore=
+  # To be compatible with `Black's default`_.
   W503,
-  # space before ``:``
   E203,
-  E501,
+  # Block comment should start with ``#``. See `pycodestyle error codes <https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes>`_. We use this to comment code out.
   E265,
-  # too many ``#``
+  # Too many leading '#' for block comment. Again, for commenting code out.
   E266,
-  E711,
-  # web2py needs to compare to ``== True`` or ``== False`` for queries.
-  E712
+  # Line too long (82 > 79 characters). Flake8 complains about comment lines being too long, while Black allows tihs. Disable flake8's long line detection to avoid these spurious warnings.
+  E501,
 
 exclude =
   # Ignore Sphinx build output.
