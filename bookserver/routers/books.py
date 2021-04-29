@@ -89,8 +89,6 @@ async def serve_page(
     templates = Jinja2Templates(
         directory=safe_join(settings.book_path, course_row.base_course, "build", course)
     )
-    # :index:`todo`: **Fill in this from the database...**
-    #
     # Notes::
     #
     #   request.application -- NA for FastAPI

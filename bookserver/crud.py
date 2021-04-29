@@ -81,11 +81,9 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
     values["timestamp"] = datetime.utcnow()
     rslogger.debug(f"hello from create at {values}")
     tbl = answer_tables[EVENT2TABLE[log_entry.event]]
-    # TODO: revalidate now that we know which table to validate against?
     new_entry = tbl(**values)
     async with async_session() as session:
         session.add(new_entry)
-        # TODO: remove this.
         await session.commit()
     rslogger.debug(f"returning {new_entry}")
     return new_entry
