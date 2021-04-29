@@ -13,7 +13,12 @@
 # Third-party imports
 # -------------------
 from fastapi.testclient import TestClient
-from bookserver.schemas import LogItemIncoming
+from pydantic import ValidationError
+import pytest
+
+# Local application imports
+# -------------------------
+from bookserver.schemas import LogItemIncoming, Useinfo
 from bookserver.main import app
 from bookserver.schemas import AssessmentRequest
 from bookserver.applogger import rslogger
@@ -79,5 +84,11 @@ def test_add_mchoice():
         )
     assert response.status_code == 200
     res = response.json()
-    assert res["correct"] == True
+    assert res["correct"] is True
     assert res["div_id"] == "test_mchoice_1"
+
+
+def test_schema_generator():
+    with pytest.raises(ValidationError):
+        # The sid Column has a max length of 512. This should fail validation.
+        Useinfo(sid="x" * 600, id="5")

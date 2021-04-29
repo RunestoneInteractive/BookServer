@@ -15,19 +15,16 @@
 #
 # Standard library
 # ----------------
-import datetime
+# None.
 
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports here...**
-from dateutil.parser import parse
 from fastapi import APIRouter
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import create_useinfo_entry, fetch_last_answer_table_entry  # noqa F401
-from ..internal.utils import canonicalize_tz
 from ..schemas import AssessmentRequest, LogItem, LogItemIncoming  # noqa F401
 
 # Routing
@@ -49,19 +46,6 @@ async def get_assessment_results(request_data: AssessmentRequest):
     #     sid = request.vars.sid
     # else:
     #     sid = auth.user.username
-
-    # :index:`todo`: **This whole thing is messy - get the deadline from the assignment in the db.**
-    if request_data.deadline:
-        try:
-            deadline = parse(canonicalize_tz(request_data.deadline))
-            tzoff = session.timezoneoffset if session.timezoneoffset else 0
-            deadline = deadline + datetime.timedelta(hours=float(tzoff))
-            deadline = deadline.replace(tzinfo=None)
-        except Exception:
-            rslogger.error(f"Bad Timezone - {request_data.deadline}")
-            deadline = datetime.datetime.utcnow()
-    else:
-        request_data.deadline = datetime.datetime.utcnow()
 
     # Identify the correct event and query the database so we can load it from the server
 
