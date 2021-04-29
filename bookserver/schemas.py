@@ -35,7 +35,7 @@ class LogItemIncoming(BaseModel):
     to add additional constraints we can do so.
     """
 
-    # :index:`TODO`: Is there any way to specify max string lengths? The database has fixed-length fields for some of these.
+    # FIXME: Use max lengths for strings based on the actual lengths from the database using `Pydantic constraints <https://pydantic-docs.helpmanual.io/usage/types/#constrained-types>`_. Is there any way to query the database for these, instead of manually keeping them in sync?
     event: str
     act: str
     div_id: str
