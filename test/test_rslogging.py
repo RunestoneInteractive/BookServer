@@ -1,7 +1,17 @@
 # ********************************
 # |docname| - test the logging API
 # ********************************
-
+#
+# Imports
+# =======
+# These are listed in the order prescribed by `PEP 8`_.
+#
+# Standard library
+# ----------------
+# None.
+#
+# Third-party imports
+# -------------------
 from fastapi.testclient import TestClient
 from bookserver.schemas import LogItemIncoming
 from bookserver.main import app
@@ -9,6 +19,8 @@ from bookserver.schemas import AssessmentRequest
 from bookserver.applogger import rslogger
 
 
+# Tests
+# =====
 def test_main():
     with TestClient(app) as client:
         response = client.get("/")

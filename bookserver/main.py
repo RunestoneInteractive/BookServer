@@ -54,9 +54,9 @@ async def startup():
     await init_models()
 
 
-# @app.on_event("shutdown")
-# async def shutdown():
-#     await database.disconnect()
+## @app.on_event("shutdown")
+## async def shutdown():
+##     await database.disconnect()
 
 
 # this is just a simple example of adding a middleware

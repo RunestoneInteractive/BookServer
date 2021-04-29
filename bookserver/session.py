@@ -44,6 +44,7 @@ async def load_user(user_id: str) -> Optional[schemas.User]:
     user = await fetch_user(user_id)
     rslogger.debug(f"user = {str(user)}")
     if user:
+        # TODO: I don't understand -- why do this here? Are we validating an existing user object?
         return schemas.User(
             username=user.username,
             first_name=user.first_name,

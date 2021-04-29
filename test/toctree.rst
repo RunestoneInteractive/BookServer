@@ -1,7 +1,7 @@
 **************************
 Testing for the BookServer
 **************************
-To run the tests, execute ``pytest`` from this subdirectory. FastAPI takes care of starting up a server!
+To run the tests, execute ``poetry run pytest`` from this subdirectory. FastAPI takes care of starting up a server!
 
 .. toctree::
     :maxdepth: 1
@@ -10,7 +10,6 @@ To run the tests, execute ``pytest`` from this subdirectory. FastAPI takes care 
 
 Continuous Integration
 ----------------------
-
 .. toctree::
     :maxdepth: 1
 

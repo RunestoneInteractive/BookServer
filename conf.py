@@ -175,10 +175,11 @@ exclude_patterns = [
     # Misc files.
     "Thumbs.db",
     ".DS_Store",
-    # Pytest files.
+    # Files excluded for obvious reasons.
     "**/.pytest_cache",
     ".pytest_cache",
-    # Poetry files.
+    "**/.mypy_cache",
+    ".mypy_cache",
     "poetry.lock",
     # **CodeChat notes:**
     #
@@ -189,10 +190,10 @@ exclude_patterns = [
     # The ``CodeToRestSphinx`` extension creates a file named
     # ``sphinx-enki-info.txt``, which should be ignored by Sphinx.
     "sphinx-enki-info.txt",
+    # TODO: Notes here. I assume this is produced by the coverage run in the test suite? A link to that point in the code would be nice.
     "test/htmlcov",
+    # `Alembic <alembic/toctree>`_ stores auto-generated migration scripts `here <https://alembic.sqlalchemy.org/en/latest/tutorial.html#the-migration-environment>`_.
     "alembic/versions",
-    "**/.mypy_cache",
-    "bookserver/templates",
 ]
 
 # `default_role <http://sphinx-doc.org/config.html#confval-default_role>`_: The

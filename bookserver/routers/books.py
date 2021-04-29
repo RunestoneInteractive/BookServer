@@ -14,8 +14,6 @@ import posixpath
 
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports here...can we remove them?***
-
 from fastapi import APIRouter, Depends, Request, HTTPException  # noqa F401
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -118,6 +116,7 @@ async def serve_page(
         course_name=course,
         base_course=course,
         user_id=user.username,
+        # TODO
         user_email="bonelake@mac.com",
         downloads_enabled="false",
         allow_pairs="false",

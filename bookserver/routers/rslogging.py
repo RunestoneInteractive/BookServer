@@ -14,7 +14,6 @@
 #
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports...can we deletet these?**
 from fastapi import APIRouter, Depends  # noqa F401
 
 # Local application imports
@@ -32,6 +31,10 @@ router = APIRouter(
 )
 
 
+# .. _log_book_event endpoint:
+#
+# log_book_event endpoint
+# -----------------------
 @router.post("/bookevent")
 async def log_book_event(entry: LogItem):
     """

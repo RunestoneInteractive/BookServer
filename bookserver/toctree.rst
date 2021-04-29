@@ -19,5 +19,6 @@ BookServer web application
     dependencies.py
     routers/toctree
     internal/toctree
+    templates/auth/login.html
     config.py
     __init__.py
