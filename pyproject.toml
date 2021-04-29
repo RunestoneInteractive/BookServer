@@ -17,7 +17,8 @@ documentation = "https://bookserver.readthedocs.io/en/latest/"
 [tool.poetry.dependencies]
 python = "^3.7"
 fastapi = "^0.63.0"
-uvicorn = "^0.13.1"
+# Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.
+uvicorn = {extras = ["standard"], version = "^0.13.1"}
 Jinja2 = "^2.11.2"
 aiofiles = "^0.6.0"
 alembic = "^1.4.3"
