@@ -30,12 +30,9 @@ jobs:
       run: |
         pip install -U pip
         pip install poetry
+        # Why are we doing an update here? Updates should be performed by committers, not automatically.
         poetry update
         poetry install
-    - name: flake8 quick test
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run the Pre Commit Check Script
       run: |
         poetry run ./pre_commit_check.py
