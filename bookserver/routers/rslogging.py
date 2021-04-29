@@ -14,7 +14,6 @@
 #
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports...can we deletet these?**
 from fastapi import APIRouter, Depends  # noqa F401
 
 # Local application imports
@@ -32,8 +31,12 @@ router = APIRouter(
 )
 
 
+# .. _log_book_event endpoint:
+#
+# log_book_event endpoint
+# -----------------------
 @router.post("/bookevent")
-async def log_book_event(entry: LogItemIncoming):
+async def log_book_event(entry: LogItem):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItem`` object to define the JSON payload it gets from a page of a book.

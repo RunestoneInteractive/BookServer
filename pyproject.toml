@@ -3,7 +3,7 @@
 # ********************************
 #
 # See https://python-poetry.org/docs/dependency-specification/ to get an understanding of
-# how poetry does specifies dependencies
+# how poetry does specifies dependencies.
 #
 [tool.poetry]
 name = "bookserver"
@@ -11,13 +11,14 @@ version = "0.1.0"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>"]
 license = "MIT"
-readme = "README.md"
+readme = "README.rst"
 documentation = "https://bookserver.readthedocs.io/en/latest/"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 fastapi = "^0.63.0"
-uvicorn = "^0.13.1"
+# Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.
+uvicorn = {extras = ["standard"], version = "^0.13.1"}
 Jinja2 = "^2.11.2"
 aiofiles = "^0.6.0"
 alembic = "^1.4.3"
@@ -38,6 +39,7 @@ flake8 = "^3.8.4"
 CodeChat_Server = "^0.0.15"
 recommonmark = "^0.7.0"
 sphinx-rtd-theme = "^0.5.2"
+mypy = "^0.812"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

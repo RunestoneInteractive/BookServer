@@ -37,25 +37,24 @@ class Settings(BaseSettings):
 
     google_ga: str = ""
 
-    # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`.
-    config: str = "development"  # production or test
+    # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`. TODO: Use an Enum for this instead! (Will that work with env vars?)
+    config: str = "development"
 
-    # `Database setup <setting.dev_dburl>`.
+    # `Database setup <setting.dev_dburl>`. It must be an async connection; for example:
+    #
+    # - ``sqlite+aiosqlite:///./runestone.db``
+    # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
     prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
     dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
     test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
 
-    # Configure ads.
+    # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
     num_banners: int = 0
     serve_ad: bool = False
 
-    # :index:`docs to write`: **What's this?**
-    library_path: str = "/Users/bmiller/Runestone"
-    dbserver: str = "sqlite"
-
-    # Specify the directory to serve books from.
-    book_path: Path = Path(__file__).parents[1] / "books"
+    # _`book_path`: specify the directory to serve books from.
+    book_path: Path = Path.home() / "Runestone/books"
 
     # This is the secret key used for generating the JWT token
     secret: str = "supersecret"

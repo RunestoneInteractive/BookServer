@@ -1,6 +1,6 @@
-# ********************************
-# |docname|- Alembic configuration
-# ********************************
+# *********************************
+# |docname| - Alembic configuration
+# *********************************
 # :index:`docs to write`: Better description...
 #
 # Imports

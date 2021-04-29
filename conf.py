@@ -27,11 +27,14 @@
 #
 # Standard library
 # ----------------
-# None.
+from pathlib import Path
+
 #
 # Third-party imports
 # -------------------
 import CodeChat.CodeToRest
+from sphinx.application import Sphinx
+from sphinx.config import Config
 
 # Local application imports
 # -------------------------
@@ -172,10 +175,11 @@ exclude_patterns = [
     # Misc files.
     "Thumbs.db",
     ".DS_Store",
-    # Pytest files.
+    # Files excluded for obvious reasons.
     "**/.pytest_cache",
     ".pytest_cache",
-    # Poetry files.
+    "**/.mypy_cache",
+    ".mypy_cache",
     "poetry.lock",
     # **CodeChat notes:**
     #
@@ -186,10 +190,10 @@ exclude_patterns = [
     # The ``CodeToRestSphinx`` extension creates a file named
     # ``sphinx-enki-info.txt``, which should be ignored by Sphinx.
     "sphinx-enki-info.txt",
+    # TODO: Notes here. I assume this is produced by the coverage run in the test suite? A link to that point in the code would be nice.
     "test/htmlcov",
+    # `Alembic <alembic/toctree>`_ stores auto-generated migration scripts `here <https://alembic.sqlalchemy.org/en/latest/tutorial.html#the-migration-environment>`_.
     "alembic/versions",
-    "**/.mypy_cache",
-    "bookserver/templates",
 ]
 
 # `default_role <http://sphinx-doc.org/config.html#confval-default_role>`_: The
@@ -327,3 +331,32 @@ intersphinx_mapping = {
         ),
     )
 }
+
+
+# Exclude empty files matching the given glob from the build.
+def exclude_empty_files(
+    # The Sphinx application object.
+    app_: Sphinx,
+    # A `glob pattern <https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob>`_ specifying which files should be excluded if they are empty.
+    pattern: str,
+):
+    # This returns a function which will be called by the `config-inited`_ event.
+    def excluder(app: Sphinx, config: Config):
+        # The path must start in the `srcdir <https://www.sphinx-doc.org/en/master/extdev/appapi.html#sphinx.application.Sphinx.srcdir>`_.
+        root_path = Path(app.srcdir)
+        # This is slightly inefficient, since it doesn't use the existing excludes to avoid searching already-excluded values.
+        app.config.exclude_patterns += [  # type: ignore
+            # Paths must be relative to the srcdir.
+            x.relative_to(root_path).as_posix()
+            for x in root_path.glob(pattern)
+            if x.stat().st_size == 0
+        ]
+
+    # Connect this to the `config-inited <https://www.sphinx-doc.org/en/master/extdev/appapi.html#event-config-inited>`_ Sphinx event.
+    app_.connect("config-inited", excluder)
+
+
+def setup(app):
+    # Exclude all empty Python files, since these add no value. (Typically, this will be ``__init__.py``.)
+    exclude_empty_files(app, "**/*.py")
+    return {"parallel_read_safe": True}

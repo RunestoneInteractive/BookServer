@@ -25,6 +25,7 @@ from .routers import books
 from .routers import rslogging
 from .db import init_models
 from .session import auth_manager
+from .config import settings
 from bookserver.applogger import rslogger
 
 # FastAPI setup
@@ -33,6 +34,7 @@ from bookserver.applogger import rslogger
 # Base.metadata.create_all()
 
 app = FastAPI()
+print(f"Serving books from {settings.book_path}.\n")
 
 # Routing
 # -------
@@ -54,9 +56,9 @@ async def startup():
     await init_models()
 
 
-# @app.on_event("shutdown")
-# async def shutdown():
-#     await database.disconnect()
+## @app.on_event("shutdown")
+## async def shutdown():
+##     await database.disconnect()
 
 
 # this is just a simple example of adding a middleware
@@ -101,9 +103,3 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     Redirect the user to the login page if not logged in
     """
     return RedirectResponse(url="/auth/login")
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port="8080")

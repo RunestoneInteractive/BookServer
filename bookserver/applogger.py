@@ -11,7 +11,6 @@
 import logging
 import sys
 
-#
 # Third-party imports
 # -------------------
 # None.

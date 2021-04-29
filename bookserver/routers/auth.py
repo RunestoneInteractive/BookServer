@@ -19,7 +19,6 @@ from datetime import timedelta
 #
 # Third-party imports
 # -------------------
-# :index:`todo`: **Lots of unused imports...can we deletet these?**
 from fastapi import APIRouter, Depends, Request, Response  # noqa F401
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -46,6 +45,10 @@ router = APIRouter(
 templates = Jinja2Templates(directory=f"bookserver/templates{router.prefix}")
 
 
+# .. _login:
+#
+# login
+# -----
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
