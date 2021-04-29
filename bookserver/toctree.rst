@@ -21,4 +21,4 @@ BookServer web application
     internal/toctree
     templates/auth/login.html
     config.py
-    __init__.py
+    __main__.py
