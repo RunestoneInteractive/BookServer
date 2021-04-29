@@ -35,7 +35,7 @@ elif settings.config == "test":
 else:
     assert False
 
-if settings.dbserver == "sqlite":
+if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {}
