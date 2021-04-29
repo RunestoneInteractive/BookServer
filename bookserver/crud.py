@@ -70,7 +70,7 @@ async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
 
 # xxx_answers
 # -----------
-async def create_answer_table_entry(log_entry: schemas.LogItem):
+async def create_answer_table_entry(log_entry: schemas.LogItemIncoming):
     values = {
         k: v
         for k, v in log_entry.dict().items()

@@ -8,8 +8,8 @@
 #
 # Standard library
 # ----------------
-# None.
-#
+import datetime
+
 # Third-party imports
 # -------------------
 from fastapi.testclient import TestClient
@@ -33,18 +33,19 @@ def test_main():
 
 
 def test_add_log():
-    item = LogItemIncoming(
+    item = dict(
         event="page",
         act="view",
         div_id="/runestone/fopp/index.html",
         sid="testuser",
         course_name="fopp",
+        timestamp=datetime.datetime.utcnow().isoformat(),
     )
     with TestClient(app) as client:
         response = client.post(
             "/logger/bookevent",
             headers={"Content-type": "application/json; charset=utf-8"},
-            json=item.dict(),
+            json=item,
         )
         assert response.status_code == 200
         assert response.json()["status"] == "OK"
@@ -52,7 +53,7 @@ def test_add_log():
 
 
 def test_add_mchoice():
-    item = LogItemIncoming(
+    item = dict(
         event="mChoice",
         act="answer:2:correct",
         correct="T",
@@ -60,6 +61,7 @@ def test_add_mchoice():
         sid="testuser",
         course_name="fopp",
         percent=1,
+        timestamp=datetime.datetime.utcnow().isoformat(),
     )
     # Create JWT security token
     # add to headers
@@ -67,20 +69,20 @@ def test_add_mchoice():
         response = client.post(
             "/logger/bookevent",
             headers={"Content-type": "application/json; charset=utf-8"},
-            json=item.dict(),
+            json=item,
         )
         assert response.status_code == 200
         assert response.json()["status"] == "OK"
 
-    req = AssessmentRequest(
-        course="fopp", div_id="test_mchoice_1", event="mChoice", sid="testuser"
+    req = dict(
+        course="fopp", div_id="test_mchoice_1", event="mChoice", sid="testuser",
     )
 
     with TestClient(app) as client:
         response = client.post(
             "/assessment/results",
             headers={"Content-type": "application/json; charset=utf-8"},
-            json=req.dict(),
+            json=req,
         )
     assert response.status_code == 200
     res = response.json()

@@ -104,12 +104,21 @@ class LogItemIncoming(BaseModel):
 
 class LogItem(LogItemIncoming):
     """
-    This may seem like overkill but it illustrates a point.  The schema for the incoming log data will not contain a timestamp.  We could make it optional there, but then that would imply that it is optional which it most certainly is not.  We could add timestamp as part of a LogItemCreate class similar to how password is handled in the tutorial: https://fastapi.tiangolo.com/tutorial/sql-databases/ But there is no security reason to exclude timestamp.  So I think this is a reasonable compromise.
+    This may seem like overkill but it illustrates a point.  The schema for the incoming log data will not contain a timestamp.  We could make it optional there, but then that would imply that it is optional which it most certainly is not.  We could add timestamp as part of a LogItemCreate class similar to how password is handled in the tutorial: https://fastapi.tiangolo.com/tutorial/sql-databases/. But there is no security reason to exclude timestamp.  So I think this is a reasonable compromise.
     """
 
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime
 
-    @validator("timestamp")
+
+class AssessmentRequest(BaseModel):
+    course: str
+    div_id: str
+    event: str
+    sid: Optional[str] = None
+    # See `Field with dynamic default value <https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields>`_.
+    deadline: datetime = Field(default_factory=datetime.utcnow)
+
+    @validator("deadline")
     def str_to_datetime(cls, value: str) -> datetime:
         # TODO: this code probably doesn't work.
         try:
@@ -123,15 +132,6 @@ class LogItem(LogItemIncoming):
             # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
             raise ValueError(f"Bad Timezone - {value}")
         return deadline
-
-
-class AssessmentRequest(BaseModel):
-    course: str
-    div_id: str
-    event: str
-    sid: Optional[str] = None
-    # See `Field with dynamic default value <https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields>`_.
-    deadline: Optional[str] = None
 
 
 class User(BaseModel):
