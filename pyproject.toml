@@ -38,6 +38,7 @@ flake8 = "^3.8.4"
 CodeChat_Server = "^0.0.15"
 recommonmark = "^0.7.0"
 sphinx-rtd-theme = "^0.5.2"
+mypy = "^0.812"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

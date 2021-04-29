@@ -27,6 +27,7 @@ Development support
     pyproject.toml
     .gitignore
     .flake8
+    mypy.ini
 
 
 Documentation generation
