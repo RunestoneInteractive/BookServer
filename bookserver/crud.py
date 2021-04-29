@@ -81,15 +81,16 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
     values["timestamp"] = datetime.utcnow()
     rslogger.debug(f"hello from create at {values}")
     tbl = answer_tables[EVENT2TABLE[log_entry.event]]
+    # TODO: revalidate now that we know which table to validate against?
     new_entry = tbl(**values)
     async with async_session() as session:
         session.add(new_entry)
+        # TODO: remove this.
         await session.commit()
     rslogger.debug(f"returning {new_entry}")
     return new_entry
 
 
-# :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
