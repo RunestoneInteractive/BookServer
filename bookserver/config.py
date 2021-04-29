@@ -53,12 +53,8 @@ class Settings(BaseSettings):
     num_banners: int = 0
     serve_ad: bool = False
 
-    # :index:`docs to write`: **What's this?**
-    library_path: str = "/Users/bmiller/Runestone"
-    dbserver: str = "sqlite"
-
-    # Specify the directory to serve books from.
-    book_path: Path = Path(__file__).parents[1] / "books"
+    # _`book_path`: specify the directory to serve books from.
+    book_path: Path = Path.home() / "Runestone/books"
 
     # This is the secret key used for generating the JWT token
     secret: str = "supersecret"
