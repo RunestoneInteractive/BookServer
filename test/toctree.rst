@@ -7,7 +7,6 @@ To run the tests, execute ``pytest`` from this subdirectory. FastAPI takes care 
     :maxdepth: 1
 
     test_rslogging.py
-    __init__.py
 
 Continuous Integration
 ----------------------
