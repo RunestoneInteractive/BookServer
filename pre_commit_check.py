@@ -34,6 +34,7 @@ def checks():
         "black --check .",
         # Do this next -- it should be easy to fix most of these.
         "flake8 .",
+        "mypy",
         # Next, check the docs. Again, these only require fixes to comments, and should still be relatively easy to correct.
         #
         # Force a `full build <https://www.sphinx-doc.org/en/master/man/sphinx-build.html>`_:

@@ -31,8 +31,8 @@ def canonicalize_tz(tstring: str) -> str:
     """
     x = re.search(r"\((.*)\)", tstring)
     if x:
-        x = x.group(1)
-        y = x.split()
+        z = x.group(1)
+        y = z.split()
         if len(y) == 1:
             return tstring
         else:

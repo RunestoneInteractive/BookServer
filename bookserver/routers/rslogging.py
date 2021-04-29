@@ -33,7 +33,7 @@ router = APIRouter(
 
 
 @router.post("/bookevent")
-async def log_book_event(entry: LogItemIncoming):
+async def log_book_event(entry: LogItem):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItem`` object to define the JSON payload it gets from a page of a book.
