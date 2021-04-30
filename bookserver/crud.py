@@ -31,7 +31,6 @@ from .models import (
     Useinfo,
     AuthUser,
     Courses,
-    UseinfoValidation,
     answer_tables,
     validation_tables,
 )

@@ -80,8 +80,8 @@ async def get_image(course: str, filepath: str):
 )
 async def serve_page(
     request: Request,
-    course: constr(max_length=512),
-    pagepath: constr(max_length=512),
+    course: constr(max_length=512),  # type: ignore
+    pagepath: constr(max_length=512),  # type: ignore
     user=Depends(auth_manager),
 ):
     rslogger.debug(f"user = {user}")

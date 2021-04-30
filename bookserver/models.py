@@ -23,7 +23,6 @@
 #
 # Third-party imports
 # -------------------
-from pydantic import constr
 from sqlalchemy import (
     Column,
     ForeignKey,
