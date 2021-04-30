@@ -23,6 +23,7 @@
 #
 # Third-party imports
 # -------------------
+from pydantic import constr
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -43,6 +44,7 @@ from sqlalchemy.sql.schema import UniqueConstraint
 # Local application imports
 # -------------------------
 from .db import Base
+from .schemas import sqlalchemy_to_pydantic
 
 
 # Web2Py boolean type
@@ -50,6 +52,7 @@ from .db import Base
 # Define a web2py-compatible Boolean type. See `custom types <http://docs.sqlalchemy.org/en/latest/core/custom_types.html>`_.
 class Web2PyBoolean(types.TypeDecorator):
     impl = types.CHAR(1)
+    python_type = str
 
     def process_bind_param(self, value, dialect):
         if value:
@@ -82,11 +85,15 @@ class Web2PyBoolean(types.TypeDecorator):
 metadata = MetaData()
 
 answer_tables = {}
+validation_tables = {}
 
 
 def register_answer_table(cls):
-    global answer_tables
-    answer_tables[cls.__tablename__] = cls
+    global answer_tables, validation_tables
+
+    table_name = cls.__tablename__
+    answer_tables[table_name] = cls
+    validation_tables[table_name] = sqlalchemy_to_pydantic(cls, exclude=["id"])
     return cls
 
 
@@ -119,8 +126,11 @@ class Useinfo(Base, IdMixin):
     # _`course_id`: the Courses ``course_name`` **NOT** the ``id`` this row refers to. TODO: Use the ``id`` instead!
     course_id = Column(String(512), ForeignKey("courses.course_name"), index=True)
     # These are not currently in web2py but I'm going to add them
-    chapter = Column(String, unique=False, index=False)
-    sub_chapter = Column(String, unique=False, index=False)
+    ##chapter = Column(String, unique=False, index=False)
+    ##sub_chapter = Column(String, unique=False, index=False)
+
+
+UseinfoValidation = sqlalchemy_to_pydantic(Useinfo, exclude=["id"])
 
 
 # Questions

@@ -14,16 +14,16 @@ import posixpath
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Depends, Request, HTTPException  # noqa F401
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import constr
 
 # Local application imports
 # -------------------------
 from bookserver.config import settings
 from ..applogger import rslogger
-from ..crud import create_useinfo_entry, fetch_course  # noqa F401
-from ..schemas import LogItem, LogItemIncoming  # noqa F401
+from ..crud import create_useinfo_entry, fetch_course
 from ..session import auth_manager
 
 # .. _APIRouter config:
@@ -79,7 +79,10 @@ async def get_image(course: str, filepath: str):
     response_class=HTMLResponse,
 )
 async def serve_page(
-    request: Request, course: str, pagepath: str, user=Depends(auth_manager)
+    request: Request,
+    course: constr(max_length=512),
+    pagepath: constr(max_length=512),
+    user=Depends(auth_manager),
 ):
     rslogger.debug(f"user = {user}")
     course_row = await fetch_course(course)
@@ -101,11 +104,11 @@ async def serve_page(
     #   activity_info
     #   settings.google_ga
     await create_useinfo_entry(
-        LogItemIncoming(
+        dict(
             event="page",
             act="view",
             div_id=pagepath,
-            course_name=course,
+            course_id=course,
             sid=user.username,
         )
     )

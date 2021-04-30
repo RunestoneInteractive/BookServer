@@ -28,7 +28,6 @@ from fastapi.templating import Jinja2Templates
 # Local application imports
 # -------------------------
 from ..session import load_user, auth_manager
-from ..schemas import LogItem, LogItemIncoming  # noqa F401
 from pydal.validators import CRYPT
 from ..applogger import rslogger
 from ..config import settings
@@ -71,11 +70,11 @@ async def login(
     rslogger.debug(f"username = {username}")
     user = await load_user(username)
     # um = UserManagerWeb2Py()
-    rslogger.debug(f"{user.username}")
     if not user:
         # raise InvalidCredentialsException
         return RedirectResponse("/auth/login")
     else:
+        rslogger.debug(f"{user.username}")
         # The password in the web2py database is formatted as follows:
         # alg$salt$hash
         # We need to grab the salt and provide that to the CRYPT function

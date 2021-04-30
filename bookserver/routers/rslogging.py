@@ -10,16 +10,18 @@
 #
 # Standard library
 # ----------------
-# None. (Or the imports.)
+from datetime import datetime
+
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Depends  # noqa F401
+from bookserver.schemas import LogItem
+from ..models import UseinfoValidation
+from fastapi import APIRouter
 
 # Local application imports
 # -------------------------
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
-from ..schemas import LogItem, LogItemIncoming  # noqa F401
 from ..applogger import rslogger
 
 # Routing
@@ -41,7 +43,17 @@ async def log_book_event(entry: LogItem):
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItem`` object to define the JSON payload it gets from a page of a book.
     """
-    idx = await create_useinfo_entry(entry)
+    # Always use the server's time.
+    entry.timestamp = datetime.utcnow()
+    # The endpoint receives a ``course_name``, but the ``useinfo`` table calls this ``course_id``. Rename it.
+    useinfo_dict = entry.dict()
+    useinfo_dict["course_id"] = useinfo_dict.pop("course_name")
+    try:
+        useinfo_entry = UseinfoValidation(**useinfo_dict)
+    except Exception:
+        # TODO!
+        raise
+    idx = await create_useinfo_entry(useinfo_entry.dict())
     if entry.event in EVENT2TABLE:
         ans_idx = await create_answer_table_entry(entry)
     else:

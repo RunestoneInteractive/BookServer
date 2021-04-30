@@ -18,7 +18,7 @@ import pytest
 
 # Local application imports
 # -------------------------
-from bookserver.schemas import Useinfo
+from bookserver.models import UseinfoValidation
 from bookserver.main import app
 from bookserver.applogger import rslogger
 
@@ -59,7 +59,7 @@ def test_add_mchoice():
         div_id="test_mchoice_1",
         sid="testuser",
         course_name="fopp",
-        percent=1,
+        percent="1",
         timestamp=datetime.datetime.utcnow().isoformat(),
     )
     # Create JWT security token
@@ -95,4 +95,4 @@ def test_add_mchoice():
 def test_schema_generator():
     with pytest.raises(ValidationError):
         # The sid Column has a max length of 512. This should fail validation.
-        Useinfo(sid="x" * 600, id="5")
+        UseinfoValidation(sid="x" * 600, id="5")

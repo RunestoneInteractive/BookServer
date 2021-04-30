@@ -12,10 +12,8 @@
 #
 # Standard library
 # ----------------
-# For ``time`, ``date``, and ``timedelta``.
 from datetime import datetime
-
-# from typing import List
+from typing import Dict, Any
 
 # Third-party imports
 # -------------------
@@ -29,7 +27,14 @@ from sqlalchemy.sql import select
 # -------------------------
 from .applogger import rslogger
 from . import schemas
-from .models import Useinfo, AuthUser, Courses, answer_tables
+from .models import (
+    Useinfo,
+    AuthUser,
+    Courses,
+    UseinfoValidation,
+    answer_tables,
+    validation_tables,
+)
 
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
@@ -48,17 +53,9 @@ EVENT2TABLE = {
 
 # useinfo
 # -------
-async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
-    new_log = dict(
-        sid=log_entry.sid,
-        event=log_entry.event,
-        act=log_entry.act,
-        div_id=log_entry.div_id,
-        timestamp=datetime.utcnow(),
-        course_id=log_entry.course_name,
-    )
+async def create_useinfo_entry(log_entry: Dict[str, Any]) -> Useinfo:
     async with async_session() as session:
-        new_entry = Useinfo(**new_log)
+        new_entry = Useinfo(**log_entry)
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
         r = session.add(new_entry)
@@ -80,7 +77,14 @@ async def create_answer_table_entry(log_entry: schemas.LogItemIncoming):
     }
     values["timestamp"] = datetime.utcnow()
     rslogger.debug(f"hello from create at {values}")
-    tbl = answer_tables[EVENT2TABLE[log_entry.event]]
+    table_name = EVENT2TABLE[log_entry.event]
+    # TODO: make this into a nice function
+    try:
+        validation_tables[table_name]()
+    except Exception:
+        # TODO: report this in some better way.
+        raise
+    tbl = answer_tables[table_name]
     new_entry = tbl(**values)
     async with async_session() as session:
         session.add(new_entry)
@@ -90,6 +94,7 @@ async def create_answer_table_entry(log_entry: schemas.LogItemIncoming):
 
 
 async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
+    # TODO: validate this!
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
     query = (

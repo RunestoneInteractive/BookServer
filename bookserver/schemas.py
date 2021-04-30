@@ -20,7 +20,6 @@ from pydantic import BaseModel, create_model, constr, validator, Field
 
 # Local application imports
 # -------------------------
-from . import models
 from .internal.utils import canonicalize_tz
 
 
@@ -73,9 +72,6 @@ def sqlalchemy_to_pydantic(
     return pydantic_model
 
 
-Useinfo = sqlalchemy_to_pydantic(models.Useinfo.__table__)
-
-
 # Schemas
 # =======
 class LogItemIncoming(BaseModel):
@@ -85,7 +81,6 @@ class LogItemIncoming(BaseModel):
     to add additional constraints we can do so.
     """
 
-    # FIXME: Use max lengths for strings based on the actual lengths from the database using `Pydantic constraints <https://pydantic-docs.helpmanual.io/usage/types/#constrained-types>`_. Is there any way to query the database for these, instead of manually keeping them in sync?
     event: str
     act: str
     div_id: str
