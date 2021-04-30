@@ -84,7 +84,6 @@ async def create_answer_table_entry(
 
 
 async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
-    # TODO: validate this!
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
     query = (

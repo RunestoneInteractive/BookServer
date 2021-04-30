@@ -58,7 +58,7 @@ async def log_book_event(entry: LogItem):
     if entry.event in EVENT2TABLE:
         table_name = EVENT2TABLE[entry.event]
         try:
-            valid_table = validation_tables[table_name]()
+            valid_table = validation_tables[table_name].from_orm(entry)
         except Exception:
             # TODO: report this in some better way.
             raise
