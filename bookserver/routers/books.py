@@ -9,6 +9,7 @@
 #
 # Standard library
 # ----------------
+from bookserver.models import UseinfoValidation
 import os.path
 import posixpath
 
@@ -104,7 +105,7 @@ async def serve_page(
     #   activity_info
     #   settings.google_ga
     await create_useinfo_entry(
-        dict(
+        UseinfoValidation(
             event="page",
             act="view",
             div_id=pagepath,

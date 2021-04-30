@@ -16,7 +16,7 @@ from typing import Container, Optional, Type, Dict, Tuple, Union, Any
 
 # Third-party imports
 # -------------------
-from pydantic import BaseModel, create_model, constr, validator, Field
+from pydantic import BaseModel, BaseConfig, create_model, constr, validator, Field
 
 # Local application imports
 # -------------------------
@@ -28,17 +28,21 @@ from .internal.utils import canonicalize_tz
 # This creates then returns a Pydantic schema from a SQLAlchemy Table or ORM class.
 #
 # This is copied from https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py then lightly modified.
+class OrmConfig(BaseConfig):
+    orm_mode = True
+
+
 def sqlalchemy_to_pydantic(
     # The SQLAlchemy model -- either a Table object or a class derived from a declarative base.
     db_model: Type,
     *,
     # An optional Pydantic `model config <https://pydantic-docs.helpmanual.io/usage/model_config/>`_ class to embed in the resulting schema.
-    config: Optional[Type] = None,
+    config: Type = OrmConfig,
     # The base class from which the Pydantic model will inherit.
     base: Optional[Type] = None,
-    # SQLAlchemy fields to exclude from the resulting schema, provided as a sequence of field names.
-    exclude: Container[str] = [],
-) -> Type[BaseModel]:
+    # SQLAlchemy fields to exclude from the resulting schema, provided as a sequence of field names. Ignore the id field by default.
+    exclude: Container[str] = ("id",),
+):
 
     # If provided an ORM model, get the underlying Table object.
     db_model = getattr(db_model, "__table__", db_model)
@@ -127,13 +131,3 @@ class AssessmentRequest(BaseModel):
             # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
             raise ValueError(f"Bad Timezone - {value}")
         return deadline
-
-
-class User(BaseModel):
-    username: str
-    course_name: str
-    course_id: int
-    first_name: str
-    last_name: str
-    email: str
-    password_hash: str
