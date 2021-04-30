@@ -32,7 +32,7 @@ def test_main():
         assert response.status_code == 200
 
 
-def test_add_log():
+def test_add_log(init_sqlite):
     item = LogItemIncoming(
         event="page",
         act="view",
@@ -51,7 +51,7 @@ def test_add_log():
         rslogger.debug(response.json())
 
 
-def test_add_mchoice():
+def test_add_mchoice(init_sqlite):
     item = LogItemIncoming(
         event="mChoice",
         act="answer:2:correct",
