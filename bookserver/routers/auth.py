@@ -55,8 +55,12 @@ def login_form(request: Request):
 
 @router.post("/validate")
 async def login(
-    data: OAuth2PasswordRequestForm = Depends(), response_class=RedirectResponse
-):
+    data: OAuth2PasswordRequestForm = Depends(),
+):  # , response_class=RedirectResponse
+    # ideally we would put back the response_class parameter but its
+    # just a hint to the doc system and right now causing the docs
+    # to crash.  Added to an issue for FastAPI on github.
+    # ):
     """
     This is called as the result of a login form being submitted.
     If authentication is successful an access token is created and stored

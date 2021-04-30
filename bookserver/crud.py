@@ -58,10 +58,10 @@ async def create_useinfo_entry(log_entry: UseinfoValidation):  # type: ignore
         new_entry = Useinfo(**log_entry.dict())  # type: ignore
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
-        r = session.add(new_entry)
-        rslogger.debug(r)
+        async with session.begin():
+            r = session.add(new_entry)
+            rslogger.debug(r)
 
-        await session.commit()
     return new_entry
 
 
@@ -77,8 +77,8 @@ async def create_answer_table_entry(
     tbl = answer_tables[EVENT2TABLE[event]]
     new_entry = tbl(**log_entry.dict())
     async with async_session() as session:
-        session.add(new_entry)
-        await session.commit()
+        async with session.begin():
+            session.add(new_entry)
     rslogger.debug(f"returning {new_entry}")
     return new_entry
 
