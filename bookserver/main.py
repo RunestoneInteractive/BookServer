@@ -13,9 +13,11 @@
 #
 # Third-party imports
 # -------------------
-from fastapi import FastAPI, Request, Depends, Cookie
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request, Depends, Cookie, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import RedirectResponse, JSONResponse
 from typing import Optional
+from pydantic.error_wrappers import ValidationError
 
 # Local application imports
 # -------------------------
@@ -100,3 +102,18 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     Redirect the user to the login page if not logged in
     """
     return RedirectResponse(url="/auth/login")
+
+
+@app.exception_handler(ValidationError)
+def level2_validation_handler(request: Request, exc: ValidationError):
+    """
+    Most validation errors are caught immediately, but we do some
+    secondary validation when populating our xxx_answers tables
+    this catches those and returns a 422
+    """
+    rslogger.debug(exc.json),
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors()}),
+    )

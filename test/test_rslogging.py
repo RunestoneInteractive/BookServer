@@ -96,3 +96,25 @@ def test_schema_generator():
     with pytest.raises(ValidationError):
         # The sid Column has a max length of 512. This should fail validation.
         UseinfoValidation(sid="x" * 600, id="5")
+
+
+def test_secondary_validation_error():
+    item = dict(
+        event="mChoice",
+        act="answer:2:correct",
+        correct="T",
+        div_id="test_mchoice_1",
+        sid="testuser",
+        course_name="fopp" * 500,
+        percent="1",
+        timestamp=datetime.datetime.utcnow().isoformat(),
+    )
+    # Create JWT security token
+    # add to headers
+    with TestClient(app) as client:
+        response = client.post(
+            "/logger/bookevent",
+            headers={"Content-type": "application/json; charset=utf-8"},
+            json=item,
+        )
+        assert response.status_code == 422
