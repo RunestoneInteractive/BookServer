@@ -7,6 +7,7 @@ To run the tests, execute ``poetry run pytest`` from this subdirectory. FastAPI 
     :maxdepth: 1
 
     test_rslogging.py
+    conftest.py
 
 Continuous Integration
 ----------------------
