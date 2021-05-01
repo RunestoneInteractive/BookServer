@@ -102,6 +102,11 @@ def register_answer_table(cls):
 class IdMixin:
     id = Column(Integer, primary_key=True)
 
+    @classmethod
+    @property
+    def t(cls):
+        return cls.__table__
+
 
 # Useinfo
 # -------
