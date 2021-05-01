@@ -15,14 +15,14 @@ from datetime import datetime
 #
 # Third-party imports
 # -------------------
-from bookserver.schemas import LogItem
-from ..models import UseinfoValidation, validation_tables
 from fastapi import APIRouter
 
 # Local application imports
 # -------------------------
-from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..applogger import rslogger
+from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
+from ..models import UseinfoValidation, validation_tables
+from ..schemas import LogItem
 
 # Routing
 # =======
