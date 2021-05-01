@@ -15,7 +15,7 @@
 #
 # Standard library
 # ----------------
-from typing import Optional
+# None.
 
 # Third-party imports
 # -------------------
@@ -24,7 +24,6 @@ from fastapi_login import LoginManager
 # Local application imports
 # -------------------------
 from .config import settings
-from . import schemas
 from .crud import fetch_user
 from .applogger import rslogger
 
@@ -34,25 +33,11 @@ auth_manager.cookie_name = "access_token"
 
 
 @auth_manager.user_loader
-async def load_user(user_id: str) -> Optional[schemas.User]:
+async def load_user(user_id: str):
     """
     fetch a user object from the database. This is designed to work with the
     original web2py auth_user schema but make it easier to migrate to a new
     database by simply returning a user object.
     """
     rslogger.debug(f"Going to fetch {user_id}")
-    user = await fetch_user(user_id)
-    rslogger.debug(f"user = {str(user)}")
-    if user:
-        # TODO: I don't understand -- why do this here? Are we validating an existing user object?
-        return schemas.User(
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            email=user.email,
-            password_hash=user.password,
-            course_name=user.course_name,
-            course_id=user.course_id,
-        )
-    else:
-        return None
+    return await fetch_user(user_id)

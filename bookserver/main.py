@@ -30,9 +30,6 @@ from bookserver.applogger import rslogger
 
 # FastAPI setup
 # =============
-# :index:`todo`: This should be moved to a Alembic function for migration.
-# Base.metadata.create_all()
-
 app = FastAPI()
 print(f"Serving books from {settings.book_path}.\n")
 

@@ -12,10 +12,7 @@
 #
 # Standard library
 # ----------------
-# For ``time`, ``date``, and ``timedelta``.
-from datetime import datetime
-
-# from typing import List
+# None.
 
 # Third-party imports
 # -------------------
@@ -29,7 +26,14 @@ from sqlalchemy.sql import select
 # -------------------------
 from .applogger import rslogger
 from . import schemas
-from .models import Useinfo, AuthUser, Courses, answer_tables
+from .models import (
+    AuthUserValidator,
+    Useinfo,
+    AuthUser,
+    Courses,
+    UseinfoValidation,
+    answer_tables,
+)
 
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
@@ -48,17 +52,10 @@ EVENT2TABLE = {
 
 # useinfo
 # -------
-async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
-    new_log = dict(
-        sid=log_entry.sid,
-        event=log_entry.event,
-        act=log_entry.act,
-        div_id=log_entry.div_id,
-        timestamp=datetime.utcnow(),
-        course_id=log_entry.course_name,
-    )
+# TODO: mypy can't use this Pydantic class as a validator.Per https://pydantic-docs.helpmanual.io/usage/mypy/, perhaps this class contains annotations that are not the "annotation-only version of required fields", such as ``constr``?
+async def create_useinfo_entry(log_entry: UseinfoValidation):  # type: ignore
     async with async_session() as session:
-        new_entry = Useinfo(**new_log)
+        new_entry = Useinfo(**log_entry.dict())  # type: ignore
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
         async with session.begin():
@@ -70,18 +67,15 @@ async def create_useinfo_entry(log_entry: schemas.LogItemIncoming) -> Useinfo:
 
 # xxx_answers
 # -----------
-async def create_answer_table_entry(log_entry: schemas.LogItem):
-    values = {
-        k: v
-        for k, v in log_entry.dict().items()
-        # filter out fields that do not go in an answer table
-        if v is not None
-        and k not in ["event", "act", "timezoneoffset", "clientLoginStatus"]
-    }
-    values["timestamp"] = datetime.utcnow()
-    rslogger.debug(f"hello from create at {values}")
-    tbl = answer_tables[EVENT2TABLE[log_entry.event]]
-    new_entry = tbl(**values)
+async def create_answer_table_entry(
+    # The correct type is one of the validators for an answer table; we use LogItemIncoming as a generalization of this.
+    log_entry: schemas.LogItemIncoming,
+    # The event type.
+    event: str,
+):
+    rslogger.debug(f"hello from create at {log_entry}")
+    tbl = answer_tables[EVENT2TABLE[event]]
+    new_entry = tbl(**log_entry.dict())
     async with async_session() as session:
         async with session.begin():
             session.add(new_entry)
@@ -89,7 +83,6 @@ async def create_answer_table_entry(log_entry: schemas.LogItem):
     return new_entry
 
 
-# :index:`TODO`: **I think the idea here**, but the implementation will still need some special cases for getting the specific data for all the question types.
 async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
@@ -126,4 +119,5 @@ async def fetch_user(user_name: str):
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-    return res.scalars().first()
+    user = res.scalars().first()
+    return AuthUserValidator.from_orm(user) if user else None

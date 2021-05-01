@@ -24,8 +24,8 @@ from fastapi import APIRouter
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
-from ..crud import create_useinfo_entry, fetch_last_answer_table_entry  # noqa F401
-from ..schemas import AssessmentRequest, LogItem, LogItemIncoming  # noqa F401
+from ..crud import fetch_last_answer_table_entry
+from ..schemas import AssessmentRequest
 
 # Routing
 # =======

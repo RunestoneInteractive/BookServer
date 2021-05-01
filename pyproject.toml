@@ -23,8 +23,6 @@ Jinja2 = "^2.11.2"
 aiofiles = "^0.6.0"
 alembic = "^1.4.3"
 python-dateutil = "^2.8.1"
-coverage = "^5.3.1"
-pytest-cov = "^2.10.1"
 fastapi-login = "^1.5.3"
 pydal = "^20210215.1"
 python-multipart = "^0.0.5"
@@ -40,6 +38,8 @@ CodeChat_Server = "^0.0.15"
 recommonmark = "^0.7.0"
 sphinx-rtd-theme = "^0.5.2"
 mypy = "^0.812"
+coverage = "^5.3.1"
+pytest-cov = "^2.10.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

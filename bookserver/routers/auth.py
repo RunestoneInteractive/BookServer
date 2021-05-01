@@ -28,7 +28,6 @@ from fastapi.templating import Jinja2Templates
 # Local application imports
 # -------------------------
 from ..session import load_user, auth_manager
-from ..schemas import LogItem, LogItemIncoming  # noqa F401
 from pydal.validators import CRYPT
 from ..applogger import rslogger
 from ..config import settings
@@ -56,8 +55,12 @@ def login_form(request: Request):
 
 @router.post("/validate")
 async def login(
-    data: OAuth2PasswordRequestForm = Depends(), response_class=RedirectResponse
-):
+    data: OAuth2PasswordRequestForm = Depends(),
+):  # , response_class=RedirectResponse
+    # ideally we would put back the response_class parameter but its
+    # just a hint to the doc system and right now causing the docs
+    # to crash.  Added to an issue for FastAPI on github.
+    # ):
     """
     This is called as the result of a login form being submitted.
     If authentication is successful an access token is created and stored
@@ -71,20 +74,20 @@ async def login(
     rslogger.debug(f"username = {username}")
     user = await load_user(username)
     # um = UserManagerWeb2Py()
-    rslogger.debug(f"{user.username}")
     if not user:
         # raise InvalidCredentialsException
         return RedirectResponse("/auth/login")
     else:
+        rslogger.debug(f"{user.username}")
         # The password in the web2py database is formatted as follows:
         # alg$salt$hash
         # We need to grab the salt and provide that to the CRYPT function
         # which we import from pydal for now.  Once we are completely off of
         # web2py then this will change.  The ``web2py_private_key`` is an environment
         # variable that comes from the ``private/auth.key`` file.
-        salt = user.password_hash.split("$")[1]
+        salt = user.password.split("$")[1]
         crypt = CRYPT(key=settings.web2py_private_key, salt=salt)
-        if str(crypt(password)[0]) != user.password_hash:
+        if str(crypt(password)[0]) != user.password:
             raise InvalidCredentialsException
 
     access_token = auth_manager.create_access_token(
