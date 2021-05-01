@@ -18,11 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-
 # Local application imports
 # -------------------------
-# See `./config.py`.
-from bookserver.config import settings
+from .config import settings
 
 # .. _setting.dev_dburl:
 if settings.config == "development":

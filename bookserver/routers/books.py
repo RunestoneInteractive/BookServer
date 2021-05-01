@@ -9,7 +9,6 @@
 #
 # Standard library
 # ----------------
-from bookserver.models import UseinfoValidation
 import os.path
 import posixpath
 
@@ -22,9 +21,10 @@ from pydantic import constr
 
 # Local application imports
 # -------------------------
-from bookserver.config import settings
 from ..applogger import rslogger
+from ..config import settings
 from ..crud import create_useinfo_entry, fetch_course
+from ..models import UseinfoValidation
 from ..session import auth_manager
 
 # .. _APIRouter config:

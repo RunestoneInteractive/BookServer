@@ -10,7 +10,7 @@
 # Standard library
 # ----------------
 # None.
-#
+
 # Third-party imports
 # -------------------
 from fastapi import FastAPI, Request, Depends, Cookie, status
@@ -21,14 +21,14 @@ from typing import Optional
 
 # Local application imports
 # -------------------------
+from .applogger import rslogger
+from .config import settings
+from .db import init_models
 from .routers import assessment
 from .routers import auth
 from .routers import books
 from .routers import rslogging
-from .db import init_models
 from .session import auth_manager
-from .config import settings
-from bookserver.applogger import rslogger
 
 # FastAPI setup
 # =============
