@@ -16,9 +16,7 @@
 
 # Third-party imports
 # -------------------
-from .db import async_session
-
-# import sqlalchemy
+from .db import engine, async_session
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 
@@ -27,7 +25,6 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import schemas
 from .models import (
-    AuthUserValidator,
     Useinfo,
     AuthUser,
     Courses,
@@ -87,7 +84,7 @@ async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
     query = (
-        select(tbl)
+        select(tbl.t)
         .where(
             and_(
                 tbl.div_id == query_data.div_id,
@@ -97,27 +94,23 @@ async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
         )
         .order_by(tbl.timestamp.desc())
     )
-    async with async_session() as session:
-        res = await session.execute(query)
+    async with engine.connect() as conn:
+        res = await conn.execute(query)
         rslogger.debug(f"res = {res}")
 
-    return res.scalars().first()
+    return res.first()
 
 
 async def fetch_course(course_name: str):
-    query = select(Courses).where(Courses.course_name == course_name)
-    async with async_session() as session:
-        res = await session.execute(query)
-    # When selecting ORM entries it is useful to use the ``scalars`` method
-    # This modifies the result so that you are getting the ORM object
-    # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
-    return res.scalars().first()
+    query = select(Courses.t).where(Courses.course_name == course_name)
+    async with engine.connect() as conn:
+        res = await conn.execute(query)
+    return res.first()
 
 
 async def fetch_user(user_name: str):
-    query = select(AuthUser).where(AuthUser.username == user_name)
-    async with async_session() as session:
-        res = await session.execute(query)
+    query = select(AuthUser.t).where(AuthUser.username == user_name)
+    async with engine.connect() as conn:
+        res = await conn.execute(query)
         rslogger.debug(f"res = {res}")
-    user = res.scalars().first()
-    return AuthUserValidator.from_orm(user) if user else None
+    return res.first()

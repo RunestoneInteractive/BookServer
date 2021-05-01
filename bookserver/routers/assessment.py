@@ -53,9 +53,8 @@ async def get_assessment_results(request_data: AssessmentRequest):
     if not row:
         return ""  # server doesn't have it so we load from local storage instead
 
-    # construct the return value from the XXXAnswer class
-    # TODO: Seems like something like this should be built in to sqlalchemy?
-    res = row.to_dict()
+    # Get the return dict from the query.
+    res = row._mapping
 
     # :index:`todo``: **port the serverside grading** code::
     #
