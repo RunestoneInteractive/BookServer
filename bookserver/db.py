@@ -14,7 +14,7 @@
 # Third-party imports
 # -------------------
 # Use asyncio for SQLAlchemy -- see `SQLAlchemy Asynchronous I/O (asyncio) <https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html>`_.
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -45,8 +45,16 @@ engine = create_async_engine(DATABASE_URL, connect_args=connect_args, echo=True)
 # This creates the SessionLocal class.  An actual session is an instance of this class.
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+
+# Provide easy access to a declarative class's Table (Core) attribute.
+class CoreDeclarativeMeta(DeclarativeMeta):
+    @property
+    def t(cls):
+        return cls.__table__
+
+
 # This creates the base class we will use to create models
-Base = declarative_base()
+Base = declarative_base(metaclass=CoreDeclarativeMeta)
 
 
 async def init_models():
