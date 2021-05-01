@@ -181,6 +181,7 @@ exclude_patterns = [
     "**/.mypy_cache",
     ".mypy_cache",
     "poetry.lock",
+    ".tox",
     # **CodeChat notes:**
     #
     # By default, Enki will instruct Sphinx to place all Sphinx output in
