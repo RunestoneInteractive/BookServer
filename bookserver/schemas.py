@@ -41,7 +41,7 @@ def sqlalchemy_to_pydantic(
     # The base class from which the Pydantic model will inherit.
     base: Optional[Type] = None,
     # SQLAlchemy fields to exclude from the resulting schema, provided as a sequence of field names. Ignore the id field by default.
-    exclude: Container[str] = ("id",),
+    exclude: Container[str] = tuple(),
 ):
 
     # If provided an ORM model, get the underlying Table object.
@@ -59,9 +59,15 @@ def sqlalchemy_to_pydantic(
         if python_type == str and hasattr(column.type, "length"):
             python_type = constr(max_length=column.type.length)
 
-        # Determine the default value for the column.
-        default = None
-        if column.default is None and not column.nullable:
+        # Determine if the column can be null, meaning it's optional from a Pydantic perspective. Make the id column optional, since it won't be present when inserting values to the database.
+        if column.nullable or name == "id":
+            python_type = Optional[python_type]
+
+        # Determine the default value for the column. Allow the id column to be null.
+        default = column.default
+        if callable(default):
+            default = column.default()
+        if column.default is None and not column.nullable and name != "id":
             default = ...
 
         # Build the schema based on this info.
