@@ -49,19 +49,11 @@ async def log_book_event(entry: LogItem):
     # The endpoint receives a ``course_name``, but the ``useinfo`` table calls this ``course_id``. Rename it.
     useinfo_dict = entry.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course_name")
-    try:
-        useinfo_entry = UseinfoValidation(**useinfo_dict)
-    except Exception:
-        # TODO!
-        raise
+    useinfo_entry = UseinfoValidation(**useinfo_dict)
     idx = await create_useinfo_entry(useinfo_entry)
     if entry.event in EVENT2TABLE:
         table_name = EVENT2TABLE[entry.event]
-        try:
-            valid_table = validation_tables[table_name].from_orm(entry)
-        except Exception:
-            # TODO: report this in some better way.
-            raise
+        valid_table = validation_tables[table_name].from_orm(entry)
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
     else:
         ans_idx = True
