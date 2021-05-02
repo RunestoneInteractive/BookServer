@@ -16,8 +16,8 @@
 from fastapi import FastAPI, Request, Depends, Cookie, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse, JSONResponse
-from typing import Optional
 from pydantic.error_wrappers import ValidationError
+from typing import Optional
 
 # Local application imports
 # -------------------------
@@ -95,7 +95,9 @@ class NotAuthenticatedException(Exception):
 
 auth_manager.not_authenticated_exception = NotAuthenticatedException
 
-
+# Fast API makes it very easy to handle different error types in an
+# elegant way through the use of middleware to catch particular
+# exception types.
 @app.exception_handler(NotAuthenticatedException)
 def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     """
@@ -104,6 +106,8 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     return RedirectResponse(url="/auth/login")
 
 
+# See:  https://fastapi.tiangolo.com/tutorial/handling-errors/#use-the-requestvalidationerror-body
+# for more details on validation errors.
 @app.exception_handler(ValidationError)
 def level2_validation_handler(request: Request, exc: ValidationError):
     """
