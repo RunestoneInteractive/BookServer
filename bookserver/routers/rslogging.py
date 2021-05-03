@@ -11,12 +11,11 @@
 # Standard library
 # ----------------
 from datetime import datetime
-from typing import Optional
 
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie
+from fastapi import APIRouter, Request
 
 # Local application imports
 # -------------------------
@@ -24,7 +23,6 @@ from ..applogger import rslogger
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..models import UseinfoValidation, validation_tables
 from ..schemas import LogItemIncoming
-from ..session import auth_manager
 
 # Routing
 # =======

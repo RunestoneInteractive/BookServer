@@ -15,12 +15,10 @@
 #
 # Standard library
 # ----------------
-from os import access
-from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie
+from fastapi import APIRouter, Request
 
 # Local application imports
 # -------------------------
