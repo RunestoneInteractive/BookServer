@@ -11,6 +11,7 @@
 # ----------------
 import os.path
 import posixpath
+from datetime import datetime
 
 # Third-party imports
 # -------------------
@@ -111,6 +112,7 @@ async def serve_page(
             div_id=pagepath,
             course_id=course,
             sid=user.username,
+            timestamp=datetime.utcnow(),
         )
     )
     context = dict(

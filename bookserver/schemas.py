@@ -94,25 +94,18 @@ class LogItemIncoming(BaseModel):
     event: str
     act: str
     div_id: str
-    sid: str
     course_name: str
+    sid: Optional[str]
     answer: Optional[str]
     correct: Optional[bool]
     percent: Optional[float]
     clientLoginStatus: Optional[bool]
     timezoneoffset: Optional[int]
+    timestamp: Optional[datetime]
     chapter: Optional[str]
     subchapter: Optional[str]
     # used by parsons
     source: Optional[str]
-
-
-class LogItem(LogItemIncoming):
-    """
-    This may seem like overkill but it illustrates a point.  The schema for the incoming log data will not contain a timestamp.  We could make it optional there, but then that would imply that it is optional which it most certainly is not.  We could add timestamp as part of a LogItemCreate class similar to how password is handled in the tutorial: https://fastapi.tiangolo.com/tutorial/sql-databases/. But there is no security reason to exclude timestamp.  So I think this is a reasonable compromise.
-    """
-
-    timestamp: datetime
 
 
 class AssessmentRequest(BaseModel):

@@ -11,18 +11,20 @@
 # Standard library
 # ----------------
 from datetime import datetime
+from typing import Optional
 
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Cookie
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..models import UseinfoValidation, validation_tables
-from ..schemas import LogItem
+from ..schemas import LogItemIncoming
+from ..session import auth_manager
 
 # Routing
 # =======
@@ -39,17 +41,26 @@ router = APIRouter(
 # -----------------------
 # See :ref:`logBookEvent`.
 @router.post("/bookevent")
-async def log_book_event(entry: LogItem):
+async def log_book_event(
+    entry: LogItemIncoming, request: Request, access_token: Optional[str] = Cookie(None)
+):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
-    It uses the ``LogItem`` object to define the JSON payload it gets from a page of a book.
+    It uses the ``LogItemIncoming`` object to define the JSON payload it gets from a page of a book.
     """
     # Always use the server's time.
+    user = await auth_manager.get_current_user(access_token)
+    if user:
+        entry.sid = user.username
+    else:
+        entry.sid = "Anonymous"
+
     entry.timestamp = datetime.utcnow()
     # The endpoint receives a ``course_name``, but the ``useinfo`` table calls this ``course_id``. Rename it.
     useinfo_dict = entry.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course_name")
     useinfo_entry = UseinfoValidation(**useinfo_dict)
+    rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)
     if entry.event in EVENT2TABLE:
         table_name = EVENT2TABLE[entry.event]

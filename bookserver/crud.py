@@ -57,6 +57,7 @@ EVENT2TABLE = {
 async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidation:
     async with async_session() as session:
         new_entry = Useinfo(**log_entry.dict())
+        rslogger.debug(f"timestamp = {log_entry.timestamp} ")
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
         async with session.begin():
