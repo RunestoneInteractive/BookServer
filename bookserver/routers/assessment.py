@@ -48,11 +48,11 @@ async def get_assessment_results(
     # Otherwise if the user is an instructor then use the provided
     # sid (it could be any student in the class) If none is provided then
     # use the user objects username
-    if is_instructor:
+    if await is_instructor(request):
         if not request_data.sid:
             request_data.sid = request.state.user.username
     else:
-        request.data.sid = request.state.user.username
+        request_data.sid = request.state.user.username
 
     row = await fetch_last_answer_table_entry(request_data)
     if not row:

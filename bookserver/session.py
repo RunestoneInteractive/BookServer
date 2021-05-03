@@ -45,11 +45,13 @@ async def load_user(user_id: str):
     return await fetch_user(user_id)
 
 
-def is_instructor(request: Request) -> bool:
+async def is_instructor(request: Request) -> bool:
     user = request.state.user
     if user is None:
         raise HTTPException(401)
-    elif user.course_name in [x.course_name for x in fetch_instructor_courses(user.id)]:
+    elif user.course_name in [
+        x.course_name for x in await fetch_instructor_courses(user.id)
+    ]:
         return True
     else:
         return False
