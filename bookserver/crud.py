@@ -12,7 +12,7 @@
 #
 # Standard library
 # ----------------
-# None.
+from typing import List
 
 # Third-party imports
 # -------------------
@@ -27,6 +27,8 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import schemas
 from .models import (
+    CourseInstructor,
+    CourseInstructorValidator,
     answer_tables,
     AuthUser,
     AuthUserValidator,
@@ -109,6 +111,8 @@ async def fetch_last_answer_table_entry(
     return validation_tables[assessment].from_orm(res.scalars().first())
 
 
+# Courses
+# -------
 async def fetch_course(course_name: str) -> CoursesValidator:
     query = select(Courses).where(Courses.course_name == course_name)
     async with async_session() as session:
@@ -119,6 +123,8 @@ async def fetch_course(course_name: str) -> CoursesValidator:
     return CoursesValidator.from_orm(res.scalars().first())
 
 
+# auth_user
+# ---------
 async def fetch_user(user_name: str) -> AuthUserValidator:
     query = select(AuthUser).where(AuthUser.username == user_name)
     async with async_session() as session:
@@ -126,3 +132,22 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
         rslogger.debug(f"res = {res}")
     user = res.scalars().first()
     return AuthUserValidator.from_orm(user) if user else None
+
+
+# instructor_courses
+# ------------------
+async def fetch_instructor_courses(
+    instructor_id: int,
+) -> List[CourseInstructorValidator]:
+    """
+    return a list of courses for which the given userid is an instructor.
+    """
+
+    query = select(CourseInstructor).where(CourseInstructor.id == instructor_id)
+    async with async_session() as session:
+        res = await session.execute(query)
+
+    course_list = [
+        CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
+    ]
+    return course_list
