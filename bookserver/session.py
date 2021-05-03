@@ -49,9 +49,7 @@ async def is_instructor(request: Request) -> bool:
     user = request.state.user
     if user is None:
         raise HTTPException(401)
-    elif user.course_name in [
-        x.course_name for x in await fetch_instructor_courses(user.id)
-    ]:
+    elif len(await fetch_instructor_courses(user.id, user.course_id)) > 0:
         return True
     else:
         return False

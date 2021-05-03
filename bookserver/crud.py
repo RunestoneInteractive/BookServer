@@ -12,7 +12,7 @@
 #
 # Standard library
 # ----------------
-from typing import List
+from typing import List, Optional
 
 # Third-party imports
 # -------------------
@@ -137,13 +137,22 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
 # instructor_courses
 # ------------------
 async def fetch_instructor_courses(
-    instructor_id: int,
+    instructor_id: int, course_id: Optional[int] = None
 ) -> List[CourseInstructorValidator]:
     """
     return a list of courses for which the given userid is an instructor.
     """
 
-    query = select(CourseInstructor).where(CourseInstructor.id == instructor_id)
+    query = select(CourseInstructor)
+    if course_id is not None:
+        query = query.where(
+            and_(
+                CourseInstructor.instructor == instructor_id,
+                CourseInstructor.course == course_id,
+            )
+        )
+    else:
+        query = query.where(CourseInstructor.instructor == instructor_id)
     async with async_session() as session:
         res = await session.execute(query)
 
