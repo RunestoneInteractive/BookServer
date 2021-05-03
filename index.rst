@@ -27,6 +27,7 @@ Development support
     .gitignore
     .flake8
     mypy.ini
+    tox.ini
 
 
 Documentation generation
