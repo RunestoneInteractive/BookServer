@@ -35,6 +35,10 @@ from .session import auth_manager
 app = FastAPI()
 print(f"Serving books from {settings.book_path}.\n")
 
+# Install the auth_manager as middleware This will make the user
+# part of the request ``request.state.user`` `See FastAPI_Login Advanced <https://fastapi-login.readthedocs.io/advanced_usage/>`_
+auth_manager.useRequest(app)
+
 # Routing
 # -------
 #
@@ -104,6 +108,7 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     """
     Redirect the user to the login page if not logged in
     """
+    rslogger.debug("User is not logged in, redirecting")
     return RedirectResponse(url="/auth/login")
 
 
