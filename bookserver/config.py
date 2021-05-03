@@ -28,7 +28,7 @@ from pydantic import BaseSettings
 # Settings
 # ========
 # Define the possible bookserver configurations. The values assigned must  be strings, since Pydantic will match these with environment variables.
-class Config(Enum):
+class BookServerConfig(Enum):
     development = "development"
     test = "test"
     production = "production"
@@ -46,9 +46,9 @@ class Settings(BaseSettings):
     google_ga: str = ""
 
     # This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
-    config: Config = "development"  # type: ignore
+    book_server_config: BookServerConfig = "development"  # type: ignore
 
-    # `Database setup <setting.dev_dburl>`. It must be an async connection; for example:
+    # Database setup: this must be an async connection; for example:
     #
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
