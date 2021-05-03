@@ -55,11 +55,9 @@ async def log_book_event(entry: LogItem):
         table_name = EVENT2TABLE[entry.event]
         valid_table = validation_tables[table_name].from_orm(entry)
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
-    else:
-        ans_idx = True
+        rslogger.debug(ans_idx)
 
-    rslogger.debug(ans_idx)
-    if idx and ans_idx:
+    if idx:
         return {"status": "OK", "idx": idx}
     else:
         return {"status": "FAIL"}

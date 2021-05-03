@@ -326,17 +326,8 @@ class Courses(Base, IdMixin):
     downloads_enabled = Column(Web2PyBoolean)
     courselevel = Column(String)
 
-    ## # Create ``child_courses`` which all refer to a single ``parent_course``: children's ``base_course`` matches a parent's ``course_name``. See `adjacency list relationships <http://docs.sqlalchemy.org/en/latest/orm/self_referential.html#self-referential>`_.
-    ## child_courses = relationship(
-    ##
-    ##     "Courses", backref=backref("parent_course", remote_side=[course_name])
-    ## )
 
-    # Define a default query: the username if provided a string. Otherwise, automatically fall back to the id.
-    @classmethod
-    def default_query(cls, key):
-        if isinstance(key, str):
-            return cls.course_name == key
+CoursesValidator = sqlalchemy_to_pydantic(Courses)
 
 
 class AuthUser(Base, IdMixin):

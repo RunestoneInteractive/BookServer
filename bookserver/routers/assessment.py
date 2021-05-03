@@ -53,15 +53,11 @@ async def get_assessment_results(request_data: AssessmentRequest):
     if not row:
         return ""  # server doesn't have it so we load from local storage instead
 
-    # construct the return value from the XXXAnswer class
-    # TODO: Seems like something like this should be built in to sqlalchemy?
-    res = row.to_dict()
-
     # :index:`todo``: **port the serverside grading** code::
     #
     #   do_server_feedback, feedback = is_server_feedback(div_id, course)
     #   if do_server_feedback:
     #       correct, res_update = fitb_feedback(rows.answer, feedback)
     #       res.update(res_update)
-    rslogger.debug(f"Returning {res}")
-    return res
+    rslogger.debug(f"Returning {row}")
+    return row
