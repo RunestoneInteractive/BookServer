@@ -27,12 +27,14 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import schemas
 from .models import (
-    AuthUserValidator,
-    Useinfo,
-    AuthUser,
-    Courses,
-    UseinfoValidation,
     answer_tables,
+    AuthUser,
+    AuthUserValidator,
+    Courses,
+    CoursesValidator,
+    Useinfo,
+    UseinfoValidation,
+    validation_tables,
 )
 
 
@@ -52,17 +54,16 @@ EVENT2TABLE = {
 
 # useinfo
 # -------
-# TODO: mypy can't use this Pydantic class as a validator.Per https://pydantic-docs.helpmanual.io/usage/mypy/, perhaps this class contains annotations that are not the "annotation-only version of required fields", such as ``constr``?
-async def create_useinfo_entry(log_entry: UseinfoValidation):  # type: ignore
+async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidation:
     async with async_session() as session:
-        new_entry = Useinfo(**log_entry.dict())  # type: ignore
+        new_entry = Useinfo(**log_entry.dict())
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
         async with session.begin():
             r = session.add(new_entry)
             rslogger.debug(r)
 
-    return new_entry
+    return UseinfoValidation.from_orm(new_entry)
 
 
 # xxx_answers
@@ -72,18 +73,21 @@ async def create_answer_table_entry(
     log_entry: schemas.LogItemIncoming,
     # The event type.
     event: str,
-):
+) -> schemas.LogItemIncoming:
     rslogger.debug(f"hello from create at {log_entry}")
-    tbl = answer_tables[EVENT2TABLE[event]]
+    table_name = EVENT2TABLE[event]
+    tbl = answer_tables[table_name]
     new_entry = tbl(**log_entry.dict())
     async with async_session() as session:
         async with session.begin():
             session.add(new_entry)
     rslogger.debug(f"returning {new_entry}")
-    return new_entry
+    return validation_tables[table_name].from_orm(new_entry)
 
 
-async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
+async def fetch_last_answer_table_entry(
+    query_data: schemas.AssessmentRequest,
+) -> schemas.LogItemIncoming:
     assessment = EVENT2TABLE[query_data.event]
     tbl = answer_tables[assessment]
     query = (
@@ -101,20 +105,20 @@ async def fetch_last_answer_table_entry(query_data: schemas.AssessmentRequest):
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
 
-    return res.scalars().first()
+    return validation_tables[assessment].from_orm(res.scalars().first())
 
 
-async def fetch_course(course_name: str):
+async def fetch_course(course_name: str) -> CoursesValidator:
     query = select(Courses).where(Courses.course_name == course_name)
     async with async_session() as session:
         res = await session.execute(query)
     # When selecting ORM entries it is useful to use the ``scalars`` method
     # This modifies the result so that you are getting the ORM object
     # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
-    return res.scalars().first()
+    return CoursesValidator.from_orm(res.scalars().first())
 
 
-async def fetch_user(user_name: str):
+async def fetch_user(user_name: str) -> AuthUserValidator:
     query = select(AuthUser).where(AuthUser.username == user_name)
     async with async_session() as session:
         res = await session.execute(query)
