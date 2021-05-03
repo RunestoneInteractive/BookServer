@@ -13,6 +13,7 @@
 #
 # Standard library
 # ----------------
+from enum import Enum
 from pathlib import Path
 
 # Third-party imports
@@ -26,6 +27,13 @@ from pydantic import BaseSettings
 
 # Settings
 # ========
+# Define the possible bookserver configurations. The values assigned must  be strings, since Pydantic will match these with environment variables.
+class Config(Enum):
+    development = "development"
+    test = "test"
+    production = "production"
+
+
 class Settings(BaseSettings):
     # Pydantic provides a wonderful utility to handle settings.  The beauty of it
     # is that you can specify variables with or without default values, and Pydantic
@@ -37,8 +45,8 @@ class Settings(BaseSettings):
 
     google_ga: str = ""
 
-    # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`. TODO: Use an Enum for this instead! (Will that work with env vars?)
-    config: str = "development"
+    # This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
+    config: Config = "development"  # type: ignore
 
     # `Database setup <setting.dev_dburl>`. It must be an async connection; for example:
     #
@@ -47,6 +55,15 @@ class Settings(BaseSettings):
     prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
     dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
     test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
+
+    # Determine the database URL based on the ``config`` and the dburls above.
+    @property
+    def database_url(self):
+        return {
+            "development": self.dev_dburl,
+            "test": self.test_dburl,
+            "production": self.prod_dburl,
+        }[self.config.value]
 
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
