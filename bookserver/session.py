@@ -19,12 +19,14 @@
 
 # Third-party imports
 # -------------------
+from fastapi import Request
+from fastapi.exceptions import HTTPException
 from fastapi_login import LoginManager
 
 # Local application imports
 # -------------------------
 from .config import settings
-from .crud import fetch_user
+from .crud import fetch_instructor_courses, fetch_user
 from .applogger import rslogger
 
 
@@ -41,3 +43,13 @@ async def load_user(user_id: str):
     """
     rslogger.debug(f"Going to fetch {user_id}")
     return await fetch_user(user_id)
+
+
+def is_instructor(request: Request) -> bool:
+    user = request.state.user
+    if user is None:
+        raise HTTPException(401)
+    elif user.course_name in [x.course_name for x in fetch_instructor_courses(user.id)]:
+        return True
+    else:
+        return False

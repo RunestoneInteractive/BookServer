@@ -41,24 +41,25 @@ router = APIRouter(
 # -----------------------
 # See :ref:`logBookEvent`.
 @router.post("/bookevent")
-async def log_book_event(
-    entry: LogItemIncoming, request: Request, access_token: Optional[str] = Cookie(None)
-):
+async def log_book_event(entry: LogItemIncoming, request: Request):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItemIncoming`` object to define the JSON payload it gets from a page of a book.
     """
-    # Always use the server's time.
-    user = await auth_manager.get_current_user(access_token)
-    if user:
-        entry.sid = user.username
+    # The middleware will set the user if they are logged in.
+    if request.state.user:
+        entry.sid = request.state.user.username
     else:
         entry.sid = "Anonymous"
 
+    # Always use the server's time.
     entry.timestamp = datetime.utcnow()
     # The endpoint receives a ``course_name``, but the ``useinfo`` table calls this ``course_id``. Rename it.
     useinfo_dict = entry.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course_name")
+    # This will validate the fields.  If a field does not validate
+    # an error will be raised and a 422 response code will be returned
+    # to the caller of the API
     useinfo_entry = UseinfoValidation(**useinfo_dict)
     rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)

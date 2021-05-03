@@ -15,17 +15,19 @@
 #
 # Standard library
 # ----------------
-# None.
+from os import access
+from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Cookie
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import fetch_last_answer_table_entry
 from ..schemas import AssessmentRequest
+from ..session import is_instructor
 
 # Routing
 # =======
@@ -39,15 +41,20 @@ router = APIRouter(
 # getAssessResults
 # ----------------
 @router.post("/results")
-async def get_assessment_results(request_data: AssessmentRequest):
-    # if (
-    #     verifyInstructorStatus(auth.user.course_name, auth.user) and request.vars.sid
-    # ):  # retrieving results for grader
-    #     sid = request.vars.sid
-    # else:
-    #     sid = auth.user.username
+async def get_assessment_results(
+    request_data: AssessmentRequest,
+    request: Request,
+):
 
-    # Identify the correct event and query the database so we can load it from the server
+    # if the user is not logged in an HTTP 401 will be returned.
+    # Otherwise if the user is an instructor then use the provided
+    # sid (it could be any student in the class) If none is provided then
+    # use the user objects username
+    if is_instructor:
+        if not request_data.sid:
+            request_data.sid = request.state.user.username
+    else:
+        request.data.sid = request.state.user.username
 
     row = await fetch_last_answer_table_entry(request_data)
     if not row:

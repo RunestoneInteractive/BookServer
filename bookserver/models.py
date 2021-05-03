@@ -350,3 +350,14 @@ class AuthUser(Base, IdMixin):
 
 
 AuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
+
+
+class CourseInstructor(Base, IdMixin):
+    __tablename__ = "course_instructor"
+    course = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    instructor = Column(Integer, ForeignKey("auth_user.id"))
+    verified = Column(Web2PyBoolean)
+    paid = Column(Web2PyBoolean)
+
+
+CourseInstructorValidator = sqlalchemy_to_pydantic(CourseInstructor)
