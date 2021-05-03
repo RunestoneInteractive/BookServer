@@ -6,7 +6,6 @@ BookServer web application
     :maxdepth: 1
 
     ../docs/installation
-    ../docs/goals
     ../docs/design
     ../docs/dev_guide
     main.py
@@ -16,7 +15,6 @@ BookServer web application
     session.py
     applogger.py
     crud.py
-    dependencies.py
     routers/toctree
     internal/toctree
     templates/auth/login.html

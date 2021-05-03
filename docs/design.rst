@@ -3,17 +3,23 @@ Design
 ******
 This document describes the design of a new book server for Runestone implemented in this repository.  Over the last 10 years we have learned a lot, our Javascript and Python skills have improved. The Python world has added a lot of new tools and created web frameworks that are far more scalable that anything available in 2011 when this project first began.  This represents a partial port/rewrite of the work that has evolved over the years.  Its long past time to clean away the cruft of the many cooks that have contributed to the project.  The cruft is nobody's fault, it is just the natural result of a program that grew organically.
 
-:index:`todo`: **This looks like a duplicate** of `goals` -- should we delete `goals`?
-
 The goals for this new book server are as follows:
 
--   Separate the book server from the instructor/admin server
--   Move to `FastAPI <https://fastapi.tiangolo.com>`_ as the framework
--   Make this book server "pip installable" and a replacement for the current server used for the runestone serve command
+-   Split the Runestone Server into two parts:
+
+    -   The instructor web app -- low volume fewer users.
+    -   The book server -- high volume many many users.
+
+-   Begin migrating to a modern development framework
+
+    -   `FastAPI <https://fastapi.tiangolo.com>`_ - an async web framework in the spirit of Flask
+    -   SQLAlchemy or another database layer that will support tracking of indices and migrations
+
+-   Make this book server "pip installable" and run with SQLite out of the box. It is a replacement for the current server used for the runestone serve command.
 -   Serve dynamic pages and handle all book interaction related API calls
 -   Use SQLite or PostgreSQL database so that an author can install with minimal system dependencies
 -   Design the book server to be highly scalable with Docker containers and a container manager like Kubernetes from the beginning.
--   Full system testability.
+-   Full system testability, with build-in ``pytest`` tests and documentation from the ground up with full coverage.
 -   rename and reorganize the Runestone Component API using RESTful concepts to make it easier for others to learn and contribute to.
 
 
