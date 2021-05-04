@@ -14,7 +14,6 @@
 # Standard library
 # ----------------
 from enum import Enum
-from functools import lru_cache
 from pathlib import Path
 
 # Third-party imports
@@ -81,11 +80,16 @@ class Settings(BaseSettings):
     web2py_path: str = str(Path(__file__).parents[2] / "web2py")
 
     # This is the private key web2py uses for hashing passwords.
-    @property  # type: ignore
-    @lru_cache
+    @property
     def web2py_private_key(self) -> str:
-        with open(self.web2py_path, encoding="utf-8") as f:
-            return f.read()
+        authfile = Path(self.web2py_path) / "private" / "auth.key"
+        with open(authfile, encoding="utf-8") as f:
+            return f.read().strip()
+
+    # web2py_private_key: str = "sha512:16492eda-ba33-48d4-8748-98d9bbdf8d33"
+    # if you want to reinitialize your database set this to Yes
+    # All data in the database will be lost
+    drop_tables: str = "Yes"
 
 
 settings = Settings()
