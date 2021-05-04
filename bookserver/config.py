@@ -13,6 +13,8 @@
 #
 # Standard library
 # ----------------
+from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 
 # Third-party imports
@@ -26,6 +28,13 @@ from pydantic import BaseSettings
 
 # Settings
 # ========
+# Define the possible bookserver configurations. The values assigned must  be strings, since Pydantic will match these with environment variables.
+class BookServerConfig(Enum):
+    development = "development"
+    test = "test"
+    production = "production"
+
+
 class Settings(BaseSettings):
     # Pydantic provides a wonderful utility to handle settings.  The beauty of it
     # is that you can specify variables with or without default values, and Pydantic
@@ -37,16 +46,25 @@ class Settings(BaseSettings):
 
     google_ga: str = ""
 
-    # Either ``development``, ``production``, or ``test``, per `this code <setting.dev_dburl>`. TODO: Use an Enum for this instead! (Will that work with env vars?)
-    config: str = "development"
+    # This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
+    book_server_config: BookServerConfig = "development"  # type: ignore
 
-    # `Database setup <setting.dev_dburl>`. It must be an async connection; for example:
+    # Database setup: this must be an async connection; for example:
     #
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
     prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
     dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
     test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
+
+    # Determine the database URL based on the ``config`` and the dburls above.
+    @property
+    def database_url(self) -> str:
+        return {
+            "development": self.dev_dburl,
+            "test": self.test_dburl,
+            "production": self.prod_dburl,
+        }[self.book_server_config.value]
 
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
@@ -59,9 +77,15 @@ class Settings(BaseSettings):
     # This is the secret key used for generating the JWT token
     secret: str = "supersecret"
 
+    # The path to web2py.
+    web2py_path: str = str(Path(__file__).parents[2] / "web2py")
+
     # This is the private key web2py uses for hashing passwords.
-    # For CI purposes this matches my private dev server.
-    web2py_private_key: str = "sha512:16492eda-ba33-48d4-8748-98d9bbdf8d33"
+    @property  # type: ignore
+    @lru_cache
+    def web2py_private_key(self) -> str:
+        with open(self.web2py_path, encoding="utf-8") as f:
+            return f.read()
 
 
 settings = Settings()

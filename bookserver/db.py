@@ -22,23 +22,15 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # -------------------------
 from .config import settings
 
-# .. _setting.dev_dburl:
-if settings.config == "development":
-    DATABASE_URL = settings.dev_dburl
-elif settings.config == "production":
-    DATABASE_URL = settings.prod_dburl
-elif settings.config == "test":
-    DATABASE_URL = settings.test_dburl
-else:
-    assert False
-
-if DATABASE_URL.startswith("sqlite"):
+if settings.database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {}
 
 # TODO: Remove the ``echo=True`` when done debugging.
-engine = create_async_engine(DATABASE_URL, connect_args=connect_args, echo=True)
+engine = create_async_engine(
+    settings.database_url, connect_args=connect_args, echo=True
+)
 # This creates the SessionLocal class.  An actual session is an instance of this class.
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
