@@ -23,6 +23,7 @@ from typing import Optional
 # -------------------------
 from .applogger import rslogger
 from .config import settings
+from .crud import create_initial_courses_users
 from .db import init_models
 from .routers import assessment
 from .routers import auth
@@ -57,6 +58,7 @@ app.include_router(auth.router)
 @app.on_event("startup")
 async def startup():
     await init_models()
+    await create_initial_courses_users()
 
 
 ## @app.on_event("shutdown")

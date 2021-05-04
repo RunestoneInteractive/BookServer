@@ -13,8 +13,8 @@
 # Standard library
 # ----------------
 from typing import List, Optional
+import datetime
 
-from sqlalchemy.exc import IntegrityError
 
 # Third-party imports
 # -------------------
@@ -24,6 +24,7 @@ from pydal.validators import CRYPT
 # import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
+from sqlalchemy.exc import IntegrityError
 
 # Local application imports
 # -------------------------
@@ -126,6 +127,15 @@ async def fetch_course(course_name: str) -> CoursesValidator:
     return CoursesValidator.from_orm(res.scalars().first())
 
 
+async def create_course(course_info: CoursesValidator) -> CoursesValidator:
+    new_course = Courses(**course_info.dict())
+    async with async_session() as session:
+        res = session.add(new_course)
+        await session.commit()
+
+    return CoursesValidator.from_orm(res) if res else None
+
+
 # auth_user
 # ---------
 async def fetch_user(user_name: str) -> AuthUserValidator:
@@ -137,19 +147,20 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     return AuthUserValidator.from_orm(user) if user else None
 
 
-async def create_user_entry(user: AuthUserValidator) -> int:
+async def create_user(user: AuthUserValidator) -> int:
     """
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
     """
-    new_user = AuthUser(**user)
+    new_user = AuthUser(**user.dict())
+    print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)
     new_user.password = str(crypt(user.password)[0])
     res = None
     try:
-        async with async_session as session:
+        async with async_session() as session:
             res = session.add(new_user)
-            session.commit()
+            await session.commit()
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
 
@@ -184,3 +195,50 @@ async def fetch_instructor_courses(
         CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
     ]
     return course_list
+
+
+async def create_initial_courses_users():
+    if settings.drop_tables == "Yes":
+        print("Populating Courses")
+        BASE_COURSES = [
+            "ac1",
+            "cppds",
+            "cppforpython",
+            "csawesome",
+            "csjava",
+            "fopp",
+            "httlads",
+            "java4python",
+            "JS4Python",
+            "learnwebgl2",
+            "MasteringDatabases",
+            "overview",
+            "py4e-int",
+            "pythonds",
+            "pythonds3",
+            "StudentCSP",
+            "TeacherCSP",
+            "thinkcpp",
+            "thinkcspy",
+            "webfundamentals",
+        ]
+
+        for c in BASE_COURSES:
+            new_course = CoursesValidator(
+                course_name=c,
+                base_course=c,
+                term_start_date=datetime.date(2000, 1, 1),
+            )
+            await create_course(new_course)
+        # make a user
+        await create_user(
+            AuthUserValidator(
+                username="testuser1",
+                first_name="test",
+                last_name="user",
+                password="xxx",
+                email="testuser1@example.com",
+                course_name="overview",
+                course_id=12,
+            )
+        )

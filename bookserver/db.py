@@ -9,7 +9,7 @@
 #
 # Standard library
 # ----------------
-# None.
+
 #
 # Third-party imports
 # -------------------
@@ -21,6 +21,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # Local application imports
 # -------------------------
 from .config import settings
+
 
 if settings.database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
@@ -39,8 +40,11 @@ Base = declarative_base()
 
 
 async def init_models():
+
     async with engine.begin() as conn:
-        # await conn.run_sync(Base.metadata.drop_all)
+        if settings.drop_tables == "Yes":
+            await conn.run_sync(Base.metadata.drop_all)
+
         await conn.run_sync(Base.metadata.create_all)
 
 
