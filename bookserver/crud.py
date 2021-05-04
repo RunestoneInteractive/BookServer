@@ -14,9 +14,12 @@
 # ----------------
 from typing import List, Optional
 
+from sqlalchemy.exc import IntegrityError
+
 # Third-party imports
 # -------------------
 from .db import async_session
+from pydal.validators import CRYPT
 
 # import sqlalchemy
 from sqlalchemy import and_
@@ -38,7 +41,7 @@ from .models import (
     UseinfoValidation,
     validation_tables,
 )
-
+from .config import settings
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -134,6 +137,25 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     return AuthUserValidator.from_orm(user) if user else None
 
 
+async def create_user_entry(user: AuthUserValidator) -> int:
+    """
+    The given user will have the password in plain text.  First we will hash
+    the password then add this user to the database.
+    """
+    new_user = AuthUser(**user)
+    crypt = CRYPT(key=settings.web2py_private_key, salt=True)
+    new_user.password = str(crypt(user.password)[0])
+    res = None
+    try:
+        async with async_session as session:
+            res = session.add(new_user)
+            session.commit()
+    except IntegrityError:
+        rslogger.error("Failed to add a duplicate user")
+
+    return AuthUserValidator.from_orm(res) if res else None
+
+
 # instructor_courses
 # ------------------
 async def fetch_instructor_courses(
@@ -141,6 +163,8 @@ async def fetch_instructor_courses(
 ) -> List[CourseInstructorValidator]:
     """
     return a list of courses for which the given userid is an instructor.
+    If the optional course_id value is included then retur the row for that
+    course to verify that instructor_id is an instructor for course_id
     """
 
     query = select(CourseInstructor)
