@@ -7,12 +7,8 @@ To run the tests, execute ``poetry run pytest`` from this subdirectory. FastAPI 
     :maxdepth: 1
 
     test_rslogging.py
+    test_runestone_components.py
     conftest.py
-
-Continuous Integration
-----------------------
-.. toctree::
-    :maxdepth: 1
-
-    ../ci_utils/ci_utils.py
+    pytest.ini
+    ci_utils.py
     ../.github/workflows/python-package.yml

@@ -328,7 +328,7 @@ intersphinx_mapping = {
         (
             None,
             # An optional local file location -- useful when updating both Sphinx builds before the updates are pushed to the server.
-            ##"C:/Users/bjones/Documents/git/RunestoneComponents/build/RunestoneComponents/objects.inv",
+            "C:/Users/bjones/Documents/git/RunestoneComponents/build/RunestoneComponents/objects.inv",
         ),
     )
 }

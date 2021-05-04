@@ -36,6 +36,12 @@ class BookServerConfig(Enum):
     production = "production"
 
 
+# A enum for the type of database in use.
+class DatabaseType(Enum):
+    SQLite = 0
+    PostgreSQL = 1
+
+
 class Settings(BaseSettings):
     # Pydantic provides a wonderful utility to handle settings.  The beauty of it
     # is that you can specify variables with or without default values, and Pydantic
@@ -72,6 +78,18 @@ class Settings(BaseSettings):
             "test": self.test_dburl,
             "production": self.prod_dburl,
         }[self.book_server_config.value]
+
+    # Determine the database type from the URL.
+    @property
+    def database_type(self) -> DatabaseType:
+        dburl = self.database_url
+        if dburl.startswith("sqlite"):
+            return DatabaseType.SQLite
+        elif dburl.startswith("postgresql"):
+            return DatabaseType.PostgreSQL
+        else:
+            raise RuntimeError(f"Unknown database type; URL is {dburl}.")
+
 
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""

@@ -20,10 +20,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Local application imports
 # -------------------------
-from .config import settings, BookServerConfig
+from .config import settings, BookServerConfig, DatabaseType
 
 
-if settings.database_url.startswith("sqlite"):
+if settings.database_type == DatabaseType.SQLite:
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {}
