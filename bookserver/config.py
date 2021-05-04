@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
     prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
-    dev_dburl: str = "postgresql+asyncpg://postgres:bully@localhost/runestone"
+    dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
     test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
 
     # Determine the database URL based on the ``config`` and the dburls above.
