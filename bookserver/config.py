@@ -14,7 +14,7 @@
 # Standard library
 # ----------------
 from enum import Enum
-from functools import cache
+from functools import lru_cache
 from pathlib import Path
 
 # Third-party imports
@@ -82,7 +82,7 @@ class Settings(BaseSettings):
 
     # This is the private key web2py uses for hashing passwords.
     @property  # type: ignore
-    @cache
+    @lru_cache
     def web2py_private_key(self) -> str:
         with open(self.web2py_path, encoding="utf-8") as f:
             return f.read()
