@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     # web2py_private_key: str = "sha512:16492eda-ba33-48d4-8748-98d9bbdf8d33"
     # if you want to reinitialize your database set this to Yes
     # All data in the database will be lost
-    drop_tables: str = "Yes"
+    drop_tables: str = "No"
 
 
 settings = Settings()
