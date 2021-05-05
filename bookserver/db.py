@@ -20,7 +20,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Local application imports
 # -------------------------
-from .config import settings
+from .config import settings, BookServerConfig
 
 
 if settings.database_url.startswith("sqlite"):
@@ -42,7 +42,11 @@ Base = declarative_base()
 async def init_models():
 
     async with engine.begin() as conn:
-        if settings.drop_tables == "Yes":
+        if (
+            settings.book_server_config
+            in [BookServerConfig.development, BookServerConfig.test]
+            and settings.drop_tables == "Yes"
+        ):
             await conn.run_sync(Base.metadata.drop_all)
 
         await conn.run_sync(Base.metadata.create_all)

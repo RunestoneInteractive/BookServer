@@ -23,8 +23,7 @@ from pydantic import BaseSettings
 
 # Local application imports
 # -------------------------
-# None.
-
+from .applogger import rslogger
 
 # Settings
 # ========
@@ -47,6 +46,12 @@ class Settings(BaseSettings):
     google_ga: str = ""
 
     # This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
+    # .. admonition: warning
+    #
+    #    When using an Enum for a configuration setting you cannot compare against
+    #    a string.  The value will actually be BookServerConfig.development or whatever
+    #    Our style will be to compare against the Enum not the .name attribute
+    #
     book_server_config: BookServerConfig = "development"  # type: ignore
 
     # Database setup: this must be an async connection; for example:
@@ -91,15 +96,21 @@ class Settings(BaseSettings):
             key_file = (
                 Path(self.web2py_path) / "applications/runestone/private/auth.key"
             )
-            with open(key_file, encoding="utf-8") as f:
-                return f.read().strip()
+            if not key_file.exists():
+                key_file = Path(self.web2py_path) / "private/auth.key"
+            if key_file.exists():
+                with open(key_file, encoding="utf-8") as f:
+                    return f.read().strip()
+            else:
+                rslogger.error("No Key file is found will default to settings.secret")
+                return self.secret
 
         return read_key()
 
     # if you want to reinitialize your database set this to Yes
     # All data in the database will be lost! This will only work for
     # development and test ``book_server_config`` settings
-    drop_tables: str = "No"
+    drop_tables: str = "Yes"
 
 
 settings = Settings()
