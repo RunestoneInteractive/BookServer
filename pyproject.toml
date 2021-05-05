@@ -55,6 +55,8 @@ pytest-asyncio = "^0.15.1"
 # See https://python-poetry.org/docs/dependency-specification/#path-dependencies. After some testing, Poetry v.1.1.6 allows both ``runestone`` to be specified in the dependencies as a PyPI package and here in the dev dependencies as a local install, and will prefer the local install here. The local install is necessary, since the tests aren't in the PyPI Runestone Components package.
 runestone = { path = "C:/Users/bjones/Documents/git/RunestoneComponents", develop = true }
 pytest-env = "^0.6.2"
+# This is a Runestone Components dependency that's needed when testing PostgreSQL.
+psycopg2 = "^2.8.6"
 
 # Scripts
 # =======
@@ -78,5 +80,5 @@ addopts = "--ignore=_build"
 #collect_ignore = ["_build"]
 # The `pytest-env <https://github.com/MobileDynasty/pytest-env>`_ plugin sets these environment variables. Set them here, before imports, since bookserver imports read from the environment variables.
 env = [
-    "BOOK_SERVER_CONFIG=test"
+    "BOOK_SERVER_CONFIG=test",
 ]

@@ -73,6 +73,7 @@ async def login(
 
     rslogger.debug(f"username = {username}")
     user = await load_user(username)
+    rslogger.debug(user)
     # um = UserManagerWeb2Py()
     if not user:
         # raise InvalidCredentialsException
@@ -87,6 +88,8 @@ async def login(
         # variable that comes from the ``private/auth.key`` file.
         salt = user.password.split("$")[1]
         crypt = CRYPT(key=settings.web2py_private_key, salt=salt)
+        rslogger.debug(str(crypt(password)[0]))
+        rslogger.debug(user.password)
         if str(crypt(password)[0]) != user.password:
             raise InvalidCredentialsException
 
