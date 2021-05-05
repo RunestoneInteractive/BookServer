@@ -42,7 +42,7 @@ from .models import (
     UseinfoValidation,
     validation_tables,
 )
-from .config import settings
+from .config import settings, BookServerConfig
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -61,14 +61,13 @@ EVENT2TABLE = {
 # useinfo
 # -------
 async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidation:
-    async with async_session() as session:
+    async with async_session.begin() as session:
         new_entry = Useinfo(**log_entry.dict())
         rslogger.debug(f"timestamp = {log_entry.timestamp} ")
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
-        async with session.begin():
-            r = session.add(new_entry)
-            rslogger.debug(r)
+        r = session.add(new_entry)
+        rslogger.debug(r)
 
     return UseinfoValidation.from_orm(new_entry)
 
@@ -85,9 +84,8 @@ async def create_answer_table_entry(
     table_name = EVENT2TABLE[event]
     tbl = answer_tables[table_name]
     new_entry = tbl(**log_entry.dict())
-    async with async_session() as session:
-        async with session.begin():
-            session.add(new_entry)
+    async with async_session.begin() as session:
+        session.add(new_entry)
     rslogger.debug(f"returning {new_entry}")
     return validation_tables[table_name].from_orm(new_entry)
 
@@ -129,9 +127,8 @@ async def fetch_course(course_name: str) -> CoursesValidator:
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
-    async with async_session() as session:
+    async with async_session.begin() as session:
         res = session.add(new_course)
-        await session.commit()
 
     return CoursesValidator.from_orm(res) if res else None
 
@@ -158,9 +155,8 @@ async def create_user(user: AuthUserValidator) -> int:
     new_user.password = str(crypt(user.password)[0])
     res = None
     try:
-        async with async_session() as session:
+        async with async_session.begin() as session:
             res = session.add(new_user)
-            await session.commit()
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
 
@@ -177,7 +173,6 @@ async def fetch_instructor_courses(
     If the optional course_id value is included then retur the row for that
     course to verify that instructor_id is an instructor for course_id
     """
-
     query = select(CourseInstructor)
     if course_id is not None:
         query = query.where(
@@ -197,13 +192,21 @@ async def fetch_instructor_courses(
     return course_list
 
 
+# Development and Testing Utils
+# -----------------------------
+#
+# This function is useful for development.  It recreates the database
+# and populates it with the common base courses and creates a test user
+#
 async def create_initial_courses_users():
     # never ever drop tables in a production environment
+    rslogger.debug(f"HELLO {settings.book_server_config} - {settings.drop_tables}")
     if (
-        settings.book_server_config in ["development", "test"]
+        settings.book_server_config
+        in [BookServerConfig.development, BookServerConfig.test]
         and settings.drop_tables == "Yes"
     ):
-        print("Populating Courses")
+        rslogger.debug("Populating Courses")
         BASE_COURSES = [
             "ac1",
             "cppds",
