@@ -3,7 +3,15 @@
 # *****************************************
 # In this file we define our SQLAlchemy data models. These get translated into relational database tables.
 #
-# Because of the interface with the `databases package <https://www.encode.io/databases/>`_ we will use the `SQLAlchemy core API <https://docs.sqlalchemy.org/en/14/core/>`_
+# Many of the models in this file were generated automatically for us by the ``sqlacodegen`` tool
+# See `pypi for details <https://pypi.org/project/sqlacodegen/>`_   Although we are defining these using
+# the declarative base style we will be using the SQLAlchemy Core for queries.  We are using
+# SQLAlchemy 1.4.x in preparation for 2.0 and the more unified interface it provides for mixing
+# declarative with core style queries.
+#
+# The models are created to be backward compatible with our current web2py implementation of
+# Runestone.  Some decisions we would make differently but we won't be changing those things
+# until we port the instructor interface to the FastAPI framework.
 #
 # Migrations
 # ==========
@@ -130,33 +138,6 @@ class Useinfo(Base, IdMixin):
 
 
 UseinfoValidation = sqlalchemy_to_pydantic(Useinfo)
-
-
-# Questions
-# ---------
-# A question in the book; this data is provided by Sphinx.
-class Questions(Base, IdMixin):
-    __tablename__ = "questions"
-    # The base_course_ this question is in.
-    base_course = Column(String(512), nullable=False)
-    # The div_id_ for this question. TODO: Rename this!
-    name = Column(String(512), nullable=False, index=True)
-    # matches chapter_label, not name
-    chapter = Column(String(512))
-    # matches sub_chapter_label, not name
-    subchapter = Column(String(512))
-    author = Column(String(512))
-    difficulty = Column(Integer)
-    question = Column(Text)
-    timestamp = Column(DateTime)
-    question_type = Column(String(512))
-    is_private = Column(Web2PyBoolean)
-    htmlsrc = Column(Text)
-    autograde = Column(String(512))
-    __table_args__ = (
-        Index("idx_quests_chap_subchap", "chapter", "subchapter"),
-        UniqueConstraint("name", "base_course", name="const_uniq_name_bc"),
-    )
 
 
 # Answers to specific question types
@@ -306,6 +287,20 @@ class Code(Base, IdMixin):
     comment = Column(Text, index=False)
 
 
+# Used for datafiles and storing questions and their suffix separately.
+# this maybe redundant TODO: check before we port the api call to get
+# a datafile
+class SourceCode(Base, IdMixin):
+    __tablename__ = "source_code"
+
+    acid = Column(String(512), index=True)
+    course_id = Column(String(512), index=True)
+    includes = Column(String(512))
+    available_files = Column(String(512))
+    main_code = Column(Text)
+    suffix_code = Column(Text)
+
+
 # Courses
 # -------
 # Every Course in the runestone system must have an entry in this table
@@ -330,6 +325,8 @@ class Courses(Base, IdMixin):
 CoursesValidator = sqlalchemy_to_pydantic(Courses)
 
 
+# Authentication and Permissions
+# ------------------------------
 class AuthUser(Base, IdMixin):
     __tablename__ = "auth_user"
     username = Column(String(512), nullable=False, unique=True)
@@ -361,3 +358,237 @@ class CourseInstructor(Base, IdMixin):
 
 
 CourseInstructorValidator = sqlalchemy_to_pydantic(CourseInstructor)
+
+
+# Enrollments
+# -----------
+#
+# Users may be enrolled in more than one course. This table tracks
+# all of their enrollments
+class UserCourse(Base, IdMixin):
+    __tablename__ = "user_courses"
+
+    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
+    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"))
+
+
+# Assignments and Questions
+# -------------------------
+
+
+class Question(Base, IdMixin):
+    __tablename__ = "questions"
+    __table_args__ = (
+        UniqueConstraint("name", "base_course"),
+        Index("chap_subchap_idx", "chapter", "subchapter"),
+    )
+
+    base_course = Column(String(512), nullable=False, index=True)
+    name = Column(String(512), nullable=False, index=True)
+    chapter = Column(String(512), index=True)
+    subchapter = Column(String(512), index=True)
+    author = Column(String(512))
+    question = Column(Text)
+    timestamp = Column(DateTime)
+    question_type = Column(String(512))
+    is_private = Column(Web2PyBoolean)
+    htmlsrc = Column(Text)
+    autograde = Column(String(512))
+    practice = Column(Web2PyBoolean)
+    topic = Column(String(512))
+    feedback = Column(Text)
+    from_source = Column(Web2PyBoolean)
+    review_flag = Column(Web2PyBoolean)
+    qnumber = Column(String(512))
+    optional = Column(Web2PyBoolean)
+    description = Column(Text)
+    difficulty = Column(Float(53))
+    pct_on_first = Column(Float(53))
+    mean_clicks_to_correct = Column(Float(53))
+
+
+class Assignment(Base, IdMixin):
+    __tablename__ = "assignments"
+    __table_args__ = (
+        Index("assignments_name_course_idx", "name", "course", unique=True),
+    )
+
+    course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
+    name = Column(String(512))
+    points = Column(Integer)
+    released = Column(Web2PyBoolean)
+    description = Column(Text)
+    duedate = Column(DateTime)
+    visible = Column(Web2PyBoolean)
+    threshold_pct = Column(Float(53))
+    allow_self_autograde = Column(Web2PyBoolean)
+    is_timed = Column(Web2PyBoolean)
+    time_limit = Column(Integer)
+    from_source = Column(Web2PyBoolean)
+    nofeedback = Column(Web2PyBoolean)
+    nopause = Column(Web2PyBoolean)
+
+
+class AssignmentQuestion(Base, IdMixin):
+    __tablename__ = "assignment_questions"
+
+    assignment_id = Column(ForeignKey("assignments.id", ondelete="CASCADE"))
+    question_id = Column(ForeignKey("questions.id", ondelete="CASCADE"))
+    points = Column(Integer)
+    timed = Column(Web2PyBoolean)
+    autograde = Column(String(512))
+    which_to_grade = Column(String(512))
+    reading_assignment = Column(Web2PyBoolean)
+    sorting_priority = Column(Integer)
+    activities_required = Column(Integer)
+
+
+# Grading
+# -------
+# The QuestionGrade table holds the score and any comments for a particular
+# student,question,course triple
+# TODO: this actually seems wrong -- it should be student,question,assignment
+# otherwise a student can only have a single grade for a particular question
+# what if an instructor assigns the same question more than once??
+class QuestionGrade(Base, IdMixin):
+    __tablename__ = "question_grades"
+    __table_args__ = (
+        Index(
+            "question_grades_sid_course_name_div_id_idx",
+            "sid",
+            "course_name",
+            "div_id",
+            unique=True,
+        ),
+    )
+
+    sid = Column(String(512), nullable=False)
+    course_name = Column(String(512), nullable=False)
+    div_id = Column(String(512), nullable=False)
+    score = Column(Float(53))
+    comment = Column(Text)
+    deadline = Column(DateTime)
+    answer_id = Column(Integer)
+
+
+# The Grade table holds the grade for an entire assignment
+class Grade(Base, IdMixin):
+    __tablename__ = "grades"
+    __table_args__ = (UniqueConstraint("auth_user", "assignment"),)
+
+    auth_user = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
+    assignment = Column(ForeignKey("assignments.id", ondelete="CASCADE"))
+    score = Column(Float(53))
+    manual_total = Column(Web2PyBoolean)
+    projected = Column(Float(53))
+    lis_result_sourcedid = Column(String(1024))
+    lis_outcome_url = Column(String(1024))
+
+
+# Book Structure Tables
+# ---------------------
+class Chapter(Base, IdMixin):
+    __tablename__ = "chapters"
+
+    chapter_name = Column(String(512))
+    course_id = Column(String(512), index=True)
+    chapter_label = Column(String(512))
+    chapter_num = Column(Integer)
+
+
+class SubChapter(Base, IdMixin):
+    __tablename__ = "sub_chapters"
+
+    sub_chapter_name = Column(String(512))
+    chapter_id = Column(ForeignKey("chapters.id", ondelete="CASCADE"), index=True)
+    sub_chapter_label = Column(String(512))
+    skipreading = Column(Web2PyBoolean)
+    sub_chapter_num = Column(Integer)
+
+
+# Tracking User Progress
+# ----------------------
+class UserSubChapterProgres(Base, IdMixin):
+    __tablename__ = "user_sub_chapter_progress"
+
+    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True)
+    chapter_id = Column(String(512), index=True)
+    sub_chapter_id = Column(String(512), index=True)
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    status = Column(Integer)
+    course_name = Column(String(512))
+
+
+class UserChapterProgres(Base, IdMixin):
+    __tablename__ = "user_chapter_progress"
+
+    user_id = Column(String(512))
+    chapter_id = Column(String(512))
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    status = Column(Integer)
+
+
+# Tables used by the ``selectquestion`` directive
+# -----------------------------------------------
+
+
+class UserExperiment(Base, IdMixin):
+    __tablename__ = "user_experiment"
+
+    experiment_id = Column(String(512))
+    sid = Column(String(512))
+    exp_group = Column(Integer)
+
+
+class SelectedQuestion(Base, IdMixin):
+    __tablename__ = "selected_questions"
+
+    selector_id = Column(String(512))
+    sid = Column(String(512))
+    selected_id = Column(String(512))
+    points = Column(Integer)
+    competency = Column(String(512))
+
+
+class Competency(Base, IdMixin):
+    __tablename__ = "competency"
+
+    question = Column(ForeignKey("questions.id", ondelete="CASCADE"))
+    competency = Column(String(512))
+    is_primary = Column(Web2PyBoolean)
+    question_name = Column(String(512))
+
+
+# Course Parameters
+# -----------------
+class CourseAttribute(Base, IdMixin):
+    __tablename__ = "course_attributes"
+    __table_args__ = (Index("course_attr_idx", "course_id", "attr"),)
+
+    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"))
+    attr = Column(String(512))
+    value = Column(Text)
+
+
+class CourseLtiMap(Base, IdMixin):
+    __tablename__ = "course_lti_map"
+
+    lti_id = Column(Integer)
+    course_id = Column(Integer)
+
+
+class LtiKey(Base, IdMixin):
+    __tablename__ = "lti_keys"
+
+    consumer = Column(String(512))
+    secret = Column(String(512))
+    application = Column(String(512))
+
+
+class Payment(Base, IdMixin):
+    __tablename__ = "payments"
+
+    user_courses_id = Column(ForeignKey("user_courses.id", ondelete="CASCADE"))
+    charge_id = Column(String(255))
