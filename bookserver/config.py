@@ -90,7 +90,6 @@ class Settings(BaseSettings):
         else:
             raise RuntimeError(f"Unknown database type; URL is {dburl}.")
 
-
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
     num_banners: int = 0

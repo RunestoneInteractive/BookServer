@@ -35,6 +35,7 @@ from urllib.request import urlopen
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
 from pyvirtualdisplay import Display
+
 # Since ``selenium_driver`` is a parameter to a function (which is a fixture), flake8 sees it as unused. However, pytest understands this as a request for the ``selenium_driver`` fixture and needs it.
 from runestone.shared_conftest import _SeleniumUtils, selenium_driver  # noqa: F401
 from selenium import webdriver
@@ -43,12 +44,11 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.sql.expression import text
-from sqlalchemy.orm import Session
 
 # Local imports
 # -------------
 from bookserver.config import DatabaseType, settings
-from bookserver.db import engine
+from bookserver.db import async_session
 from .ci_utils import xqt, pushd
 
 
@@ -195,15 +195,14 @@ def run_bookserver(bookserver_address, pytestconfig):
 
 
 # Database
-# --------
+# ========
 # This fixture provides access to a clean instance of the Runestone database.
 #
 # Provide access the the Runestone database through a fixture. After a test runs,
 # restore the database to its initial state.
 @pytest.fixture
-def bookserver_session():
-    session = Session(engine, future=True)
-    yield session
+async def bookserver_session():
+    yield async_session
 
     # **Restore the database state after the test finishes**
     ##------------------------------------------------------
@@ -266,16 +265,38 @@ def bookserver_session():
         """
     ).split()
 
-    with session.begin() as conn:
+    with async_session.begin() as session:
         if settings.database_type == DatabaseType.PostgreSQL:
-            conn.execute(text("TRUNCATE :tables CASCADE;", tables=tables_to_delete.join(", ")))
+            await session.execute(
+                text("TRUNCATE :tables CASCADE;", tables=tables_to_delete.join(", "))
+            )
         else:
             for table in tables_to_delete:
-                conn.execute(text("DELETE FROM :table;", table=table))
+                await session.execute(text("DELETE FROM :table;", table=table))
+
+
+# User management
+# ---------------
+@pytest.fixture
+async def create_test_user(bookserver_session):
+    async def _create_test_user(**kwargs):
+        # Preserve the password when creating the user.
+        plain_password = kwargs["password"]
+        user = await create_user(**kwargs)
+        user.plain_password = plain_password
+        return user
+
+    return _create_test_user
+
+
+# Provide a way to get a prebuilt test user.
+@pytest.fixture
+async def test_user_1(create_test_user):
+    return await create_test_user(name="test_user_1", password="password_1")
 
 
 # Selenium
-# --------
+# ========
 # Provide access to Runestone through a web browser using Selenium. There's a lot of shared code between these tests and the Runestone Component tests using Selenium; see :doc:`shared_conftest.py` for details.
 #
 # Create an instance of Selenium once per testing session.
@@ -319,12 +340,8 @@ class _SeleniumServerUtils(_SeleniumUtils):
     ):
 
         self.get("auth/login")
-        self.driver.find_element_by_id("login_user").send_keys(
-            test_user.username
-        )
-        self.driver.find_element_by_id("loginpw").send_keys(
-            test_user.password
-        )
+        self.driver.find_element_by_id("login_user").send_keys(test_user.username)
+        self.driver.find_element_by_id("loginpw").send_keys(test_user.plain_password)
         self.driver.find_element_by_id("login_button").click()
         self.user = test_user
 

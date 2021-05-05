@@ -5,6 +5,8 @@
 # See https://python-poetry.org/docs/dependency-specification/ to get an understanding of
 # how poetry does specifies dependencies.
 #
+# Project metadata
+# ================
 [tool.poetry]
 name = "bookserver"
 version = "0.1.0"
@@ -14,6 +16,8 @@ license = "MIT"
 readme = "README.rst"
 documentation = "https://bookserver.readthedocs.io/en/latest/"
 
+# Dependencies
+# ============
 [tool.poetry.dependencies]
 python = "^3.7"
 fastapi = "^0.63.0"
@@ -31,6 +35,8 @@ SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
 runestone = "^5.6.1"
 
+# Development dependencies
+# ========================
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 pytest = "^6.2.0"
@@ -45,16 +51,32 @@ tox = "^3.23.0"
 selenium = "^3.141.0"
 PyVirtualDisplay = "^2.1"
 polling2 = "^0.4.6"
+pytest-asyncio = "^0.15.1"
+# See https://python-poetry.org/docs/dependency-specification/#path-dependencies. After some testing, Poetry v.1.1.6 allows both ``runestone`` to be specified in the dependencies as a PyPI package and here in the dev dependencies as a local install, and will prefer the local install here. The local install is necessary, since the tests aren't in the PyPI Runestone Components package.
+runestone = { path = "C:/Users/bjones/Documents/git/RunestoneComponents", develop = true }
+pytest-env = "^0.6.2"
 
+# Scripts
+# =======
 # See `scripts <https://python-poetry.org/docs/pyproject/#scripts>`_.
 [tool.poetry.scripts]
 bookserver = 'bookserver.__main__:run'
 
+# Poetry backend
+# ==============
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+# .. _pytest configuration:
+#
+# pytest configuration
+# ====================
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--ignore=_build"
 #collect_ignore = ["_build"]
+# The `pytest-env <https://github.com/MobileDynasty/pytest-env>`_ plugin sets these environment variables. Set them here, before imports, since bookserver imports read from the environment variables.
+env = [
+    "BOOK_SERVER_CONFIG=test"
+]

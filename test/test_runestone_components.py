@@ -33,7 +33,7 @@ from sqlalchemy.sql import select
 
 # Local imports
 # -------------
-from bookserver.models import Code
+from bookserver.models import Code, MchoiceAnswers
 
 
 # Utilities
@@ -100,7 +100,9 @@ def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
 
     def ac_check_fields(index, div_id):
-        row = get_answer(session, select(Code).where(Code.acid == div_id), index + 1)[index]
+        row = get_answer(session, select(Code).where(Code.acid == div_id), index + 1)[
+            index
+        ]
         assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
         assert row.acid == div_id
         assert row.sid == selenium_utils_user_ac.user.username
@@ -262,14 +264,17 @@ def xtest_lp_1(selenium_utils_user):
 
 # Mchoice
 # -------
-def xtest_mchoice_1(selenium_utils_user_1, bookserver_session):
+def test_mchoice_1(selenium_utils_user_1, bookserver_session):
     su = selenium_utils_user_1
-    db = bookserver_session
     div_id = "test_mchoice_1"
 
     def mc_check_common_fields(index):
         return check_common_fields(
-            su, db, db.mchoice_answers.div_id == div_id, index, div_id
+            su,
+            bookserver_session,
+            select(MchoiceAnswers).where(MchoiceAnswers.div_id == div_id),
+            index,
+            div_id,
         )
 
     test_assess.test_ma1(selenium_utils_user_1)
