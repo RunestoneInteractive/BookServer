@@ -28,6 +28,8 @@ from .applogger import rslogger
 # Settings
 # ========
 # Define the possible bookserver configurations. The values assigned must  be strings, since Pydantic will match these with environment variables.
+
+
 class BookServerConfig(Enum):
     development = "development"
     test = "test"
