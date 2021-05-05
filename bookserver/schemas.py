@@ -130,3 +130,7 @@ class AssessmentRequest(BaseModel):
             # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
             raise ValueError(f"Bad Timezone - {value}")
         return deadline
+
+
+class TimezoneRequest(BaseModel):
+    timezoneoffset: int
