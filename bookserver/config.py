@@ -15,6 +15,7 @@
 # ----------------
 from enum import Enum
 from pathlib import Path
+from functools import lru_cache
 
 # Third-party imports
 # -------------------
@@ -77,18 +78,27 @@ class Settings(BaseSettings):
     secret: str = "supersecret"
 
     # The path to web2py.
-    web2py_path: str = str(Path(__file__).parents[2] / "web2py")
+    web2py_path: str = str(Path(__file__).resolve().parents[2] / "web2py")
+    # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # This is the private key web2py uses for hashing passwords.
-    @property
-    def web2py_private_key(self) -> str:
-        authfile = Path(self.web2py_path) / "private" / "auth.key"
-        with open(authfile, encoding="utf-8") as f:
-            return f.read().strip()
 
-    # web2py_private_key: str = "sha512:16492eda-ba33-48d4-8748-98d9bbdf8d33"
+    @property  # type: ignore
+    def web2py_private_key(self) -> str:
+        # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
+        @lru_cache
+        def read_key():
+            key_file = (
+                Path(self.web2py_path) / "applications/runestone/private/auth.key"
+            )
+            with open(key_file, encoding="utf-8") as f:
+                return f.read().strip()
+
+        return read_key()
+
     # if you want to reinitialize your database set this to Yes
-    # All data in the database will be lost
+    # All data in the database will be lost! This will only work for
+    # development and test ``book_server_config`` settings
     drop_tables: str = "No"
 
 
