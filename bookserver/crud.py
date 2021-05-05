@@ -198,7 +198,11 @@ async def fetch_instructor_courses(
 
 
 async def create_initial_courses_users():
-    if settings.drop_tables == "Yes":
+    # never ever drop tables in a production environment
+    if (
+        settings.book_server_config in ["development", "test"]
+        and settings.drop_tables == "Yes"
+    ):
         print("Populating Courses")
         BASE_COURSES = [
             "ac1",
