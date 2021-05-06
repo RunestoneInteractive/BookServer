@@ -67,8 +67,12 @@ class Settings(BaseSettings):
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
     prod_dburl: str = "sqlite+aiosqlite:///" + str(Path(".").resolve() / "runestone.db")
-    dev_dburl: str = "sqlite+aiosqlite:///" + str(Path(".").resolve() / "runestone_dev.db")
-    test_dburl: str = "sqlite+aiosqlite:///" + str(Path(".").resolve() / "runestone_test.db")
+    dev_dburl: str = "sqlite+aiosqlite:///" + str(
+        Path(".").resolve() / "runestone_dev.db"
+    )
+    test_dburl: str = "sqlite+aiosqlite:///" + str(
+        Path(".").resolve() / "runestone_test.db"
+    )
 
     # Determine the database URL based on the ``config`` and the dburls above.
     @property
@@ -102,7 +106,9 @@ class Settings(BaseSettings):
     secret: str = "supersecret"
 
     # The path to web2py.
-    web2py_path: str = str(Path(__file__).resolve().parents[2] / "web2py/applications/runestone")
+    web2py_path: str = str(
+        Path(__file__).resolve().parents[2] / "web2py/applications/runestone"
+    )
     # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # This is the private key web2py uses for hashing passwords.
@@ -111,9 +117,7 @@ class Settings(BaseSettings):
         # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
         @lru_cache
         def read_key():
-            key_file = (
-                Path(self.web2py_path) / "private/auth.key"
-            )
+            key_file = Path(self.web2py_path) / "private/auth.key"
             if key_file.exists():
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()

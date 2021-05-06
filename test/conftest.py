@@ -121,7 +121,9 @@ def run_bookserver(bookserver_address, pytestconfig):
         # Build the test book to add in db fields needed.
         with pushd(test_book_path), MonkeyPatch().context() as m:
             # The runestone build process only looks at ``DBURL``.
-            sync_dburl = settings.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
+            sync_dburl = settings.database_url.replace("+asyncpg", "").replace(
+                "+aiosqlite", ""
+            )
             m.setenv("WEB2PY_CONFIG", "test")
             m.setenv("TEST_DBURL", sync_dburl)
             xqt(
@@ -292,9 +294,7 @@ async def bookserver_session(run_bookserver):
     async with engine.begin() as conn:
         if settings.database_type == DatabaseType.PostgreSQL:
             tables = ", ".join(tables_to_delete)
-            await conn.execute(
-                text(f"TRUNCATE {tables} CASCADE;")
-            )
+            await conn.execute(text(f"TRUNCATE {tables} CASCADE;"))
         else:
             for table in tables_to_delete:
                 print(table)
@@ -315,6 +315,7 @@ def create_test_course(bookserver_session):
         course = CoursesValidator(**kwargs)
         await create_course(course)
         return course
+
     return _create_test_course
 
 
@@ -347,7 +348,9 @@ def create_test_user(bookserver_session):
 # Provide a way to get a prebuilt test user.
 @pytest.fixture
 async def test_user_1(create_test_user, test_course_1):
-    return await create_test_user(username="test_user_1", password="password_1", course=test_course_1)
+    return await create_test_user(
+        username="test_user_1", password="password_1", course=test_course_1
+    )
 
 
 # Selenium
