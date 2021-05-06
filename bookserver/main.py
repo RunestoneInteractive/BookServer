@@ -9,7 +9,7 @@
 #
 # Standard library
 # ----------------
-# None.
+import json
 
 # Third-party imports
 # -------------------
@@ -66,11 +66,18 @@ async def startup():
 ##     await database.disconnect()
 
 
-# this is just a simple example of adding a middleware
-# it does not do anything useful.
+#
+# If the user supplies a timezone offset we'll store it in the RS_info cookie
+# lots of API calls need this so rather than having each process the cookie
+# we'll drop the value into request.state this will make it generally avilable
+#
 @app.middleware("http")
 async def get_session_object(request: Request, call_next):
-    request.state.session = {"sessionid": 1234567}
+    tz_cookie = request.cookies.get("RS_info")
+    if tz_cookie:
+        vals = json.loads(tz_cookie)
+        request.state.tz_offset = vals["tz_offset"]
+        rslogger.info(f"Timzone offset: {request.state.tz_offset}")
     response = await call_next(request)
     return response
 

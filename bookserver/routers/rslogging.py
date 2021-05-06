@@ -11,18 +11,20 @@
 # Standard library
 # ----------------
 from datetime import datetime
+import json
+from typing import Optional
 
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Cookie, Response
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
 from ..models import UseinfoValidation, validation_tables
-from ..schemas import LogItemIncoming
+from ..schemas import LogItemIncoming, TimezoneRequest
 
 # Routing
 # =======
@@ -71,3 +73,17 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         return {"status": "OK", "idx": idx}
     else:
         return {"status": "FAIL"}
+
+
+@router.post("/set_tz_offset")
+def set_tz_offset(
+    response: Response, tzreq: TimezoneRequest, RS_info: Optional[str] = Cookie(None)
+):
+    if RS_info:
+        values = json.loads(RS_info)
+    else:
+        values = {}
+    values["tz_offset"] = tzreq.timezoneoffset
+    response.set_cookie(key="RS_info", value=str(json.dumps(values)))
+    rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
+    return "done"
