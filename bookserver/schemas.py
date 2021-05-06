@@ -144,8 +144,8 @@ class LogRunIncoming(BaseModel):
     course: str
     clientLoginStatus: bool
     timezoneoffset: int
+    lang: str
     prefix: Optional[str]
     suffix: Optional[str]
-    lang: Optional[str]
     partner: Optional[str]
     sid: Optional[str]

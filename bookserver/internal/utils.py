@@ -9,7 +9,6 @@
 # Standard library
 # ----------------
 import re
-from enum import Enum
 from typing import Any
 
 # Third-party imports

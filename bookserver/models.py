@@ -302,6 +302,7 @@ class SourceCode(Base, IdMixin):
 
 CodeValidator = sqlalchemy_to_pydantic(Code)
 
+
 # Courses
 # -------
 # Every Course in the runestone system must have an entry in this table

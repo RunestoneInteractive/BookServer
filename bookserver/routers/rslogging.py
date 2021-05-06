@@ -18,9 +18,6 @@ from typing import Optional
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Request, Cookie, Response, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
-from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
 # Local application imports
 # -------------------------
@@ -57,6 +54,7 @@ COMMENT_MAP = {
     "c": "//",
     "cpp": "//",
 }
+
 
 # .. _log_book_event endpoint:
 #
@@ -152,13 +150,13 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     # Now add an entry to the code table
 
-    if data.to_save == True:
+    if data.to_save:
         useinfo_dict["course_id"] = request.state.user.course_id
         entry = CodeValidator(**useinfo_dict)
         await create_code_entry(entry)
 
         if data.partner:
-            if same_class(request.state.username, data.partner):
+            if await same_class(request.state.username, data.partner):
                 comchar = COMMENT_MAP.get(data.lang, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
@@ -178,6 +176,6 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
     return make_json_response(status=status.HTTP_201_CREATED)
 
 
-def same_class(user1: AuthUserValidator, user2: str) -> bool:
-    user2 = fetch_user(user2)
-    return user1.course_id == user2.course_id
+async def same_class(user1: AuthUserValidator, user2: str) -> bool:
+    u2 = await fetch_user(user2)
+    return user1.course_id == u2.course_id
