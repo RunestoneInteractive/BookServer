@@ -16,8 +16,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      WEB2PY_CONFIG: test
-      TEST_DBURL: sqlite+aiosqlite:///./runestone_test.db
+      BOOK_SERVER_CONFIG: test
+      TEST_DBURL: sqlite+aiosqlite:///${{ github.workspace }}/runestone_test.db
+      BOOK_PATH: ${{ github.workspace }}/../RunestoneServer/books
+      WEB2PY_PATH: ${{ github.workspace }}/../RunestoneServer
     strategy:
       matrix:
         python-version: ['3.8', '3.9']
@@ -28,10 +30,15 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Poetry
+    - name: Install pre-reqs
       run: |
+        mkdir ../RunestoneComponents
+        git clone https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
+        git clone https://github.com/RunestoneInteractive/RunestoneServer.git ../RunestoneServer
         pip install -U pip
         pip install poetry
+    - name: Install bookserver
+      run: |
         # Why are we doing an update here? Updates should be performed by committers, not automatically.
         poetry update
         poetry install
