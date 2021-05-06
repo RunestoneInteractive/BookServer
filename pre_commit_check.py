@@ -30,7 +30,7 @@ def checks():
         # Run this first, since it's quick and should always succeed.
         "black --check .",
         # Do this next -- it should be easy to fix most of these.
-        ##"flake8 .",
+        "flake8 .",
         "mypy",
         # Next, check the docs. Again, these only require fixes to comments, and should still be relatively easy to correct.
         #
@@ -42,7 +42,7 @@ def checks():
     )
     # Finally, unit tests -- the hardest to get right.
     with pushd("test"):
-        xqt("pytest --cov=bookserver")
+        xqt("pytest -s -k test_mchoice_1")
 
 
 # .. attention:: Coverage Reports

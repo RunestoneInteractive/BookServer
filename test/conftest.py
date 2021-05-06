@@ -166,7 +166,7 @@ def run_bookserver(bookserver_address, pytestconfig):
     # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
     if False:
         # TODO: implement server-side grading. Until then, not needed.
-        celery_process = subprocess.Popen(
+        celery_process = subprocess.Popen(  # noqa: F841
             [
                 sys.executable,
                 "-m",

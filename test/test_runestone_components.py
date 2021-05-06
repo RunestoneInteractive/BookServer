@@ -33,7 +33,17 @@ from sqlalchemy.sql import select
 
 # Local imports
 # -------------
-from bookserver.models import ClickableareaAnswers, Code, MchoiceAnswers, FitbAnswers, DragndropAnswers, ParsonsAnswers, Useinfo, TimedExam, ShortanswerAnswers
+from bookserver.models import (
+    ClickableareaAnswers,
+    Code,
+    MchoiceAnswers,
+    FitbAnswers,
+    DragndropAnswers,
+    ParsonsAnswers,
+    Useinfo,
+    TimedExam,
+    ShortanswerAnswers,
+)
 
 
 # Utilities
@@ -317,9 +327,11 @@ def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
     test_poll.test_poll(selenium_utils_user_1)
     assert (
-        get_answer(bookserver_session, select(Useinfo).where((Useinfo.div_id == id) & (Useinfo.event == "poll")), 1)[
-            0
-        ].act
+        get_answer(
+            bookserver_session,
+            select(Useinfo).where((Useinfo.div_id == id) & (Useinfo.event == "poll")),
+            1,
+        )[0].act
         == "4"
     )
 
@@ -420,7 +432,11 @@ def selenium_utils_user_timed(selenium_utils_user):
 def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
     def tt_check_common_fields(index, div_id):
         row = check_common_fields_raw(
-            selenium_utils_user_timed, bookserver_session, select(TimedExam).where(TimedExam.div_id == div_id), index, div_id
+            selenium_utils_user_timed,
+            bookserver_session,
+            select(TimedExam).where(TimedExam.div_id == div_id),
+            index,
+            div_id,
         )
         # The tests should finish the timed exam in a few seconds.
         assert row.time_taken < 10
