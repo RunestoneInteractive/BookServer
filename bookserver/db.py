@@ -51,6 +51,7 @@ async def init_models():
         await conn.run_sync(Base.metadata.create_all)
 
 
+# If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop of truncate tables (see `bookserver_session`).
 async def term_models():
     await engine.dispose()
 

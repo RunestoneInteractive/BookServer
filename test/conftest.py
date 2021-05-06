@@ -224,10 +224,12 @@ def run_bookserver(bookserver_address, pytestconfig):
 
 # Database
 # ========
-# This fixture provides access to a clean instance of the Runestone database.
 #
-# Provide access the the Runestone database through a fixture. After a test runs,
-# restore the database to its initial state.
+# .. _bookserver_session:
+#
+# bookserver_session
+# ------------------
+# This fixture provides access to a clean instance of the Runestone database.
 @pytest.fixture
 async def bookserver_session(run_bookserver):
     # **Clean the database state before a test**
