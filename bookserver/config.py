@@ -19,7 +19,8 @@ from functools import lru_cache
 
 # Third-party imports
 # -------------------
-from pydantic import BaseSettings
+import pkg_resources
+from pydantic import BaseSettings, PrivateAttr
 
 # Local application imports
 # -------------------------
@@ -62,17 +63,16 @@ class Settings(BaseSettings):
     #
     book_server_config: BookServerConfig = "development"  # type: ignore
 
+    # The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
+    _book_server_path: str = pkg_resources.resource_filename("bookserver", "")
+
     # Database setup: this must be an async connection; for example:
     #
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
-    prod_dburl: str = "sqlite+aiosqlite:///" + str(Path(".").resolve() / "runestone.db")
-    dev_dburl: str = "sqlite+aiosqlite:///" + str(
-        Path(".").resolve() / "runestone_dev.db"
-    )
-    test_dburl: str = "sqlite+aiosqlite:///" + str(
-        Path(".").resolve() / "runestone_test.db"
-    )
+    prod_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone.db"
+    dev_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_dev.db"
+    test_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_test.db"
 
     # Determine the database URL based on the ``config`` and the dburls above.
     @property
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
 
     # The path to web2py.
     web2py_path: str = str(
-        Path(__file__).resolve().parents[2] / "web2py/applications/runestone"
+        Path(_book_server_path).parents[2] / "web2py/applications/runestone"
     )
     # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 

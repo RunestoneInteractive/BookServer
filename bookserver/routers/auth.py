@@ -24,11 +24,11 @@ from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydal.validators import CRYPT
 
 # Local application imports
 # -------------------------
 from ..session import load_user, auth_manager
-from pydal.validators import CRYPT
 from ..applogger import rslogger
 from ..config import settings
 
@@ -41,7 +41,7 @@ router = APIRouter(
     tags=["auth"],
 )
 
-templates = Jinja2Templates(directory=f"bookserver/templates{router.prefix}")
+templates = Jinja2Templates(directory=f"{settings._book_server_path}/templates{router.prefix}")
 
 
 # .. _login:
