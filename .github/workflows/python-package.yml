@@ -33,7 +33,7 @@ jobs:
     - name: Install pre-reqs
       run: |
         mkdir ../RunestoneComponents
-        git clone https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
+        git clone -b bookserver https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
         pushd ../RunestoneComponents
         npm install
         npm run build
