@@ -205,11 +205,13 @@ def run_bookserver(bookserver_address, pytestconfig):
         try:
             urlopen(bookserver_address, timeout=1)
             break
-        except URLError:
+        except URLError as e:
+            print(e)
             # Wait for the server to come up.
             pass
     else:
-        assert False, "Server not up."
+        print("Failure, server not up.")
+        #assert False, "Server not up."
     print("done.\n")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
