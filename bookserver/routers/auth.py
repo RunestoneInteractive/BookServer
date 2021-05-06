@@ -41,7 +41,9 @@ router = APIRouter(
     tags=["auth"],
 )
 
-templates = Jinja2Templates(directory=f"{settings._book_server_path}/templates{router.prefix}")
+templates = Jinja2Templates(
+    directory=f"{settings._book_server_path}/templates{router.prefix}"
+)
 
 
 # .. _login:

@@ -20,7 +20,7 @@ from functools import lru_cache
 # Third-party imports
 # -------------------
 import pkg_resources
-from pydantic import BaseSettings, PrivateAttr
+from pydantic import BaseSettings
 
 # Local application imports
 # -------------------------
