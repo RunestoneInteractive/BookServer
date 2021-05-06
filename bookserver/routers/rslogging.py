@@ -20,6 +20,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Cookie, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
 # Local application imports
 # -------------------------
@@ -38,6 +39,7 @@ from ..models import (
     validation_tables,
 )
 from ..schemas import LogItemIncoming, LogRunIncoming, TimezoneRequest
+from ..internal.utils import make_json_response
 
 # Routing
 # =======
@@ -71,7 +73,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     if request.state.user:
         entry.sid = request.state.user.username
     else:
-        return JSONResponse(content={"result": "ignored"})
+        return make_json_response(status.HTTP_401_UNAUTHORIZED)
 
     # Always use the server's time.
     entry.timestamp = datetime.utcnow()
@@ -91,9 +93,9 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         rslogger.debug(ans_idx)
 
     if idx:
-        return JSONResponse(content={"result": "success", "detail": idx})
+        return make_json_response(detail=idx)
     else:
-        return JSONResponse(content={"result": "fail"})
+        return make_json_response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.post("/set_tz_offset")
@@ -108,9 +110,7 @@ def set_tz_offset(
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
 
-    return JSONResponse(
-        content=jsonable_encoder({"result": "success"}),
-    )
+    return make_json_response()
 
 
 # runlog endpoint
@@ -121,23 +121,19 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
     # First add a useinfo entry for this run
     if request.state.user:
         if data.course != request.state.user.course_name:
-            return JSONResponse(
-                content=dict(
-                    result="fail",
-                    detail="You appear to have changed courses in another tab.  Please switch to this course",
-                )
+            return make_json_response(
+                status=status.HTTP_401_UNAUTHORIZED,
+                detail="You appear to have changed courses in another tab.  Please switch to this course",
             )
         data.sid = request.state.user.username
     else:
         if data.clientLoginStatus == "true":
             rslogger.error("Session Expired")
-            return JSONResponse(
-                content=jsonable_encoder(
-                    {"result": "fail", "detail": "Session Expired"}
-                )
+            return make_json_response(
+                status=status.HTTP_401_UNAUTHORIZED, detail="Session Expired"
             )
         else:
-            return JSONResponse(content=jsonable_encoder({"result": "ignored"}))
+            return make_json_response(status=status.HTTP_401_UNAUTHORIZED)
 
     # everything after this assumes that the user is logged in
 
@@ -168,16 +164,18 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
                 entry.code = newcode
                 await create_code_entry(entry)
             else:
-                return JSONResponse(
-                    content=jsonable_encoder(
+                return make_json_response(
+                    status=status.HTTP_207_MULTI_STATUS,
+                    detail=[
                         {
-                            "result": "fail",
+                            "result": status.HTTP_401_UNAUTHORIZED,
                             "detail": "Partner data not saved, you must be enrolled in the same class as your partner",
-                        }
-                    )
+                        },
+                        {"result": status.HTTP_200_OK, "detail": None},
+                    ],
                 )
 
-    return JSONResponse(content=jsonable_encoder({"result": "success"}))
+    return make_json_response()
 
 
 def same_class(user1: AuthUserValidator, user2: str) -> bool:
