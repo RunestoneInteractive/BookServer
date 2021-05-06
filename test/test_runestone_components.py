@@ -33,7 +33,7 @@ from sqlalchemy.sql import select
 
 # Local imports
 # -------------
-from bookserver.models import Code, MchoiceAnswers
+from bookserver.models import ClickableareaAnswers, Code, MchoiceAnswers, FitbAnswers, DragndropAnswers, ParsonsAnswers, Useinfo, TimedExam, ShortanswerAnswers
 
 
 # Utilities
@@ -122,15 +122,14 @@ def test_activecode_1(selenium_utils_user_ac, bookserver_session):
 
 # ClickableArea
 # -------------
-def xtest_clickable_area_1(selenium_utils_user_1, bookserver_session):
-    db = bookserver_session
+def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_clickablearea_1"
 
     def ca_check_common_fields(index):
         return check_common_fields(
             selenium_utils_user_1,
-            db,
-            db.clickablearea_answers.div_id == div_id,
+            bookserver_session,
+            select(ClickableareaAnswers).where(ClickableareaAnswers.div_id == div_id),
             index,
             div_id,
         )
@@ -146,15 +145,14 @@ def xtest_clickable_area_1(selenium_utils_user_1, bookserver_session):
 
 # Drag-n-drop
 # -----------
-def xtest_dnd_1(selenium_utils_user_1, bookserver_session):
-    db = bookserver_session
+def test_dnd_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_dnd_1"
 
     def dnd_check_common_fields(index):
         return check_common_fields(
             selenium_utils_user_1,
-            db,
-            db.dragndrop_answers.div_id == div_id,
+            bookserver_session,
+            select(DragndropAnswers).where(DragndropAnswers.div_id == div_id),
             index,
             div_id,
         )
@@ -168,14 +166,12 @@ def xtest_dnd_1(selenium_utils_user_1, bookserver_session):
 # Fitb
 # ----
 # Test server-side logic in FITB questions.
-def xtest_fitb_1(selenium_utils_user_1, bookserver_session):
-    db = bookserver_session
-
+def test_fitb_1(selenium_utils_user_1, bookserver_session):
     def fitb_check_common_fields(index, div_id):
         answer, correct, percent = check_common_fields(
             selenium_utils_user_1,
-            db,
-            db.fitb_answers.div_id == div_id,
+            bookserver_session,
+            select(FitbAnswers).where(FitbAnswers.div_id == div_id),
             index,
             div_id,
         )
@@ -222,7 +218,7 @@ def xtest_fitb_1(selenium_utils_user_1, bookserver_session):
 
 # Lp
 # --
-def xtest_lp_1(selenium_utils_user):
+def test_lp_1(selenium_utils_user):
     su = selenium_utils_user
     href = "lp_demo.py.html"
     su.get_book_url(href)
@@ -265,12 +261,11 @@ def xtest_lp_1(selenium_utils_user):
 # Mchoice
 # -------
 def test_mchoice_1(selenium_utils_user_1, bookserver_session):
-    su = selenium_utils_user_1
     div_id = "test_mchoice_1"
 
     def mc_check_common_fields(index):
         return check_common_fields(
-            su,
+            selenium_utils_user_1,
             bookserver_session,
             select(MchoiceAnswers).where(MchoiceAnswers.div_id == div_id),
             index,
@@ -288,14 +283,12 @@ def test_mchoice_1(selenium_utils_user_1, bookserver_session):
 
 # Parsons's problems
 # ------------------
-def xtest_parsons_1(selenium_utils_user_1, bookserver_session):
-    db = bookserver_session
-
+def test_parsons_1(selenium_utils_user_1, bookserver_session):
     def pp_check_common_fields(index, div_id):
         row = check_common_fields_raw(
             selenium_utils_user_1,
-            db,
-            db.parsons_answers.div_id == div_id,
+            bookserver_session,
+            select(ParsonsAnswers).where(ParsonsAnswers.div_id == div_id),
             index,
             div_id,
         )
@@ -320,12 +313,11 @@ def xtest_parsons_1(selenium_utils_user_1, bookserver_session):
 
 # Poll
 # ----
-def xtest_poll_1(selenium_utils_user_1, bookserver_session):
+def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
     test_poll.test_poll(selenium_utils_user_1)
-    db = bookserver_session
     assert (
-        get_answer(db, (db.useinfo.div_id == id) & (db.useinfo.event == "poll"), 1)[
+        get_answer(bookserver_session, select(Useinfo).where((Useinfo.div_id == id) & (Useinfo.event == "poll")), 1)[
             0
         ].act
         == "4"
@@ -334,12 +326,12 @@ def xtest_poll_1(selenium_utils_user_1, bookserver_session):
 
 # Short answer
 # ------------
-def xtest_short_answer_1(selenium_utils_user_1, bookserver_session):
+def test_short_answer_1(selenium_utils_user_1, bookserver_session):
     id = "test_short_answer_1"
 
     # The first test doesn't click the submit button.
     db = bookserver_session
-    expr = db.shortanswer_answers.div_id == id
+    expr = select(ShortanswerAnswers).where(ShortanswerAnswers.div_id == id)
     test_shortanswer.test_sa1(selenium_utils_user_1)
     s = get_answer(db, expr, 0)
 
@@ -378,23 +370,23 @@ def test_selectquestion_2(selenium_utils_user_2):
     test_spreadsheet_1(selenium_utils_user_2)
 
 
-def xtest_selectquestion_3(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
     test_clickable_area_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_4(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
     test_fitb_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_5(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
     test_mchoice_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_6(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
     test_parsons_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_7(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
     test_dnd_1(selenium_utils_user_2, bookserver_session)
 
 
@@ -402,17 +394,17 @@ def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
     test_activecode_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_10(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
     test_short_answer_1(selenium_utils_user_2, bookserver_session)
 
 
-def xtest_selectquestion_11(selenium_utils_user_2, bookserver_session):
+def test_selectquestion_11(selenium_utils_user_2, bookserver_session):
     _test_timed_1(selenium_utils_user_2, bookserver_session, "test_timed_2")
 
 
 # Spreadsheet
 # -----------
-def xtest_spreadsheet_1(selenium_utils_user_1):
+def test_spreadsheet_1(selenium_utils_user_1):
     test_spreadsheet.test_ss_autograde(selenium_utils_user_1)
 
 
@@ -426,11 +418,9 @@ def selenium_utils_user_timed(selenium_utils_user):
 
 # Provide the ability to invoke tests with a specific div_id, since the selectquestion test is a different problem with a different div_id than the plain test.
 def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
-    db = bookserver_session
-
     def tt_check_common_fields(index, div_id):
         row = check_common_fields_raw(
-            selenium_utils_user_timed, db, db.timed_exam.div_id == div_id, index, div_id
+            selenium_utils_user_timed, bookserver_session, select(TimedExam).where(TimedExam.div_id == div_id), index, div_id
         )
         # The tests should finish the timed exam in a few seconds.
         assert row.time_taken < 10
@@ -442,5 +432,5 @@ def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
     assert tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
 
 
-def xtest_timed_1(selenium_utils_user_timed, bookserver_session):
+def test_timed_1(selenium_utils_user_timed, bookserver_session):
     _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")
