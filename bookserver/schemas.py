@@ -134,3 +134,18 @@ class AssessmentRequest(BaseModel):
 
 class TimezoneRequest(BaseModel):
     timezoneoffset: int
+
+
+class LogRunIncoming(BaseModel):
+    div_id: str
+    code: str
+    errinfo: str
+    to_save: bool
+    prefix: str
+    suffix: str
+    lang: str
+    course: str
+    clientLoginStatus: bool
+    timezoneoffset: int
+    partner: Optional[str]
+    sid: Optional[str]

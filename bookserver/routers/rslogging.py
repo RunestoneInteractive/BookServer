@@ -22,9 +22,20 @@ from fastapi import APIRouter, Request, Cookie, Response
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
-from ..crud import EVENT2TABLE, create_answer_table_entry, create_useinfo_entry
-from ..models import UseinfoValidation, validation_tables
-from ..schemas import LogItemIncoming, TimezoneRequest
+from ..crud import (
+    EVENT2TABLE,
+    create_answer_table_entry,
+    create_code_entry,
+    create_useinfo_entry,
+    fetch_user,
+)
+from ..models import (
+    AuthUserValidator,
+    CodeValidator,
+    UseinfoValidation,
+    validation_tables,
+)
+from ..schemas import LogItemIncoming, LogRunIncoming
 
 # Routing
 # =======
@@ -34,6 +45,14 @@ router = APIRouter(
     tags=["logger"],
 )
 
+COMMENT_MAP = {
+    "sql": "--",
+    "python": "#",
+    "java": "//",
+    "javascript": "//",
+    "c": "//",
+    "cpp": "//",
+}
 
 # .. _log_book_event endpoint:
 #
@@ -87,3 +106,66 @@ def set_tz_offset(
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
     return "done"
+
+
+# runlog endpoint
+# ---------------
+# The `logRunEvent` client-side function calls this endpoint to record an activecode run
+@router.post("/runlog")
+def runlog(request: Request, response: Response, data: LogRunIncoming):
+    # First add a useinfo entry for this run
+    if request.state.user:
+        if data.course != request.state.user.course_name:
+            return json.dumps(
+                dict(
+                    log=False,
+                    message="You appear to have changed courses in another tab.  Please switch to this course",
+                )
+            )
+        data.sid = request.state.user.username
+    else:
+        if data.clientLoginStatus == "true":
+            rslogger.error("Session Expired")
+            return json.dumps(dict(log=False, message="Session Expired"))
+        else:
+            data.sid = "Anonymous"
+    useinfo_dict = data.dict()
+    useinfo_dict["course_id"] = useinfo_dict.pop("course")
+    useinfo_dict["timestamp"] = datetime.utcnow()
+    if data.errinfo != "success":
+        useinfo_dict["event"] = "ac_error"
+        useinfo_dict["act"] = str(error_info)[:512]
+    else:
+        useinfo_dict["act"] = "run"
+        if "event" not in useinfo_dict:
+            useinfo_dict["event"] = "activecode"
+
+    create_useinfo_entry(UseinfoValidation(**useinfo_dict))
+
+    # Now add an entry to the code table
+    if request.state.user:
+        if "to_save" in data and (data.to_save == "True" or data.to_save == "true"):
+            entry = CodeValidator(**useinfo_dict)
+            create_code_entry(entry)
+
+            if data.partner:
+                if same_class(request.state.username, data.partner):
+                    comchar = COMMENT_MAP.get(data.lang, "#")
+                    newcode = (
+                        "{} This code was shared by {}\n\n".format(comchar, sid) + code
+                    )
+                    entry.code = newcode
+                    create_code_entry(entry)
+                else:
+                    res = {
+                        "message": "You must be enrolled in the same class as your partner"
+                    }
+                    return res
+
+    res = {"log": True}
+    return res
+
+
+def same_class(user1: AuthUserValidator, user2: str) -> bool:
+    user2 = fetch_user(user2)
+    return user1.course_id == user2.course_id

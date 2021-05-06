@@ -31,6 +31,8 @@ from sqlalchemy.exc import IntegrityError
 from .applogger import rslogger
 from . import schemas
 from .models import (
+    Code,
+    CodeValidator,
     CourseInstructor,
     CourseInstructorValidator,
     answer_tables,
@@ -190,6 +192,18 @@ async def fetch_instructor_courses(
         CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
     ]
     return course_list
+
+
+# Code
+# ----
+
+
+async def create_code_entry(data: CodeValidator):
+    new_code = Code(**data.dict())
+    async with async_session.begin() as session:
+        res = session.add(new_code)
+
+    return CodeValidator.from_orm(res) if res else None
 
 
 # Development and Testing Utils

@@ -279,7 +279,6 @@ class Code(Base, IdMixin):
         unique=False,
         index=True,
     )  # unique identifier for a component
-    course_name = Column(String, index=True)
     course_id = Column(Integer, index=False)
     code = Column(Text, index=False)
     language = Column(Text, index=False)
@@ -300,6 +299,8 @@ class SourceCode(Base, IdMixin):
     main_code = Column(Text)
     suffix_code = Column(Text)
 
+
+CodeValidator = sqlalchemy_to_pydantic(Code)
 
 # Courses
 # -------
