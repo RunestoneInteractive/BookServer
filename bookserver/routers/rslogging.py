@@ -93,7 +93,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         rslogger.debug(ans_idx)
 
     if idx:
-        return make_json_response(detail=idx)
+        return make_json_response(status=status.HTTP_201_CREATED, detail=idx)
     else:
         return make_json_response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -175,7 +175,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
                     ],
                 )
 
-    return make_json_response()
+    return make_json_response(status=status.HTTP_201_CREATED)
 
 
 def same_class(user1: AuthUserValidator, user2: str) -> bool:

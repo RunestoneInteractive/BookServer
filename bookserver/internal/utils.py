@@ -50,4 +50,6 @@ def make_json_response(
     status: int = status.HTTP_200_OK, detail: Any = None
 ) -> JSONResponse:
     # Omit the detail if it's none.
-    return JSONResponse(status=status, content=jsonable_encoder({"detail": detail}))
+    return JSONResponse(
+        status_code=status, content=jsonable_encoder({"detail": detail})
+    )
