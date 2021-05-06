@@ -24,7 +24,7 @@ from typing import Optional
 from .applogger import rslogger
 from .config import settings
 from .crud import create_initial_courses_users
-from .db import init_models
+from .db import init_models, term_models
 from .routers import assessment
 from .routers import auth
 from .routers import books
@@ -61,9 +61,9 @@ async def startup():
     await create_initial_courses_users()
 
 
-## @app.on_event("shutdown")
-## async def shutdown():
-##     await database.disconnect()
+@app.on_event("shutdown")
+async def shutdown():
+    await term_models()
 
 
 #

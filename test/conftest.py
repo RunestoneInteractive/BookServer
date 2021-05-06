@@ -293,7 +293,7 @@ async def bookserver_session(run_bookserver):
         if settings.database_type == DatabaseType.PostgreSQL:
             tables = ", ".join(tables_to_delete)
             await conn.execute(
-                text("TRUNCATE :tables CASCADE;"), dict(tables=tables)
+                text(f"TRUNCATE {tables} CASCADE;")
             )
         else:
             for table in tables_to_delete:
