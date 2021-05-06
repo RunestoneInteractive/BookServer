@@ -141,11 +141,11 @@ class LogRunIncoming(BaseModel):
     code: str
     errinfo: str
     to_save: bool
-    prefix: str
-    suffix: str
-    lang: str
     course: str
     clientLoginStatus: bool
     timezoneoffset: int
+    prefix: Optional[str]
+    suffix: Optional[str]
+    lang: Optional[str]
     partner: Optional[str]
     sid: Optional[str]

@@ -17,7 +17,9 @@ from typing import Optional
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie, Response
+from fastapi import APIRouter, Request, Cookie, Response, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 # Local application imports
 # -------------------------
@@ -35,7 +37,7 @@ from ..models import (
     UseinfoValidation,
     validation_tables,
 )
-from ..schemas import LogItemIncoming, LogRunIncoming
+from ..schemas import LogItemIncoming, LogRunIncoming, TimezoneRequest
 
 # Routing
 # =======
@@ -69,7 +71,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     if request.state.user:
         entry.sid = request.state.user.username
     else:
-        entry.sid = "Anonymous"
+        return JSONResponse(content={"result": "ignored"})
 
     # Always use the server's time.
     entry.timestamp = datetime.utcnow()
@@ -89,9 +91,9 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         rslogger.debug(ans_idx)
 
     if idx:
-        return {"status": "OK", "idx": idx}
+        return JSONResponse(content={"result": "success", "detail": idx})
     else:
-        return {"status": "FAIL"}
+        return JSONResponse(content={"result": "fail"})
 
 
 @router.post("/set_tz_offset")
@@ -105,65 +107,77 @@ def set_tz_offset(
     values["tz_offset"] = tzreq.timezoneoffset
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
-    return "done"
+
+    return JSONResponse(
+        content=jsonable_encoder({"result": "success"}),
+    )
 
 
 # runlog endpoint
 # ---------------
 # The `logRunEvent` client-side function calls this endpoint to record an activecode run
 @router.post("/runlog")
-def runlog(request: Request, response: Response, data: LogRunIncoming):
+async def runlog(request: Request, response: Response, data: LogRunIncoming):
     # First add a useinfo entry for this run
     if request.state.user:
         if data.course != request.state.user.course_name:
-            return json.dumps(
-                dict(
-                    log=False,
-                    message="You appear to have changed courses in another tab.  Please switch to this course",
+            return JSONResponse(
+                content=dict(
+                    result="fail",
+                    detail="You appear to have changed courses in another tab.  Please switch to this course",
                 )
             )
         data.sid = request.state.user.username
     else:
         if data.clientLoginStatus == "true":
             rslogger.error("Session Expired")
-            return json.dumps(dict(log=False, message="Session Expired"))
+            return JSONResponse(
+                content=jsonable_encoder(
+                    {"result": "fail", "detail": "Session Expired"}
+                )
+            )
         else:
-            data.sid = "Anonymous"
+            return JSONResponse(content=jsonable_encoder({"result": "ignored"}))
+
+    # everything after this assumes that the user is logged in
+
     useinfo_dict = data.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course")
     useinfo_dict["timestamp"] = datetime.utcnow()
     if data.errinfo != "success":
         useinfo_dict["event"] = "ac_error"
-        useinfo_dict["act"] = str(error_info)[:512]
+        useinfo_dict["act"] = str(data.errinfo)[:512]
     else:
         useinfo_dict["act"] = "run"
         if "event" not in useinfo_dict:
             useinfo_dict["event"] = "activecode"
 
-    create_useinfo_entry(UseinfoValidation(**useinfo_dict))
+    await create_useinfo_entry(UseinfoValidation(**useinfo_dict))
 
     # Now add an entry to the code table
-    if request.state.user:
-        if "to_save" in data and (data.to_save == "True" or data.to_save == "true"):
-            entry = CodeValidator(**useinfo_dict)
-            create_code_entry(entry)
 
-            if data.partner:
-                if same_class(request.state.username, data.partner):
-                    comchar = COMMENT_MAP.get(data.lang, "#")
-                    newcode = (
-                        "{} This code was shared by {}\n\n".format(comchar, sid) + code
+    if data.to_save == True:
+        useinfo_dict["course_id"] = request.state.user.course_id
+        entry = CodeValidator(**useinfo_dict)
+        await create_code_entry(entry)
+
+        if data.partner:
+            if same_class(request.state.username, data.partner):
+                comchar = COMMENT_MAP.get(data.lang, "#")
+                newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
+                entry.code = newcode
+                await create_code_entry(entry)
+            else:
+                return JSONResponse(
+                    content=jsonable_encoder(
+                        {
+                            "result": "fail",
+                            "detail": "Partner data not saved, you must be enrolled in the same class as your partner",
+                        }
                     )
-                    entry.code = newcode
-                    create_code_entry(entry)
-                else:
-                    res = {
-                        "message": "You must be enrolled in the same class as your partner"
-                    }
-                    return res
+                )
 
-    res = {"log": True}
-    return res
+    return JSONResponse(content=jsonable_encoder({"result": "success"}))
 
 
 def same_class(user1: AuthUserValidator, user2: str) -> bool:

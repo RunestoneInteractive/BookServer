@@ -128,6 +128,7 @@ async def serve_page(
         settings=settings,
         is_logged_in="false",
         is_instructor="true",
+        enable_compare_me="true",
         readings=[],
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
