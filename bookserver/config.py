@@ -107,7 +107,7 @@ class Settings(BaseSettings):
 
     # The path to web2py.
     web2py_path: str = str(
-        Path(_book_server_path).parents[2] / "web2py/applications/runestone"
+        Path(_book_server_path).parents[1] / "web2py/applications/runestone"
     )
     # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 

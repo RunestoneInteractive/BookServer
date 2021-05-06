@@ -106,6 +106,7 @@ def selenium_utils_user_ac(selenium_utils_user):
     return selenium_utils_user
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
 
@@ -132,6 +133,7 @@ def test_activecode_1(selenium_utils_user_ac, bookserver_session):
 
 # ClickableArea
 # -------------
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_clickablearea_1"
 
@@ -155,6 +157,7 @@ def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
 
 # Drag-n-drop
 # -----------
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_dnd_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_dnd_1"
 
@@ -176,6 +179,7 @@ def test_dnd_1(selenium_utils_user_1, bookserver_session):
 # Fitb
 # ----
 # Test server-side logic in FITB questions.
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_fitb_1(selenium_utils_user_1, bookserver_session):
     def fitb_check_common_fields(index, div_id):
         answer, correct, percent = check_common_fields(
@@ -228,6 +232,7 @@ def test_fitb_1(selenium_utils_user_1, bookserver_session):
 
 # Lp
 # --
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_lp_1(selenium_utils_user):
     su = selenium_utils_user
     href = "lp_demo.py.html"
@@ -293,6 +298,7 @@ def test_mchoice_1(selenium_utils_user_1, bookserver_session):
 
 # Parsons's problems
 # ------------------
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_parsons_1(selenium_utils_user_1, bookserver_session):
     def pp_check_common_fields(index, div_id):
         row = check_common_fields_raw(
@@ -323,6 +329,7 @@ def test_parsons_1(selenium_utils_user_1, bookserver_session):
 
 # Poll
 # ----
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
     test_poll.test_poll(selenium_utils_user_1)
@@ -338,6 +345,7 @@ def test_poll_1(selenium_utils_user_1, bookserver_session):
 
 # Short answer
 # ------------
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_short_answer_1(selenium_utils_user_1, bookserver_session):
     id = "test_short_answer_1"
 
@@ -373,7 +381,8 @@ def selenium_utils_user_2(selenium_utils_user):
 
 
 # Check rendering of selectquestion, which requires server-side support.
-def xtest_selectquestion_1(selenium_utils_user_2, bookserver_session):
+@pytest.mark.skip(reason="Need to port more server code first.")
+def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
     test_poll_1(selenium_utils_user_2, bookserver_session)
 
 
@@ -382,40 +391,49 @@ def test_selectquestion_2(selenium_utils_user_2):
     test_spreadsheet_1(selenium_utils_user_2)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
     test_clickable_area_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
     test_fitb_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
     test_mchoice_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
     test_parsons_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
     test_dnd_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
     test_activecode_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
     test_short_answer_1(selenium_utils_user_2, bookserver_session)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_selectquestion_11(selenium_utils_user_2, bookserver_session):
     _test_timed_1(selenium_utils_user_2, bookserver_session, "test_timed_2")
 
 
 # Spreadsheet
 # -----------
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_spreadsheet_1(selenium_utils_user_1):
     test_spreadsheet.test_ss_autograde(selenium_utils_user_1)
 
@@ -448,5 +466,6 @@ def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
     assert tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
 
 
+@pytest.mark.skip(reason="Need to port more server code first.")
 def test_timed_1(selenium_utils_user_timed, bookserver_session):
     _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")

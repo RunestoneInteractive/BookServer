@@ -58,7 +58,7 @@ from .ci_utils import xqt, pushd
 # ============
 # Add `command-line options <http://doc.pytest.org/en/latest/example/parametrize.html#generating-parameters-combinations-depending-on-command-line>`_.
 def pytest_addoption(parser):
-    # Per the `API reference <http://doc.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_addoption>`,
+    # Per the `API reference <http://doc.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_addoption>`_,
     # options are argparse style.
     parser.addoption(
         "--skipdbinit",
@@ -361,7 +361,7 @@ async def test_user_1(create_test_user, test_course_1):
 
 # Selenium
 # ========
-# Provide access to Runestone through a web browser using Selenium. There's a lot of shared code between these tests and the Runestone Component tests using Selenium; see :doc:`shared_conftest.py` for details.
+# Provide access to Runestone through a web browser using Selenium. There's a lot of shared code between these tests and the Runestone Component tests using Selenium; see :ref:`shared_conftest.py` for details.
 #
 # Create an instance of Selenium once per testing session.
 @pytest.fixture(scope="session")

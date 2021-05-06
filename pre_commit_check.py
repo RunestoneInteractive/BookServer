@@ -42,7 +42,7 @@ def checks():
     )
     # Finally, unit tests -- the hardest to get right.
     with pushd("test"):
-        xqt("pytest -s -k test_mchoice_1")
+        xqt("pytest -s")
 
 
 # .. attention:: Coverage Reports
