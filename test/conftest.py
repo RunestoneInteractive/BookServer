@@ -211,7 +211,7 @@ def run_bookserver(bookserver_address, pytestconfig):
             pass
     else:
         print("Failure, server not up.")
-        #assert False, "Server not up."
+        ##assert False, "Server not up."
     print("done.\n")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
