@@ -310,7 +310,7 @@ async def bookserver_session(run_bookserver):
 
 
 # User management
-# ---------------}
+# ---------------
 @pytest.fixture
 def create_test_course(bookserver_session):
     async def _create_test_course(**kwargs):
@@ -332,6 +332,7 @@ async def test_course_1(create_test_course):
     )
 
 
+# A class to hold a user plus the class the user is in.
 class TestAuthUserValidator(AuthUserValidator):
     course: CoursesValidator
 
@@ -339,6 +340,7 @@ class TestAuthUserValidator(AuthUserValidator):
 @pytest.fixture
 def create_test_user(bookserver_session):
     async def _create_test_user(**kwargs):
+        # TODO: Add this user to the provided course.
         course = kwargs.pop("course")
         user = AuthUserValidator(**kwargs)
         assert await create_user(user)
