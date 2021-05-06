@@ -20,7 +20,6 @@
 #
 # Standard library
 # ----------------
-import asyncio
 import os
 import subprocess
 import sys
@@ -31,6 +30,7 @@ from urllib.request import urlopen
 
 # Third-party imports
 # -------------------
+from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
 from pyvirtualdisplay import Display
@@ -49,6 +49,7 @@ from sqlalchemy.sql import text
 from bookserver.config import DatabaseType, settings
 from bookserver.db import async_session, engine
 from bookserver.crud import create_user, create_course
+from bookserver.main import app
 from bookserver.models import AuthUserValidator, CoursesValidator
 from .ci_utils import xqt, pushd
 
@@ -83,16 +84,6 @@ def pytest_terminal_summary(terminalreporter):
     terminalreporter.write_line(res)
 
 
-# TODO: delete me.
-if False:
-    @pytest.fixture(scope="session")
-    def event_loop(request):
-        """Create an instance of the default event loop for each test case."""
-        loop = asyncio.get_event_loop_policy().new_event_loop()
-        yield loop
-        loop.close()
-
-
 # Server prep and run
 # ===================
 @pytest.fixture(scope="session")
@@ -122,6 +113,11 @@ def run_bookserver(bookserver_address, pytestconfig):
             except OSError:
                 if retry == 99:
                     raise
+
+        # Start the app to initialize the database.
+        with TestClient(app):
+            pass
+
         # Build the test book to add in db fields needed.
         with pushd(test_book_path), MonkeyPatch().context() as m:
             # The runestone build process only looks at ``DBURL``.
@@ -129,8 +125,7 @@ def run_bookserver(bookserver_address, pytestconfig):
             m.setenv("WEB2PY_CONFIG", "test")
             m.setenv("TEST_DBURL", sync_dburl)
             xqt(
-                # TODO: re-enable when SQLite works again (dropping all tables breaks the Runestone build).
-                #"{} -m runestone build --all".format(sys.executable),
+                "{} -m runestone build --all".format(sys.executable),
                 "{} -m runestone deploy".format(sys.executable),
             )
 
@@ -153,11 +148,11 @@ def run_bookserver(bookserver_address, pytestconfig):
     book_server_process = subprocess.Popen(
         [
             sys.executable,
-            #"-m",
-            #"coverage",
-            #"run",
-            #"--append",
-            #"--source=bookserver",
+            "-m",
+            "coverage",
+            "run",
+            "--append",
+            "--source=bookserver",
             "-m",
             "bookserver",
         ],
