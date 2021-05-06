@@ -68,8 +68,7 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
         rslogger.debug(f"session = {session}")
         r = session.add(new_entry)
         rslogger.debug(r)
-
-    return UseinfoValidation.from_orm(new_entry)
+        return UseinfoValidation.from_orm(new_entry)
 
 
 # xxx_answers
@@ -86,8 +85,8 @@ async def create_answer_table_entry(
     new_entry = tbl(**log_entry.dict())
     async with async_session.begin() as session:
         session.add(new_entry)
-    rslogger.debug(f"returning {new_entry}")
-    return validation_tables[table_name].from_orm(new_entry)
+        rslogger.debug(f"returning {new_entry}")
+        return validation_tables[table_name].from_orm(new_entry)
 
 
 async def fetch_last_answer_table_entry(
@@ -109,8 +108,7 @@ async def fetch_last_answer_table_entry(
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-
-    return validation_tables[assessment].from_orm(res.scalars().first())
+        return validation_tables[assessment].from_orm(res.scalars().first())
 
 
 # Courses
@@ -126,10 +124,11 @@ async def fetch_base_course(base_course: str) -> CoursesValidator:
         return CoursesValidator.from_orm(course) if course else None
 
 
-async def create_course(course_info: CoursesValidator):
+async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
         session.add(new_course)
+        return CoursesValidator.from_orm(new_course)
 
 
 # auth_user
@@ -153,11 +152,10 @@ async def create_user(user: AuthUserValidator) -> bool:
     try:
         async with async_session.begin() as session:
             session.add(new_user)
+            return AuthUserValidator.from_orm(new_user)
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
         return False
-
-    return True
 
 
 # instructor_courses
@@ -183,10 +181,10 @@ async def fetch_instructor_courses(
     async with async_session() as session:
         res = await session.execute(query)
 
-    course_list = [
-        CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
-    ]
-    return course_list
+        course_list = [
+            CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
+        ]
+        return course_list
 
 
 # Development and Testing Utils
