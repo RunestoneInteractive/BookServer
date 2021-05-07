@@ -20,7 +20,7 @@ import datetime
 # -------------------
 from .db import async_session
 from pydal.validators import CRYPT
-from pydantic.error_wrappers import ValidationError
+from fastapi.exceptions import HTTPException
 
 # import sqlalchemy
 from sqlalchemy import and_
@@ -153,7 +153,10 @@ async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     the password then add this user to the database.
     """
     if await fetch_user(user.username):
-        raise ValidationError(["user already exists"], AuthUserValidator)
+        raise HTTPException(
+            status_code=422, detail=[{"loc": ["username"], "msg": "duplicate user"}]
+        )
+
     new_user = AuthUser(**user.dict())
     print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)

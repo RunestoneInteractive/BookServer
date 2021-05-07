@@ -34,7 +34,6 @@ from typing import Type
 # Third-party imports
 # -------------------
 from pydantic import validator
-from pydantic.error_wrappers import ValidationError
 from pydantic.main import BaseModel
 from sqlalchemy import (
     Column,
@@ -360,7 +359,7 @@ class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
     @validator("username")
     def username_clear_of_css_characters(cls, v):
         if re.search(r"""[!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ]""", v):
-            raise ValidationError("username must not have special characters")
+            raise ValueError("username must not contain special characters")
         return v
 
     # So far the recommendation from Pydantic is to do async validation
