@@ -88,8 +88,9 @@ async def create_answer_table_entry(
     new_entry = tbl(**log_entry.dict())
     async with async_session.begin() as session:
         session.add(new_entry)
-        rslogger.debug(f"returning {new_entry}")
-        return validation_tables[table_name].from_orm(new_entry)
+
+    rslogger.debug(f"returning {new_entry}")
+    return validation_tables[table_name].from_orm(new_entry)
 
 
 async def fetch_last_answer_table_entry(
@@ -124,15 +125,15 @@ async def fetch_course(course_name: str) -> CoursesValidator:
         # When selecting ORM entries it is useful to use the ``scalars`` method
         # This modifies the result so that you are getting the ORM object
         # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
-        return CoursesValidator.from_orm(res.scalars().first())
+    return CoursesValidator.from_orm(res.scalars().first())
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
-        res = session.add(new_course)
+        session.add(new_course)
 
-        return CoursesValidator.from_orm(res) if res else None
+    return CoursesValidator.from_orm(new_course)
 
 
 # auth_user
@@ -143,7 +144,7 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
         user = res.scalars().first()
-        return AuthUserValidator.from_orm(user) if user else None
+    return AuthUserValidator.from_orm(user) if user else None
 
 
 async def create_user(user: AuthUserValidator) -> AuthUserValidator:
@@ -155,14 +156,13 @@ async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)
     new_user.password = str(crypt(user.password)[0])
-    res = None
     try:
         async with async_session.begin() as session:
-            res = session.add(new_user)
-            return AuthUserValidator.from_orm(res) if res else None
+            session.add(new_user)
+        return AuthUserValidator.from_orm(new_user)
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
-    return res or user
+    return new_user
 
 
 # instructor_courses
@@ -201,9 +201,9 @@ async def fetch_instructor_courses(
 async def create_code_entry(data: CodeValidator):
     new_code = Code(**data.dict())
     async with async_session.begin() as session:
-        res = session.add(new_code)
+        session.add(new_code)
 
-        return CodeValidator.from_orm(res) if res else None
+    return CodeValidator.from_orm(new_code)
 
 
 # Development and Testing Utils

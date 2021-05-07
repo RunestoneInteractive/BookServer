@@ -71,7 +71,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     if request.state.user:
         entry.sid = request.state.user.username
     else:
-        return make_json_response(status.HTTP_401_UNAUTHORIZED)
+        return make_json_response(status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
     # Always use the server's time.
     entry.timestamp = datetime.utcnow()
