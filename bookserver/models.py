@@ -28,12 +28,14 @@
 # Standard library
 # ----------------
 import re
+from typing import Type
 
 #
 # Third-party imports
 # -------------------
 from pydantic import validator
 from pydantic.error_wrappers import ValidationError
+from pydantic.main import BaseModel
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -351,10 +353,10 @@ class AuthUser(Base, IdMixin):
     accept_tcp = Column(Web2PyBoolean)
 
 
-BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
+BaseAuthUserValidator: Type[BaseModel] = sqlalchemy_to_pydantic(AuthUser)
 
 
-class AuthUserValidator(BaseAuthUserValidator):
+class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
     @validator("username")
     def username_clear_of_css_characters(cls, v):
         if re.search(r"""[!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ]""", v):
