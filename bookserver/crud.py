@@ -88,8 +88,8 @@ async def create_answer_table_entry(
     new_entry = tbl(**log_entry.dict())
     async with async_session.begin() as session:
         session.add(new_entry)
-    rslogger.debug(f"returning {new_entry}")
-    return validation_tables[table_name].from_orm(new_entry)
+        rslogger.debug(f"returning {new_entry}")
+        return validation_tables[table_name].from_orm(new_entry)
 
 
 async def fetch_last_answer_table_entry(
@@ -112,7 +112,7 @@ async def fetch_last_answer_table_entry(
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
 
-    return validation_tables[assessment].from_orm(res.scalars().first())
+        return validation_tables[assessment].from_orm(res.scalars().first())
 
 
 # Courses
@@ -121,10 +121,10 @@ async def fetch_course(course_name: str) -> CoursesValidator:
     query = select(Courses).where(Courses.course_name == course_name)
     async with async_session() as session:
         res = await session.execute(query)
-    # When selecting ORM entries it is useful to use the ``scalars`` method
-    # This modifies the result so that you are getting the ORM object
-    # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
-    return CoursesValidator.from_orm(res.scalars().first())
+        # When selecting ORM entries it is useful to use the ``scalars`` method
+        # This modifies the result so that you are getting the ORM object
+        # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
+        return CoursesValidator.from_orm(res.scalars().first())
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
@@ -132,7 +132,7 @@ async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     async with async_session.begin() as session:
         res = session.add(new_course)
 
-    return CoursesValidator.from_orm(res) if res else None
+        return CoursesValidator.from_orm(res) if res else None
 
 
 # auth_user
@@ -142,8 +142,8 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-    user = res.scalars().first()
-    return AuthUserValidator.from_orm(user) if user else None
+        user = res.scalars().first()
+        return AuthUserValidator.from_orm(user) if user else None
 
 
 async def create_user(user: AuthUserValidator) -> int:
@@ -162,7 +162,7 @@ async def create_user(user: AuthUserValidator) -> int:
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
 
-    return AuthUserValidator.from_orm(res) if res else None
+        return AuthUserValidator.from_orm(res) if res else None
 
 
 # instructor_courses
@@ -188,10 +188,10 @@ async def fetch_instructor_courses(
     async with async_session() as session:
         res = await session.execute(query)
 
-    course_list = [
-        CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
-    ]
-    return course_list
+        course_list = [
+            CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
+        ]
+        return course_list
 
 
 # Code
@@ -203,7 +203,7 @@ async def create_code_entry(data: CodeValidator):
     async with async_session.begin() as session:
         res = session.add(new_code)
 
-    return CodeValidator.from_orm(res) if res else None
+        return CodeValidator.from_orm(res) if res else None
 
 
 # Development and Testing Utils
