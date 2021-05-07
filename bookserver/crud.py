@@ -20,8 +20,6 @@ import datetime
 # -------------------
 from .db import async_session
 from pydal.validators import CRYPT
-
-# import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
 from sqlalchemy.exc import IntegrityError
@@ -66,9 +64,9 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
         rslogger.debug(f"timestamp = {log_entry.timestamp} ")
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
-        r = session.add(new_entry)
-        rslogger.debug(r)
-        return UseinfoValidation.from_orm(new_entry)
+        session.add(new_entry)
+    rslogger.debug(new_entry)
+    return UseinfoValidation.from_orm(new_entry)
 
 
 # xxx_answers
@@ -85,8 +83,8 @@ async def create_answer_table_entry(
     new_entry = tbl(**log_entry.dict())
     async with async_session.begin() as session:
         session.add(new_entry)
-        rslogger.debug(f"returning {new_entry}")
-        return validation_tables[table_name].from_orm(new_entry)
+    rslogger.debug(f"returning {new_entry}")
+    return validation_tables[table_name].from_orm(new_entry)
 
 
 async def fetch_last_answer_table_entry(
@@ -128,7 +126,7 @@ async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
         session.add(new_course)
-        return CoursesValidator.from_orm(new_course)
+    return CoursesValidator.from_orm(new_course)
 
 
 # auth_user
@@ -141,7 +139,7 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
         return AuthUserValidator.from_orm(user) if user else None
 
 
-async def create_user(user: AuthUserValidator) -> bool:
+async def create_user(user: AuthUserValidator) -> Optional[AuthUserValidator]:
     """
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
@@ -152,10 +150,10 @@ async def create_user(user: AuthUserValidator) -> bool:
     try:
         async with async_session.begin() as session:
             session.add(new_user)
-            return AuthUserValidator.from_orm(new_user)
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
-        return False
+        return None
+    return AuthUserValidator.from_orm(new_user)
 
 
 # instructor_courses
@@ -189,7 +187,6 @@ async def fetch_instructor_courses(
 
 # Development and Testing Utils
 # -----------------------------
-#
 # This function is useful for development.  It recreates the database
 # and populates it with the common base courses and creates a test user
 #
