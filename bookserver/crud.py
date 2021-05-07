@@ -146,7 +146,7 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
         return AuthUserValidator.from_orm(user) if user else None
 
 
-async def create_user(user: AuthUserValidator) -> int:
+async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     """
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
@@ -159,10 +159,10 @@ async def create_user(user: AuthUserValidator) -> int:
     try:
         async with async_session.begin() as session:
             res = session.add(new_user)
+            return AuthUserValidator.from_orm(res) if res else None
     except IntegrityError:
         rslogger.error("Failed to add a duplicate user")
-
-        return AuthUserValidator.from_orm(res) if res else None
+    return res or user
 
 
 # instructor_courses
