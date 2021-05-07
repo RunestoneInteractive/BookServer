@@ -20,11 +20,11 @@ import datetime
 # -------------------
 from .db import async_session
 from pydal.validators import CRYPT
+from pydantic.error_wrappers import ValidationError
 
 # import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
-from sqlalchemy.exc import IntegrityError
 
 # Local application imports
 # -------------------------
@@ -152,17 +152,15 @@ async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
     """
+    if await fetch_user(user.username):
+        raise ValidationError(["user already exists"], AuthUserValidator)
     new_user = AuthUser(**user.dict())
     print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)
     new_user.password = str(crypt(user.password)[0])
-    try:
-        async with async_session.begin() as session:
-            session.add(new_user)
-        return AuthUserValidator.from_orm(new_user)
-    except IntegrityError:
-        rslogger.error("Failed to add a duplicate user")
-    return new_user
+    async with async_session.begin() as session:
+        session.add(new_user)
+    return AuthUserValidator.from_orm(new_user)
 
 
 # instructor_courses

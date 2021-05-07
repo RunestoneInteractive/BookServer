@@ -27,10 +27,13 @@
 #
 # Standard library
 # ----------------
-# None.
+import re
+
 #
 # Third-party imports
 # -------------------
+from pydantic import validator
+from pydantic.error_wrappers import ValidationError
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -348,7 +351,23 @@ class AuthUser(Base, IdMixin):
     accept_tcp = Column(Web2PyBoolean)
 
 
-AuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
+BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
+
+
+class AuthUserValidator(BaseAuthUserValidator):
+    @validator("username")
+    def username_clear_of_css_characters(cls, v):
+        if re.search(r"""[!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ]""", v):
+            raise ValidationError("username must not have special characters")
+        return v
+
+    # So far the recommendation from Pydantic is to do async validation
+    # outside the validator proper as validators are not async
+    # @validator("username")
+    # def username_unique(cls, v):
+    #     if bookserver.crud.fetch_user(v):
+    #         raise ValueError("username must be unique")
+    #     return v
 
 
 class CourseInstructor(Base, IdMixin):
