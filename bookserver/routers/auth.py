@@ -14,6 +14,7 @@
 #
 # Standard library
 # ----------------
+from bookserver.models import AuthUserValidator
 from datetime import timedelta
 
 #
@@ -31,7 +32,7 @@ from ..session import load_user, auth_manager
 from pydal.validators import CRYPT
 from ..applogger import rslogger
 from ..config import settings
-
+from ..crud import create_user
 
 # Routing
 # =======
@@ -101,3 +102,9 @@ async def login(
     # for future pages.
     auth_manager.set_cookie(response, access_token)
     return response
+
+
+@router.post("/newuser")
+async def register(user: AuthUserValidator) -> AuthUserValidator:
+    res = await create_user(user)
+    return res
