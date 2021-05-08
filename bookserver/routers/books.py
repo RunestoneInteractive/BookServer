@@ -24,7 +24,7 @@ from pydantic import constr
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
-from ..crud import create_useinfo_entry, fetch_course
+from ..crud import create_useinfo_entry, fetch_base_course
 from ..models import UseinfoValidation
 from ..session import auth_manager
 
@@ -86,11 +86,10 @@ async def serve_page(
     pagepath: constr(max_length=512),  # type: ignore
     user=Depends(auth_manager),
 ):
-    rslogger.debug(f"user = {user}")
-    course_row = await fetch_course(course)
+    rslogger.debug(f"user = {user}, course = {course}")
+    course_row = await fetch_base_course(course)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course} not found")
-
     templates = Jinja2Templates(
         directory=safe_join(settings.book_path, course_row.base_course, "build", course)
     )

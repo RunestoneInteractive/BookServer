@@ -12,8 +12,7 @@
 #
 # Standard library
 # ----------------
-from pathlib import Path
-import sys
+# None.
 
 # Third-party imports
 # -------------------
@@ -21,9 +20,7 @@ import sys
 #
 # Local application imports
 # -------------------------
-# This isn't in the path, since it's used only for development.
-sys.path.insert(0, str(Path(__file__).parent / "ci_utils"))
-from ci_utils import xqt, pushd  # noqa: E402
+from test.ci_utils import xqt, pushd
 
 
 # Checks
@@ -45,7 +42,7 @@ def checks():
     )
     # Finally, unit tests -- the hardest to get right.
     with pushd("test"):
-        xqt("pytest --cov=bookserver")
+        xqt("pytest -s")
 
 
 # .. attention:: Coverage Reports

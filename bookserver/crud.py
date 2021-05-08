@@ -69,9 +69,8 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
         rslogger.debug(f"timestamp = {log_entry.timestamp} ")
         rslogger.debug(f"New Entry = {new_entry}")
         rslogger.debug(f"session = {session}")
-        r = session.add(new_entry)
-        rslogger.debug(r)
-
+        session.add(new_entry)
+    rslogger.debug(new_entry)
     return UseinfoValidation.from_orm(new_entry)
 
 
@@ -113,27 +112,26 @@ async def fetch_last_answer_table_entry(
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-
         return validation_tables[assessment].from_orm(res.scalars().first())
 
 
 # Courses
 # -------
-async def fetch_course(course_name: str) -> CoursesValidator:
-    query = select(Courses).where(Courses.course_name == course_name)
+async def fetch_base_course(base_course: str) -> CoursesValidator:
+    query = select(Courses).where(Courses.base_course == base_course)
     async with async_session() as session:
         res = await session.execute(query)
         # When selecting ORM entries it is useful to use the ``scalars`` method
         # This modifies the result so that you are getting the ORM object
         # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
-    return CoursesValidator.from_orm(res.scalars().first())
+        course = res.scalars().one_or_none()
+        return CoursesValidator.from_orm(course) if course else None
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
         session.add(new_course)
-
     return CoursesValidator.from_orm(new_course)
 
 
@@ -144,11 +142,11 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-        user = res.scalars().first()
+        user = res.scalars().one_or_none()
     return AuthUserValidator.from_orm(user) if user else None
 
 
-async def create_user(user: AuthUserValidator) -> AuthUserValidator:
+async def create_user(user: AuthUserValidator) -> Optional[AuthUserValidator]:
     """
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
@@ -162,7 +160,6 @@ async def create_user(user: AuthUserValidator) -> AuthUserValidator:
         )
 
     new_user = AuthUser(**user.dict())
-    print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)
     new_user.password = str(crypt(user.password)[0])
     async with async_session.begin() as session:
@@ -213,7 +210,6 @@ async def create_code_entry(data: CodeValidator):
 
 # Development and Testing Utils
 # -----------------------------
-#
 # This function is useful for development.  It recreates the database
 # and populates it with the common base courses and creates a test user
 #

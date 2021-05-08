@@ -19,6 +19,7 @@ from functools import lru_cache
 
 # Third-party imports
 # -------------------
+import pkg_resources
 from pydantic import BaseSettings
 
 # Local application imports
@@ -34,6 +35,12 @@ class BookServerConfig(Enum):
     development = "development"
     test = "test"
     production = "production"
+
+
+# A enum for the type of database in use.
+class DatabaseType(Enum):
+    SQLite = 0
+    PostgreSQL = 1
 
 
 class Settings(BaseSettings):
@@ -56,13 +63,16 @@ class Settings(BaseSettings):
     #
     book_server_config: BookServerConfig = "development"  # type: ignore
 
+    # The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
+    _book_server_path: str = pkg_resources.resource_filename("bookserver", "")
+
     # Database setup: this must be an async connection; for example:
     #
     # - ``sqlite+aiosqlite:///./runestone.db``
     # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
-    prod_dburl: str = "sqlite+aiosqlite:///./runestone.db"
-    dev_dburl: str = "sqlite+aiosqlite:///./runestone_dev.db"
-    test_dburl: str = "sqlite+aiosqlite:///./runestone_test.db"
+    prod_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone.db"
+    dev_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_dev.db"
+    test_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_test.db"
 
     # Determine the database URL based on the ``config`` and the dburls above.
     @property
@@ -72,6 +82,17 @@ class Settings(BaseSettings):
             "test": self.test_dburl,
             "production": self.prod_dburl,
         }[self.book_server_config.value]
+
+    # Determine the database type from the URL.
+    @property
+    def database_type(self) -> DatabaseType:
+        dburl = self.database_url
+        if dburl.startswith("sqlite"):
+            return DatabaseType.SQLite
+        elif dburl.startswith("postgresql"):
+            return DatabaseType.PostgreSQL
+        else:
+            raise RuntimeError(f"Unknown database type; URL is {dburl}.")
 
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
@@ -85,21 +106,18 @@ class Settings(BaseSettings):
     secret: str = "supersecret"
 
     # The path to web2py.
-    web2py_path: str = str(Path(__file__).resolve().parents[2] / "web2py")
+    web2py_path: str = str(
+        Path(_book_server_path).parents[1] / "web2py/applications/runestone"
+    )
     # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # This is the private key web2py uses for hashing passwords.
-
-    @property  # type: ignore
+    @property
     def web2py_private_key(self) -> str:
         # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
         @lru_cache
         def read_key():
-            key_file = (
-                Path(self.web2py_path) / "applications/runestone/private/auth.key"
-            )
-            if not key_file.exists():
-                key_file = Path(self.web2py_path) / "private/auth.key"
+            key_file = Path(self.web2py_path) / "private/auth.key"
             if key_file.exists():
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()
@@ -112,7 +130,7 @@ class Settings(BaseSettings):
     # if you want to reinitialize your database set this to Yes
     # All data in the database will be lost! This will only work for
     # development and test ``book_server_config`` settings
-    drop_tables: str = "Yes"
+    drop_tables: str = "No"
 
 
 settings = Settings()

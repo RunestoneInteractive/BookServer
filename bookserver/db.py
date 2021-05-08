@@ -20,10 +20,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Local application imports
 # -------------------------
-from .config import settings, BookServerConfig
+from .config import settings, BookServerConfig, DatabaseType
 
 
-if settings.database_url.startswith("sqlite"):
+if settings.database_type == DatabaseType.SQLite:
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {}
@@ -40,7 +40,6 @@ Base = declarative_base()
 
 
 async def init_models():
-
     async with engine.begin() as conn:
         if (
             settings.book_server_config
@@ -50,6 +49,11 @@ async def init_models():
             await conn.run_sync(Base.metadata.drop_all)
 
         await conn.run_sync(Base.metadata.create_all)
+
+
+# If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop of truncate tables (see `bookserver_session`).
+async def term_models():
+    await engine.dispose()
 
 
 # Dependency
