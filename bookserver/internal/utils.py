@@ -9,7 +9,7 @@
 # Standard library
 # ----------------
 import re
-from typing import Any
+from typing import Any, List
 
 # Third-party imports
 # -------------------
@@ -52,3 +52,16 @@ def make_json_response(
     return JSONResponse(
         status_code=status, content=jsonable_encoder({"detail": detail})
     )
+
+
+def http_422error_detail(loc: List[str], msg: str, err_type: str) -> List[dict]:
+    """
+    loc: should be a list, the first element indicates where the error occurred
+      for example in the path or in the body of the request. it could also be function
+      I suppose. the second element in the list indicates the name of the data element
+      that is not valid.
+    msg: this is a descriptive message about the error.
+    type: this is the specific error that was raised. e.g. value_error, type_error,
+      integrity_error
+    """
+    return [{"loc": loc, "msg": msg, "type": err_type}]

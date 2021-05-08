@@ -45,6 +45,7 @@ from .models import (
     validation_tables,
 )
 from .config import settings, BookServerConfig
+from .internal.utils import http_422error_detail
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -154,7 +155,10 @@ async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     """
     if await fetch_user(user.username):
         raise HTTPException(
-            status_code=422, detail=[{"loc": ["username"], "msg": "duplicate user"}]
+            status_code=422,
+            detail=http_422error_detail(
+                ["body", "username"], "duplicate username", "integrity_error"
+            ),
         )
 
     new_user = AuthUser(**user.dict())
