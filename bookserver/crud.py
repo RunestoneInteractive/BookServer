@@ -20,17 +20,19 @@ import datetime
 # -------------------
 from .db import async_session
 from pydal.validators import CRYPT
+from fastapi.exceptions import HTTPException
 
 # import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy.sql import select
-from sqlalchemy.exc import IntegrityError
 
 # Local application imports
 # -------------------------
 from .applogger import rslogger
 from . import schemas
 from .models import (
+    Code,
+    CodeValidator,
     CourseInstructor,
     CourseInstructorValidator,
     answer_tables,
@@ -86,6 +88,7 @@ async def create_answer_table_entry(
     new_entry = tbl(**log_entry.dict())
     async with async_session.begin() as session:
         session.add(new_entry)
+
     rslogger.debug(f"returning {new_entry}")
     return validation_tables[table_name].from_orm(new_entry)
 
@@ -110,7 +113,7 @@ async def fetch_last_answer_table_entry(
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
 
-    return validation_tables[assessment].from_orm(res.scalars().first())
+        return validation_tables[assessment].from_orm(res.scalars().first())
 
 
 # Courses
@@ -119,18 +122,18 @@ async def fetch_course(course_name: str) -> CoursesValidator:
     query = select(Courses).where(Courses.course_name == course_name)
     async with async_session() as session:
         res = await session.execute(query)
-    # When selecting ORM entries it is useful to use the ``scalars`` method
-    # This modifies the result so that you are getting the ORM object
-    # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
+        # When selecting ORM entries it is useful to use the ``scalars`` method
+        # This modifies the result so that you are getting the ORM object
+        # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
     return CoursesValidator.from_orm(res.scalars().first())
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
-        res = session.add(new_course)
+        session.add(new_course)
 
-    return CoursesValidator.from_orm(res) if res else None
+    return CoursesValidator.from_orm(new_course)
 
 
 # auth_user
@@ -140,27 +143,27 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-    user = res.scalars().first()
+        user = res.scalars().first()
     return AuthUserValidator.from_orm(user) if user else None
 
 
-async def create_user(user: AuthUserValidator) -> int:
+async def create_user(user: AuthUserValidator) -> AuthUserValidator:
     """
     The given user will have the password in plain text.  First we will hash
     the password then add this user to the database.
     """
+    if await fetch_user(user.username):
+        raise HTTPException(
+            status_code=422, detail=[{"loc": ["username"], "msg": "duplicate user"}]
+        )
+
     new_user = AuthUser(**user.dict())
     print(settings.web2py_private_key)
     crypt = CRYPT(key=settings.web2py_private_key, salt=True)
     new_user.password = str(crypt(user.password)[0])
-    res = None
-    try:
-        async with async_session.begin() as session:
-            res = session.add(new_user)
-    except IntegrityError:
-        rslogger.error("Failed to add a duplicate user")
-
-    return AuthUserValidator.from_orm(res) if res else None
+    async with async_session.begin() as session:
+        session.add(new_user)
+    return AuthUserValidator.from_orm(new_user)
 
 
 # instructor_courses
@@ -186,10 +189,22 @@ async def fetch_instructor_courses(
     async with async_session() as session:
         res = await session.execute(query)
 
-    course_list = [
-        CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
-    ]
-    return course_list
+        course_list = [
+            CourseInstructorValidator.from_orm(x) for x in res.scalars().fetchall()
+        ]
+        return course_list
+
+
+# Code
+# ----
+
+
+async def create_code_entry(data: CodeValidator):
+    new_code = Code(**data.dict())
+    async with async_session.begin() as session:
+        session.add(new_code)
+
+    return CodeValidator.from_orm(new_code)
 
 
 # Development and Testing Utils

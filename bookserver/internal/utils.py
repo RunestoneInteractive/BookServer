@@ -9,10 +9,14 @@
 # Standard library
 # ----------------
 import re
+from typing import Any
 
 # Third-party imports
 # -------------------
-# None.
+from fastapi import status
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+
 #
 # Local application imports
 # -------------------------
@@ -39,3 +43,12 @@ def canonicalize_tz(tstring: str) -> str:
             zstring = "".join([i[0] for i in y])
             return re.sub(r"(.*)\((.*)\)", r"\1({})".format(zstring), tstring)
     return tstring
+
+
+def make_json_response(
+    status: int = status.HTTP_200_OK, detail: Any = None
+) -> JSONResponse:
+    # Omit the detail if it's none.
+    return JSONResponse(
+        status_code=status, content=jsonable_encoder({"detail": detail})
+    )

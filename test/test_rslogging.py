@@ -46,8 +46,8 @@ def test_add_log():
             headers={"Content-type": "application/json; charset=utf-8"},
             json=item,
         )
-        assert response.status_code == 200
-        assert response.json()["status"] == "OK"
+        assert response.status_code == 401
+        # assert response.json()["result"] == "success"
         rslogger.debug(response.json())
 
 
@@ -70,8 +70,8 @@ def test_add_mchoice():
             headers={"Content-type": "application/json; charset=utf-8"},
             json=item,
         )
-        assert response.status_code == 200
-        assert response.json()["status"] == "OK"
+        assert response.status_code == 401
+        # assert response.json()["result"] == "success"
 
     req = dict(
         course="fopp",
@@ -118,4 +118,4 @@ def test_secondary_validation_error():
             headers={"Content-type": "application/json; charset=utf-8"},
             json=item,
         )
-        assert response.status_code == 422
+        assert response.status_code == 401

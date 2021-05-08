@@ -27,10 +27,14 @@
 #
 # Standard library
 # ----------------
-# None.
+import re
+from typing import Type
+
 #
 # Third-party imports
 # -------------------
+from pydantic import validator
+from pydantic.main import BaseModel
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -279,7 +283,6 @@ class Code(Base, IdMixin):
         unique=False,
         index=True,
     )  # unique identifier for a component
-    course_name = Column(String, index=True)
     course_id = Column(Integer, index=False)
     code = Column(Text, index=False)
     language = Column(Text, index=False)
@@ -299,6 +302,9 @@ class SourceCode(Base, IdMixin):
     available_files = Column(String(512))
     main_code = Column(Text)
     suffix_code = Column(Text)
+
+
+CodeValidator = sqlalchemy_to_pydantic(Code)
 
 
 # Courses
@@ -346,7 +352,23 @@ class AuthUser(Base, IdMixin):
     accept_tcp = Column(Web2PyBoolean)
 
 
-AuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
+BaseAuthUserValidator: Type[BaseModel] = sqlalchemy_to_pydantic(AuthUser)
+
+
+class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
+    @validator("username")
+    def username_clear_of_css_characters(cls, v):
+        if re.search(r"""[!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ]""", v):
+            raise ValueError("username must not contain special characters")
+        return v
+
+    # So far the recommendation from Pydantic is to do async validation
+    # outside the validator proper as validators are not async
+    # @validator("username")
+    # def username_unique(cls, v):
+    #     if bookserver.crud.fetch_user(v):
+    #         raise ValueError("username must be unique")
+    #     return v
 
 
 class CourseInstructor(Base, IdMixin):
