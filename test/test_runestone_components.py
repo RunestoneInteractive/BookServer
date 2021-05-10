@@ -10,12 +10,12 @@
 #
 # Standard library
 # ----------------
+import asyncio
 import datetime
 import json
 
 # Third-party imports
 # -------------------
-from polling2 import poll
 import pytest
 from runestone.activecode.test import test_activecode
 from runestone.clickableArea.test import test_clickableArea
@@ -49,19 +49,20 @@ from bookserver.models import (
 # Utilities
 # =========
 # Poll the database waiting for the client to perform an update via Ajax.
-def get_answer(session, stmt, minimum_len):
-    with session() as sess:
-        return poll(
-            lambda: sess.execute(stmt).all(),
-            check_success=lambda s: len(s) >= minimum_len,
-            step=0.1,
-            timeout=10,
-        )
+async def get_answer(session, stmt, minimum_len):
+    async def poll():
+        while True:
+            ret = (await sess.execute(stmt)).all()
+            if len(ret) >= minimum_len:
+                return ret
+    async with session() as sess:
+        # Wait up to 10 seconds for the desired answer length.
+        return await asyncio.wait_for(poll(), 10)
 
 
 # Check the fields common to the tables of most Runestone components.
-def check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id):
-    row = get_answer(session, stmt, index + 1)[index]
+async def check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id):
+    row = (await get_answer(session, stmt, index + 1))[index]
     assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
     assert row.div_id == div_id
     assert row.sid == selenium_utils_user.user.username
@@ -70,8 +71,8 @@ def check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id):
 
 
 # Return the answer, correct, and percent fields after checking common fields.
-def check_common_fields(selenium_utils_user, session, stmt, index, div_id):
-    row = check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id)
+async def check_common_fields(selenium_utils_user, session, stmt, index, div_id):
+    row = await check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id)
     return row.answer, row.correct, row.percent
 
 
@@ -107,11 +108,12 @@ def selenium_utils_user_ac(selenium_utils_user):
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_activecode_1(selenium_utils_user_ac, bookserver_session):
+@pytest.mark.asyncio
+async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
 
-    def ac_check_fields(index, div_id):
-        row = get_answer(session, select(Code).where(Code.acid == div_id), index + 1)[
+    async def ac_check_fields(index, div_id):
+        row = (await get_answer(session, select(Code).where(Code.acid == div_id), index + 1))[
             index
         ]
         assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
@@ -121,7 +123,7 @@ def test_activecode_1(selenium_utils_user_ac, bookserver_session):
         return row
 
     test_activecode.test_history(selenium_utils_user_ac)
-    row = ac_check_fields(0, "test_activecode_2")
+    row = await ac_check_fields(0, "test_activecode_2")
     assert row.emessage == "success"
     assert row.code == "print('Goodbye')"
     assert row.grade is None
@@ -134,11 +136,12 @@ def test_activecode_1(selenium_utils_user_ac, bookserver_session):
 # ClickableArea
 # -------------
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
+@pytest.mark.asyncio
+async def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_clickablearea_1"
 
-    def ca_check_common_fields(index):
-        return check_common_fields(
+    async def ca_check_common_fields(index):
+        return await check_common_fields(
             selenium_utils_user_1,
             bookserver_session,
             select(ClickableareaAnswers).where(ClickableareaAnswers.div_id == div_id),
@@ -147,10 +150,10 @@ def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
         )
 
     test_clickableArea.test_ca1(selenium_utils_user_1)
-    assert ca_check_common_fields(0) == ("", False, None)
+    assert await ca_check_common_fields(0) == ("", False, None)
 
     test_clickableArea.test_ca2(selenium_utils_user_1)
-    assert ca_check_common_fields(1) == ("0;2", True, 1)
+    assert await ca_check_common_fields(1) == ("0;2", True, 1)
 
     # TODO: There are a lot more clickable area tests that could be easily ported!
 
@@ -158,11 +161,12 @@ def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
 # Drag-n-drop
 # -----------
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_dnd_1(selenium_utils_user_1, bookserver_session):
+@pytest.mark.asyncio
+async def test_dnd_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_dnd_1"
 
-    def dnd_check_common_fields(index):
-        return check_common_fields(
+    async def dnd_check_common_fields(index):
+        return await check_common_fields(
             selenium_utils_user_1,
             bookserver_session,
             select(DragndropAnswers).where(DragndropAnswers.div_id == div_id),
@@ -171,7 +175,7 @@ def test_dnd_1(selenium_utils_user_1, bookserver_session):
         )
 
     test_dragndrop.test_dnd1(selenium_utils_user_1)
-    assert dnd_check_common_fields(0) == ("-1;-1;-1", False, None)
+    assert await dnd_check_common_fields(0) == ("-1;-1;-1", False, None)
 
     # TODO: There are more dnd tests that could easily be ported!
 
@@ -180,8 +184,9 @@ def test_dnd_1(selenium_utils_user_1, bookserver_session):
 # ----
 # Test server-side logic in FITB questions.
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_fitb_1(selenium_utils_user_1, bookserver_session):
-    def fitb_check_common_fields(index, div_id):
+@pytest.mark.asyncio
+async def test_fitb_1(selenium_utils_user_1, bookserver_session):
+    async def fitb_check_common_fields(index, div_id):
         answer, correct, percent = check_common_fields(
             selenium_utils_user_1,
             bookserver_session,
@@ -192,13 +197,13 @@ def test_fitb_1(selenium_utils_user_1, bookserver_session):
         return json.loads(answer), correct, percent
 
     test_fitb.test_fitb1(selenium_utils_user_1)
-    assert fitb_check_common_fields(0, "test_fitb_string") == (["", ""], False, 0)
+    assert await fitb_check_common_fields(0, "test_fitb_string") == (["", ""], False, 0)
 
     test_fitb.test_fitb2(selenium_utils_user_1)
-    assert fitb_check_common_fields(1, "test_fitb_string") == (["red", ""], False, 0.5)
+    assert await fitb_check_common_fields(1, "test_fitb_string") == (["red", ""], False, 0.5)
 
     test_fitb.test_fitb3(selenium_utils_user_1)
-    assert fitb_check_common_fields(2, "test_fitb_string") == (["red", "away"], True, 1)
+    assert await fitb_check_common_fields(2, "test_fitb_string") == (["red", "away"], True, 1)
 
     test_fitb.test_fitb4(selenium_utils_user_1)
     assert fitb_check_common_fields(3, "test_fitb_string") == (["red", "away"], True, 1)
@@ -207,27 +212,27 @@ def test_fitb_1(selenium_utils_user_1, bookserver_session):
     assert fitb_check_common_fields(0, "test_fitb_number") == ([" 6"], False, 0)
 
     test_fitb.test_fitboneblank_wildcard(selenium_utils_user_1)
-    assert fitb_check_common_fields(1, "test_fitb_number") == (["I give up"], False, 0)
+    assert await fitb_check_common_fields(1, "test_fitb_number") == (["I give up"], False, 0)
 
     test_fitb.test_fitbfillrange(selenium_utils_user_1)
-    assert fitb_check_common_fields(2, "test_fitb_number") == ([" 6.28 "], True, 1)
+    assert await fitb_check_common_fields(2, "test_fitb_number") == ([" 6.28 "], True, 1)
 
     test_fitb.test_fitbregex(selenium_utils_user_1)
-    assert fitb_check_common_fields(0, "test_fitb_regex_1") == (
+    assert await fitb_check_common_fields(0, "test_fitb_regex_1") == (
         [" maire ", "LITTLE", "2"],
         True,
         1,
     )
 
     test_fitb.test_regexescapes1(selenium_utils_user_1)
-    assert fitb_check_common_fields(0, "test_fitb_regex_2") == (
+    assert await fitb_check_common_fields(0, "test_fitb_regex_2") == (
         [r"C:\windows\system"],
         True,
         1,
     )
 
     test_fitb.test_regexescapes2(selenium_utils_user_1)
-    assert fitb_check_common_fields(0, "test_fitb_regex_3") == (["[]"], True, 1)
+    assert await fitb_check_common_fields(0, "test_fitb_regex_3") == (["[]"], True, 1)
 
 
 # Lp
@@ -275,23 +280,24 @@ def test_lp_1(selenium_utils_user):
 
 # Mchoice
 # -------
-def test_mchoice_1(selenium_utils_user_1, bookserver_session):
+@pytest.mark.asyncio
+async def test_mchoice_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_mchoice_1"
 
-    def mc_check_common_fields(index):
-        return check_common_fields(
+    async def mc_check_common_fields(index):
+        return await check_common_fields(
             selenium_utils_user_1,
             bookserver_session,
-            select(MchoiceAnswers).where(MchoiceAnswers.div_id == div_id),
+            select(MchoiceAnswers.__table__).where(MchoiceAnswers.div_id == div_id),
             index,
             div_id,
         )
 
     test_assess.test_ma1(selenium_utils_user_1)
-    assert mc_check_common_fields(0) == ("", False, None)
+    assert await mc_check_common_fields(0) == ("", False, None)
 
     test_assess.test_ma2(selenium_utils_user_1)
-    assert mc_check_common_fields(1) == ("0,2", True, 1)
+    assert await mc_check_common_fields(1) == ("0,2", True, 1)
 
     # TODO: There are a lot more multiple choice tests that could be easily ported!
 
@@ -299,9 +305,10 @@ def test_mchoice_1(selenium_utils_user_1, bookserver_session):
 # Parsons's problems
 # ------------------
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_parsons_1(selenium_utils_user_1, bookserver_session):
-    def pp_check_common_fields(index, div_id):
-        row = check_common_fields_raw(
+@pytest.mark.asyncio
+async def test_parsons_1(selenium_utils_user_1, bookserver_session):
+    async def pp_check_common_fields(index, div_id):
+        row = await check_common_fields_raw(
             selenium_utils_user_1,
             bookserver_session,
             select(ParsonsAnswers).where(ParsonsAnswers.div_id == div_id),
@@ -311,13 +318,13 @@ def test_parsons_1(selenium_utils_user_1, bookserver_session):
         return row.answer, row.correct, row.percent, row.source
 
     test_parsons.test_general(selenium_utils_user_1)
-    assert pp_check_common_fields(0, "test_parsons_1") == (
+    assert await pp_check_common_fields(0, "test_parsons_1") == (
         "-",
         False,
         None,
         "0_0-1_2_0-3_4_0-6_0-5_0",
     )
-    assert pp_check_common_fields(1, "test_parsons_1") == (
+    assert await pp_check_common_fields(1, "test_parsons_1") == (
         "0_0-1_2_1-3_4_1-5_1",
         True,
         1.0,
@@ -330,15 +337,16 @@ def test_parsons_1(selenium_utils_user_1, bookserver_session):
 # Poll
 # ----
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_poll_1(selenium_utils_user_1, bookserver_session):
+@pytest.mark.asyncio
+async def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
     test_poll.test_poll(selenium_utils_user_1)
     assert (
-        get_answer(
+        (await get_answer(
             bookserver_session,
             select(Useinfo).where((Useinfo.div_id == id) & (Useinfo.event == "poll")),
             1,
-        )[0].act
+        ))[0].act
         == "4"
     )
 
@@ -346,28 +354,29 @@ def test_poll_1(selenium_utils_user_1, bookserver_session):
 # Short answer
 # ------------
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_short_answer_1(selenium_utils_user_1, bookserver_session):
+@pytest.mark.asyncio
+async def test_short_answer_1(selenium_utils_user_1, bookserver_session):
     id = "test_short_answer_1"
 
     # The first test doesn't click the submit button.
     db = bookserver_session
     expr = select(ShortanswerAnswers).where(ShortanswerAnswers.div_id == id)
     test_shortanswer.test_sa1(selenium_utils_user_1)
-    s = get_answer(db, expr, 0)
+    s = await get_answer(db, expr, 0)
 
     # The second test clicks submit with no text.
     test_shortanswer.test_sa2(selenium_utils_user_1)
-    s = get_answer(db, expr, 1)
+    s = await get_answer(db, expr, 1)
     assert s[0].answer == ""
 
     # The third test types text then submits it.
     test_shortanswer.test_sa3(selenium_utils_user_1)
-    s = get_answer(db, expr, 2)
+    s = await get_answer(db, expr, 2)
     assert s[1].answer == "My answer"
 
     # The fourth test is just a duplicate of the third test.
     test_shortanswer.test_sa4(selenium_utils_user_1)
-    s = get_answer(db, expr, 3)
+    s = await get_answer(db, expr, 3)
     assert s[2].answer == "My answer"
 
 
@@ -382,8 +391,9 @@ def selenium_utils_user_2(selenium_utils_user):
 
 # Check rendering of selectquestion, which requires server-side support.
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
-    test_poll_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
+    await test_poll_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="The spreadsheet component doesn't support selectquestion.")
@@ -392,42 +402,50 @@ def test_selectquestion_2(selenium_utils_user_2):
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
-    test_clickable_area_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
+    await test_clickable_area_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
-    test_fitb_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
+    await test_fitb_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
-    test_mchoice_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
+    await test_mchoice_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
-    test_parsons_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
+    await test_parsons_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
-    test_dnd_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
+    await test_dnd_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
-    test_activecode_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
+    await test_activecode_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
-    test_short_answer_1(selenium_utils_user_2, bookserver_session)
+@pytest.mark.asyncio
+async def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
+    await test_short_answer_1(selenium_utils_user_2, bookserver_session)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_selectquestion_11(selenium_utils_user_2, bookserver_session):
+@pytest.mark.asyncio
+async def test_selectquestion_11(selenium_utils_user_2, bookserver_session):
     _test_timed_1(selenium_utils_user_2, bookserver_session, "test_timed_2")
 
 
@@ -447,8 +465,8 @@ def selenium_utils_user_timed(selenium_utils_user):
 
 
 # Provide the ability to invoke tests with a specific div_id, since the selectquestion test is a different problem with a different div_id than the plain test.
-def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
-    def tt_check_common_fields(index, div_id):
+async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
+    async def tt_check_common_fields(index, div_id):
         row = check_common_fields_raw(
             selenium_utils_user_timed,
             bookserver_session,
@@ -461,11 +479,11 @@ def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
         return row.correct, row.incorrect, row.skipped, row.reset
 
     test_timed._test_1(selenium_utils_user_timed, timed_divid)
-    # import pdb; pdb.set_trace()
-    assert tt_check_common_fields(0, timed_divid) == (0, 0, 0, None)
-    assert tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
+    assert await tt_check_common_fields(0, timed_divid) == (0, 0, 0, None)
+    assert await tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
-def test_timed_1(selenium_utils_user_timed, bookserver_session):
-    _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")
+@pytest.mark.asyncio
+async def test_timed_1(selenium_utils_user_timed, bookserver_session):
+    await _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")

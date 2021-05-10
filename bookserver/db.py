@@ -30,7 +30,7 @@ else:
 
 # TODO: Remove the ``echo=True`` when done debugging.
 engine = create_async_engine(
-    settings.database_url, connect_args=connect_args, echo=True
+    settings.database_url, connect_args=connect_args, #echo=True
 )
 # This creates the SessionLocal class.  An actual session is an instance of this class.
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
