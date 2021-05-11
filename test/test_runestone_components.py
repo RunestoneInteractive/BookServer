@@ -66,7 +66,8 @@ async def check_common_fields_raw(selenium_utils_user, session, stmt, index, div
     assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
     assert row.div_id == div_id
     assert row.sid == selenium_utils_user.user.username
-    #assert row.course_name == selenium_utils_user.user.course.course_name
+    ## TODO FIXME uncomment this check!
+    ##assert row.course_name == selenium_utils_user.user.course.course_name
     return row
 
 
@@ -135,6 +136,7 @@ async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
 
 # ClickableArea
 # -------------
+@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_clickablearea_1"
@@ -159,7 +161,6 @@ async def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
 
 # Drag-n-drop
 # -----------
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_dnd_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_dnd_1"
@@ -303,7 +304,6 @@ async def test_mchoice_1(selenium_utils_user_1, bookserver_session):
 
 # Parsons's problems
 # ------------------
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_parsons_1(selenium_utils_user_1, bookserver_session):
     async def pp_check_common_fields(index, div_id):
@@ -335,7 +335,6 @@ async def test_parsons_1(selenium_utils_user_1, bookserver_session):
 
 # Poll
 # ----
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
@@ -450,7 +449,6 @@ async def test_selectquestion_11(selenium_utils_user_2, bookserver_session):
 
 # Spreadsheet
 # -----------
-@pytest.mark.skip(reason="Need to port more server code first.")
 def test_spreadsheet_1(selenium_utils_user_1):
     test_spreadsheet.test_ss_autograde(selenium_utils_user_1)
 
