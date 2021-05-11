@@ -48,7 +48,7 @@ from sqlalchemy.sql import text
 # -------------
 from bookserver.config import DatabaseType, settings
 from bookserver.db import async_session, engine
-from bookserver.crud import create_user, create_course
+from bookserver.crud import create_user, create_course, fetch_base_course
 from bookserver.main import app
 from bookserver.models import AuthUserValidator, CoursesValidator
 from .ci_utils import xqt, pushd
@@ -316,9 +316,15 @@ async def bookserver_session(run_bookserver):
 @pytest.fixture
 def create_test_course(bookserver_session):
     async def _create_test_course(**kwargs):
+        # If the base course doesn't exist, make that first.
+        base_course_name = kwargs["base_course"]
+        if not await fetch_base_course(base_course_name):
+            base_course = CoursesValidator(**kwargs)
+            base_course.course_name = base_course_name
+            await create_course(base_course)
+
         course = CoursesValidator(**kwargs)
-        await create_course(course)
-        return course
+        return await create_course(course)
 
     return _create_test_course
 
@@ -344,6 +350,8 @@ def create_test_user(bookserver_session):
     async def _create_test_user(**kwargs):
         # TODO: Add this user to the provided course.
         course = kwargs.pop("course")
+        kwargs["course_id"] = course.id
+        kwargs["course_name"] = course.course_name
         user = AuthUserValidator(**kwargs)
         assert await create_user(user)
         return TestAuthUserValidator(course=course, **kwargs)
