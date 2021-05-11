@@ -55,6 +55,7 @@ async def get_answer(session, stmt, minimum_len):
             ret = (await sess.execute(stmt)).scalars().all()
             if len(ret) >= minimum_len:
                 return ret
+
     async with session() as sess:
         # Wait up to 10 seconds for the desired answer length.
         return await asyncio.wait_for(poll(), 10)
@@ -73,7 +74,9 @@ async def check_common_fields_raw(selenium_utils_user, session, stmt, index, div
 
 # Return the answer, correct, and percent fields after checking common fields.
 async def check_common_fields(selenium_utils_user, session, stmt, index, div_id):
-    row = await check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id)
+    row = await check_common_fields_raw(
+        selenium_utils_user, session, stmt, index, div_id
+    )
     return row.answer, row.correct, row.percent
 
 
@@ -114,9 +117,11 @@ async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
 
     async def ac_check_fields(index, div_id):
-        row = (await get_answer(session, select(Code).where(Code.acid == div_id), index + 1))[
-            index
-        ]
+        row = (
+            await get_answer(
+                session, select(Code).where(Code.acid == div_id), index + 1
+            )
+        )[index]
         assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
         assert row.acid == div_id
         assert row.sid == selenium_utils_user_ac.user.username
@@ -200,10 +205,18 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
     assert await fitb_check_common_fields(0, "test_fitb_string") == (["", ""], False, 0)
 
     test_fitb.test_fitb2(selenium_utils_user_1)
-    assert await fitb_check_common_fields(1, "test_fitb_string") == (["red", ""], False, 0.5)
+    assert await fitb_check_common_fields(1, "test_fitb_string") == (
+        ["red", ""],
+        False,
+        0.5,
+    )
 
     test_fitb.test_fitb3(selenium_utils_user_1)
-    assert await fitb_check_common_fields(2, "test_fitb_string") == (["red", "away"], True, 1)
+    assert await fitb_check_common_fields(2, "test_fitb_string") == (
+        ["red", "away"],
+        True,
+        1,
+    )
 
     test_fitb.test_fitb4(selenium_utils_user_1)
     assert fitb_check_common_fields(3, "test_fitb_string") == (["red", "away"], True, 1)
@@ -212,10 +225,18 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
     assert fitb_check_common_fields(0, "test_fitb_number") == ([" 6"], False, 0)
 
     test_fitb.test_fitboneblank_wildcard(selenium_utils_user_1)
-    assert await fitb_check_common_fields(1, "test_fitb_number") == (["I give up"], False, 0)
+    assert await fitb_check_common_fields(1, "test_fitb_number") == (
+        ["I give up"],
+        False,
+        0,
+    )
 
     test_fitb.test_fitbfillrange(selenium_utils_user_1)
-    assert await fitb_check_common_fields(2, "test_fitb_number") == ([" 6.28 "], True, 1)
+    assert await fitb_check_common_fields(2, "test_fitb_number") == (
+        [" 6.28 "],
+        True,
+        1,
+    )
 
     test_fitb.test_fitbregex(selenium_utils_user_1)
     assert await fitb_check_common_fields(0, "test_fitb_regex_1") == (
@@ -340,13 +361,12 @@ async def test_poll_1(selenium_utils_user_1, bookserver_session):
     id = "test_poll_1"
     test_poll.test_poll(selenium_utils_user_1)
     assert (
-        (await get_answer(
+        await get_answer(
             bookserver_session,
             select(Useinfo).where((Useinfo.div_id == id) & (Useinfo.event == "poll")),
             1,
-        ))[0].act
-        == "4"
-    )
+        )
+    )[0].act == "4"
 
 
 # Short answer

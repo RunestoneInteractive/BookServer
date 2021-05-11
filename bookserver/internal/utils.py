@@ -60,6 +60,6 @@ def http_422error_detail(
     # a descriptive message about the error.
     msg: str,
     # this is the specific error that was raised. e.g. value_error, type_error, integrity_error.
-    err_type: str
+    err_type: str,
 ) -> List[dict]:
     return [{"loc": loc, "msg": msg, "type": err_type}]
