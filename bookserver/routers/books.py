@@ -87,7 +87,8 @@ async def serve_page(
     user=Depends(auth_manager),
 ):
     rslogger.debug(f"user = {user}, course = {course}")
-    course_row = await fetch_base_course(course)
+    course_row = await fetch_base_course(user.course_name)
+    rslogger.debug(f"Base course = {course_row.base_course}")
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course} not found")
     templates = Jinja2Templates(
@@ -116,8 +117,8 @@ async def serve_page(
     )
     context = dict(
         request=request,
-        course_name=course,
-        base_course=course,
+        course_name=user.course_name,
+        base_course=course_row.base_course,
         user_id=user.username,
         # TODO
         user_email="bonelake@mac.com",

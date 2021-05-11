@@ -18,7 +18,7 @@
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 
 # Local application imports
 # -------------------------
@@ -26,6 +26,7 @@ from ..applogger import rslogger
 from ..crud import fetch_last_answer_table_entry
 from ..schemas import AssessmentRequest
 from ..session import is_instructor
+from ..internal.utils import make_json_response
 
 # Routing
 # =======
@@ -43,7 +44,10 @@ async def get_assessment_results(
     request_data: AssessmentRequest,
     request: Request,
 ):
-
+    if not request.state.user:
+        return make_json_response(
+            status=status.HTTP_401_UNAUTHORIZED, detail="not logged in"
+        )
     # if the user is not logged in an HTTP 401 will be returned.
     # Otherwise if the user is an instructor then use the provided
     # sid (it could be any student in the class) If none is provided then
@@ -52,11 +56,16 @@ async def get_assessment_results(
         if not request_data.sid:
             request_data.sid = request.state.user.username
     else:
+        if request_data.sid:
+            # someone is attempting to spoof the api
+            return make_json_response(
+                status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
+            )
         request_data.sid = request.state.user.username
 
     row = await fetch_last_answer_table_entry(request_data)
-    if not row:
-        return ""  # server doesn't have it so we load from local storage instead
+    if not row or row.id is None:
+        return make_json_response(detail="no data")
 
     # :index:`todo``: **port the serverside grading** code::
     #
@@ -65,4 +74,4 @@ async def get_assessment_results(
     #       correct, res_update = fitb_feedback(rows.answer, feedback)
     #       res.update(res_update)
     rslogger.debug(f"Returning {row}")
-    return row
+    return make_json_response(detail=row)
