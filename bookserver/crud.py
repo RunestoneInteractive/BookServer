@@ -117,8 +117,8 @@ async def fetch_last_answer_table_entry(
 
 # Courses
 # -------
-async def fetch_base_course(base_course: str) -> CoursesValidator:
-    query = select(Courses).where(Courses.base_course == base_course)
+async def fetch_course(course_name: str) -> CoursesValidator:
+    query = select(Courses).where(Courses.course_name == course_name)
     async with async_session() as session:
         res = await session.execute(query)
         # When selecting ORM entries it is useful to use the ``scalars`` method
@@ -126,6 +126,19 @@ async def fetch_base_course(base_course: str) -> CoursesValidator:
         # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
         course = res.scalars().one_or_none()
         return CoursesValidator.from_orm(course) if course else None
+
+
+async def fetch_base_course(base_course: str) -> CoursesValidator:
+    query = select(Courses).where(
+        (Courses.base_course == base_course) & (Courses.course_name == base_course)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        # When selecting ORM entries it is useful to use the ``scalars`` method
+        # This modifies the result so that you are getting the ORM object
+        # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
+        base_course = res.scalars().one_or_none()
+        return CoursesValidator.from_orm(base_course) if base_course else None
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
@@ -141,7 +154,6 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     query = select(AuthUser).where(AuthUser.username == user_name)
     async with async_session() as session:
         res = await session.execute(query)
-        rslogger.debug(f"res = {res}")
         user = res.scalars().one_or_none()
     return AuthUserValidator.from_orm(user) if user else None
 
