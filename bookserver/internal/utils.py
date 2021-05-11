@@ -54,14 +54,12 @@ def make_json_response(
     )
 
 
-def http_422error_detail(loc: List[str], msg: str, err_type: str) -> List[dict]:
-    """
-    loc: should be a list, the first element indicates where the error occurred
-      for example in the path or in the body of the request. it could also be function
-      I suppose. the second element in the list indicates the name of the data element
-      that is not valid.
-    msg: this is a descriptive message about the error.
-    type: this is the specific error that was raised. e.g. value_error, type_error,
-      integrity_error
-    """
+def http_422error_detail(
+    # Should be a list, the first element indicates where the error occurred for example in the path or in the body of the request. it could also be function I suppose. The second element in the list gives the name of the data element that is not valid.
+    loc: List[str],
+    # a descriptive message about the error.
+    msg: str,
+    # this is the specific error that was raised. e.g. value_error, type_error, integrity_error.
+    err_type: str
+) -> List[dict]:
     return [{"loc": loc, "msg": msg, "type": err_type}]
