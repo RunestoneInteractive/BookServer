@@ -64,7 +64,7 @@ async def get_answer(session, stmt, minimum_len):
 # Check the fields common to the tables of most Runestone components.
 async def check_common_fields_raw(selenium_utils_user, session, stmt, index, div_id):
     row = (await get_answer(session, stmt, index + 1))[index]
-    assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
+    assert row.timestamp - datetime.datetime.utcnow() < datetime.timedelta(seconds=5)
     assert row.div_id == div_id
     assert row.sid == selenium_utils_user.user.username
     ## TODO FIXME uncomment this check!
