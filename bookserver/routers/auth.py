@@ -16,6 +16,7 @@
 # ----------------
 from bookserver.models import AuthUserValidator
 from datetime import timedelta
+from typing import Optional
 
 #
 # Third-party imports
@@ -110,6 +111,6 @@ async def login(
 
 
 @router.post("/newuser")
-async def register(user: AuthUserValidator) -> AuthUserValidator:
+async def register(user: AuthUserValidator) -> Optional[AuthUserValidator]:
     res = await create_user(user)
     return res

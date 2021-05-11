@@ -362,13 +362,13 @@ class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
             raise ValueError("username must not contain special characters")
         return v
 
-    # So far the recommendation from Pydantic is to do async validation
-    # outside the validator proper as validators are not async
-    # @validator("username")
-    # def username_unique(cls, v):
-    #     if bookserver.crud.fetch_user(v):
-    #         raise ValueError("username must be unique")
-    #     return v
+    ## So far the recommendation from Pydantic is to do async validation
+    ## outside the validator proper as validators are not async
+    ## @validator("username")
+    ## def username_unique(cls, v):
+    ##     if bookserver.crud.fetch_user(v):
+    ##         raise ValueError("username must be unique")
+    ##     return v
 
 
 class CourseInstructor(Base, IdMixin):

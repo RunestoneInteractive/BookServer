@@ -57,7 +57,7 @@ EVENT2TABLE = {
     "mChoice": "mchoice_answers",
     "parsons": "parsons_answers",
     "shortanswer": "shortanswer_answers",
-    "unittest": "unittest_answers ",
+    "unittest": "unittest_answers",
 }
 
 
