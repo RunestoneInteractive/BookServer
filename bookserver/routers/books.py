@@ -18,13 +18,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from jinja2.exceptions import TemplateNotFound
 from pydantic import constr
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
-from ..crud import create_useinfo_entry, fetch_base_course
+from ..crud import create_useinfo_entry, fetch_course
 from ..models import UseinfoValidation
 from ..session import auth_manager
 
@@ -76,23 +77,27 @@ async def get_image(course: str, filepath: str):
 # ===================
 # To see the output of this endpoint, see http://localhost:8080/books/published/overview/index.html.
 @router.api_route(
-    "/published/{course:str}/{pagepath:path}",
+    "/published/{course_name:str}/{pagepath:path}",
     methods=["GET", "POST"],
     response_class=HTMLResponse,
 )
 async def serve_page(
     request: Request,
-    course: constr(max_length=512),  # type: ignore
+    course_name: constr(max_length=512),  # type: ignore
     pagepath: constr(max_length=512),  # type: ignore
     user=Depends(auth_manager),
 ):
-    rslogger.debug(f"user = {user}, course = {course}")
-    course_row = await fetch_base_course(user.course_name)
-    rslogger.debug(f"Base course = {course_row.base_course}")
+    rslogger.debug(f"user = {user}, course name = {course_name}")
+    # Make sure this course exists, and look up its base course.
+    course_row = await fetch_course(user.course_name)
     if not course_row:
-        raise HTTPException(status_code=404, detail=f"Course {course} not found")
+        raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
+    rslogger.debug(f"Base course = {course_row.base_course}")
+    # The template path comes from the base course's name.
     templates = Jinja2Templates(
-        directory=safe_join(settings.book_path, course_row.base_course, "build", course)
+        directory=safe_join(
+            settings.book_path, course_row.base_course, "build", course_row.base_course
+        )
     )
     # Notes::
     #
@@ -110,7 +115,7 @@ async def serve_page(
             event="page",
             act="view",
             div_id=pagepath,
-            course_id=course,
+            course_id=course_name,
             sid=user.username,
             timestamp=datetime.utcnow(),
         )
@@ -132,7 +137,10 @@ async def serve_page(
         readings=[],
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
-    return templates.TemplateResponse(pagepath, context)
+    try:
+        return templates.TemplateResponse(pagepath, context)
+    except TemplateNotFound:
+        raise HTTPException(status_code=404, detail="Page not found.")
 
 
 # Utilities
