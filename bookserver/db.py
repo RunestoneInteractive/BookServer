@@ -28,9 +28,12 @@ if settings.database_type == DatabaseType.SQLite:
 else:
     connect_args = {}
 
-# TODO: Remove the ``echo=True`` when done debugging.
+# The polling in `../../test/test_runestone_components.py` produces a HUGE amount of output when echo is true.
+extra_settings = (
+    {} if settings.book_server_config == BookServerConfig.test else dict(echo=True)
+)
 engine = create_async_engine(
-    settings.database_url, connect_args=connect_args, echo=True
+    settings.database_url, connect_args=connect_args, **extra_settings
 )
 # This creates the SessionLocal class.  An actual session is an instance of this class.
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
