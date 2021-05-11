@@ -64,7 +64,8 @@ async def get_assessment_results(
         request_data.sid = request.state.user.username
 
     row = await fetch_last_answer_table_entry(request_data)
-    if not row or row.id is None:
+    # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
+    if not row or row.id is None:  # type: ignore
         return make_json_response(detail="no data")
 
     # :index:`todo``: **port the serverside grading** code::
