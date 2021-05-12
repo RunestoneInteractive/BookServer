@@ -165,7 +165,7 @@ class AnswerMixin(IdMixin):
 
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
-    # See the `timed exam endpoint parameters <timed exam endpoint parameters>` for documentation on these columns.
+    # See the :ref:`timed exam endpoint parameters` for documentation on these columns..
     correct = Column(Integer)
     incorrect = Column(Integer)
     skipped = Column(Integer)

@@ -113,7 +113,7 @@ def set_tz_offset(
 
 # runlog endpoint
 # ---------------
-# The `logRunEvent` client-side function calls this endpoint to record an activecode run
+# The :ref:`logRunEvent` client-side function calls this endpoint to record an activecode run
 @router.post("/runlog")
 async def runlog(request: Request, response: Response, data: LogRunIncoming):
     # First add a useinfo entry for this run
