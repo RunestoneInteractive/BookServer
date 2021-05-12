@@ -28,13 +28,10 @@
 # Standard library
 # ----------------
 import re
-from typing import Type
 
-#
 # Third-party imports
 # -------------------
 from pydantic import validator
-from pydantic.main import BaseModel
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -352,7 +349,7 @@ class AuthUser(Base, IdMixin):
     accept_tcp = Column(Web2PyBoolean)
 
 
-BaseAuthUserValidator: Type[BaseModel] = sqlalchemy_to_pydantic(AuthUser)
+BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
 
 
 class AuthUserValidator(BaseAuthUserValidator):  # type: ignore

@@ -12,7 +12,7 @@
 # ----------------
 from datetime import datetime, timedelta
 from dateutil.parser import parse
-from typing import Container, Optional, Type, Dict, Tuple, Union, Any
+from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 
 # Third-party imports
 # -------------------
@@ -25,21 +25,28 @@ from .internal.utils import canonicalize_tz
 
 # Schema generation
 # =================
+# Change the ``BaseModel.from_orm`` method to return ``None`` if the input was ``None``, instead of a class full of variables set to ``None``.
+class BaseModelNone(BaseModel):
+    @classmethod
+    def from_orm(cls, obj):
+        return None if obj is None else super().from_orm(obj)
+
+    # Enable `ORM mode <https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances>`_.
+    class Config:
+        orm_mode = True
+
+
 # This creates then returns a Pydantic schema from a SQLAlchemy Table or ORM class.
 #
 # This is copied from https://github.com/tiangolo/pydantic-sqlalchemy/blob/master/pydantic_sqlalchemy/main.py then lightly modified.
-class OrmConfig(BaseConfig):
-    orm_mode = True
-
-
 def sqlalchemy_to_pydantic(
     # The SQLAlchemy model -- either a Table object or a class derived from a declarative base.
     db_model: Type,
     *,
     # An optional Pydantic `model config <https://pydantic-docs.helpmanual.io/usage/model_config/>`_ class to embed in the resulting schema.
-    config: Type = OrmConfig,
+    config: Optional[Type[BaseConfig]] = None,
     # The base class from which the Pydantic model will inherit.
-    base: Optional[Type] = None,
+    base: Type[BaseModel] = BaseModelNone,
     # SQLAlchemy fields to exclude from the resulting schema, provided as a sequence of field names. Ignore the id field by default.
     exclude: Container[str] = tuple(),
 ):
@@ -47,7 +54,7 @@ def sqlalchemy_to_pydantic(
     # If provided an ORM model, get the underlying Table object.
     db_model = getattr(db_model, "__table__", db_model)
 
-    fields: Dict[str, Union[Tuple[str, Any], Type]] = {}
+    fields: Dict[str, Union[Tuple[Type, Any], Type[BaseConfig]]] = {}
     for column in db_model.columns:
         # Determine the name of this column.
         name = column.key
@@ -73,18 +80,16 @@ def sqlalchemy_to_pydantic(
         # Build the schema based on this info.
         fields[name] = (python_type, default)
 
-    # Optionally include special key word arguments. See `create_model <https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation>`_.
+    # See `create_model <https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation>`_.
     if config:
         fields["__config__"] = config
-    if base:
-        fields["__base__"] = base
-    pydantic_model = create_model(str(db_model.name), **fields)  # type: ignore
+    pydantic_model = create_model(str(db_model.name), __base__=base, **fields)  # type: ignore
     return pydantic_model
 
 
 # Schemas
 # =======
-class LogItemIncoming(BaseModel):
+class LogItemIncoming(BaseModelNone):
     """
     This class defines the schema for what we can expect to get from a logging event.
     Because we are using pydantic type verification happens automatically, if we want
@@ -108,7 +113,7 @@ class LogItemIncoming(BaseModel):
     source: Optional[str]
 
 
-class AssessmentRequest(BaseModel):
+class AssessmentRequest(BaseModelNone):
     course: str
     div_id: str
     event: str
@@ -132,11 +137,11 @@ class AssessmentRequest(BaseModel):
         return deadline
 
 
-class TimezoneRequest(BaseModel):
+class TimezoneRequest(BaseModelNone):
     timezoneoffset: int
 
 
-class LogRunIncoming(BaseModel):
+class LogRunIncoming(BaseModelNone):
     div_id: str
     code: str
     errinfo: str
