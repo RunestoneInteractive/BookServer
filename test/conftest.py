@@ -20,6 +20,7 @@
 #
 # Standard library
 # ----------------
+import datetime
 import os
 import subprocess
 import sys
@@ -120,7 +121,6 @@ def run_bookserver(bookserver_address, pytestconfig):
 
         # Build the test book to add in db fields needed.
         with pushd(test_book_path), MonkeyPatch().context() as m:
-            # The runestone build process only looks at ``DBURL``.
             sync_dburl = settings.database_url.replace("+asyncpg", "").replace(
                 "+aiosqlite", ""
             )
@@ -210,8 +210,7 @@ def run_bookserver(bookserver_address, pytestconfig):
             # Wait for the server to come up.
             pass
     else:
-        print("Failure, server not up.")
-        ##assert False, "Server not up."
+        assert False, "Server not up."
     print("done.\n")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
@@ -333,10 +332,13 @@ def create_test_course(bookserver_session):
 async def test_course_1(create_test_course):
     return await create_test_course(
         course_name="test_child_course_1",
-        term_start_date="2000-01-01",
+        term_start_date=datetime.datetime(2000, 1, 1),
         login_required=True,
         base_course="test_course_1",
+        allow_pairs=True,
         student_price=None,
+        downloads_enabled=True,
+        courselevel="",
     )
 
 
@@ -363,7 +365,20 @@ def create_test_user(bookserver_session):
 @pytest.fixture
 async def test_user_1(create_test_user, test_course_1):
     return await create_test_user(
-        username="test_user_1", password="password_1", course=test_course_1
+        username="test_user_1",
+        first_name="test",
+        last_name="user 1",
+        email="test@user1.com",
+        password="password_1",
+        created_on=datetime.datetime(2000, 1, 1),
+        modified_on=datetime.datetime(2000, 1, 1),
+        registration_key="",
+        reset_password_key="",
+        registration_id="",
+        course=test_course_1,
+        active=True,
+        donated=True,
+        accept_tcp=True,
     )
 
 

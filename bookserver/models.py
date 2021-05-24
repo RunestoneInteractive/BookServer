@@ -122,17 +122,19 @@ class IdMixin:
 class Useinfo(Base, IdMixin):
     __tablename__ = "useinfo"
     # _`timestamp`: when this entry was recorded by this webapp.
-    timestamp = Column(DateTime, index=True)
+    timestamp = Column(DateTime, index=True, nullable=False)
     # _`sid`: TODO: The student id? (user) which produced this row.
-    sid = Column(String(512), index=True)
+    sid = Column(String(512), index=True, nullable=False)
     # The type of question (timed exam, fill in the blank, etc.).
-    event = Column(String(512), index=True)
+    event = Column(String(512), index=True, nullable=False)
     # TODO: What is this? The action associated with this log entry?
-    act = Column(String(512))
+    act = Column(String(512), nullable=False)
     # _`div_id`: the ID of the question which produced this entry.
-    div_id = Column(String(512), index=True)
+    div_id = Column(String(512), index=True, nullable=False)
     # _`course_id`: the Courses ``course_name`` **NOT** the ``id`` this row refers to. TODO: Use the ``id`` instead!
-    course_id = Column(String(512), ForeignKey("courses.course_name"), index=True)
+    course_id = Column(
+        String(512), ForeignKey("courses.course_name"), index=True, nullable=False
+    )
     # These are not currently in web2py but I'm going to add them
     ##chapter = Column(String, unique=False, index=False)
     ##sub_chapter = Column(String, unique=False, index=False)
@@ -148,16 +150,16 @@ class AnswerMixin(IdMixin):
     # TODO: these entries duplicate Useinfo.timestamp. Why not just have a timestamp_id field?
     #
     # See timestamp_.
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, nullable=False)
     # See div_id_.
-    div_id = Column(String(512), index=True)
+    div_id = Column(String(512), index=True, nullable=False)
     # See sid_.
-    sid = Column(String(512), index=True)
+    sid = Column(String(512), index=True, nullable=False)
 
     # See course_name_. Mixins with foreign keys need `special treatment <http://docs.sqlalchemy.org/en/latest/orm/extensions/declarative/mixins.html#mixing-in-columns>`_.
     @declared_attr
     def course_name(cls):
-        return Column(String(512), ForeignKey("courses.course_name"))
+        return Column(String(512), ForeignKey("courses.course_name"), nullable=False)
 
     def to_dict(self):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
@@ -166,10 +168,10 @@ class AnswerMixin(IdMixin):
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
     # See the :ref:`timed exam endpoint parameters` for documentation on these columns..
-    correct = Column(Integer)
-    incorrect = Column(Integer)
-    skipped = Column(Integer)
-    time_taken = Column(Integer)
+    correct = Column(Integer, nullable=False)
+    incorrect = Column(Integer, nullable=False)
+    skipped = Column(Integer, nullable=False)
+    time_taken = Column(Integer, nullable=False)
     # True if the ``act`` endpoint parameter was ``'reset'``; otherwise, False.
     reset = Column(Web2PyBoolean)
 
@@ -177,7 +179,8 @@ class TimedExam(Base, AnswerMixin):
 # Like an AnswerMixin, but also has a boolean correct_ field.
 class CorrectAnswerMixin(AnswerMixin):
     # _`correct`: True if this answer is correct.
-    correct = Column(Web2PyBoolean)
+    correct = Column(Web2PyBoolean, nullable=False)
+    # Some question types (drag-n-drop, for example) don't provide this. A more accurate approach would be to specify this for each answer class, but I'm avoiding that extra work for now.
     percent = Column(Float)
 
 
@@ -186,7 +189,7 @@ class CorrectAnswerMixin(AnswerMixin):
 class MchoiceAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "mchoice_answers"
     # _`answer`: The answer to this question. TODO: what is the format?
-    answer = Column(String(50))
+    answer = Column(String(50), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_mc", "sid", "div_id", "course_name"),)
 
 
@@ -195,7 +198,7 @@ class MchoiceAnswers(Base, CorrectAnswerMixin):
 class FitbAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "fitb_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_fb", "sid", "div_id", "course_name"),)
 
 
@@ -204,7 +207,7 @@ class FitbAnswers(Base, CorrectAnswerMixin):
 class DragndropAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "dragndrop_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_dd", "sid", "div_id", "course_name"),)
 
 
@@ -213,7 +216,7 @@ class DragndropAnswers(Base, CorrectAnswerMixin):
 class ClickableareaAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "clickablearea_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_ca", "sid", "div_id", "course_name"),)
 
 
@@ -222,9 +225,9 @@ class ClickableareaAnswers(Base, CorrectAnswerMixin):
 class ParsonsAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "parsons_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     # _`source`: The source code provided by a student? TODO.
-    source = Column(String(512))
+    source = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_pp", "sid", "div_id", "course_name"),)
 
 
@@ -233,9 +236,9 @@ class ParsonsAnswers(Base, CorrectAnswerMixin):
 class CodelensAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "codelens_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     # See source_.
-    source = Column(String(512))
+    source = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_cl", "sid", "div_id", "course_name"),)
 
 
@@ -243,16 +246,16 @@ class CodelensAnswers(Base, CorrectAnswerMixin):
 class ShortanswerAnswers(Base, AnswerMixin):
     __tablename__ = "shortanswer_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_sa", "sid", "div_id", "course_name"),)
 
 
 @register_answer_table
 class UnittestAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "unittest_answers"
-    answer = Column(Text)
-    passed = Column(Integer)
-    failed = Column(Integer)
+    answer = Column(Text, nullable=False)
+    passed = Column(Integer, nullable=False)
+    failed = Column(Integer, nullable=False)
     __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
 
 
@@ -260,9 +263,9 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
     # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me.
-    answer = Column(String(512))
+    answer = Column(String(512), nullable=False)
     # A grade between 0 and 100.
-    correct = Column(Float())
+    correct = Column(Float(), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
 
 
@@ -273,18 +276,19 @@ class LpAnswers(Base, AnswerMixin):
 #
 class Code(Base, IdMixin):
     __tablename__ = "code"
-    timestamp = Column(DateTime, unique=False, index=True)
-    sid = Column(String(512), unique=False, index=True)
+    timestamp = Column(DateTime, unique=False, index=True, nullable=False)
+    sid = Column(String(512), unique=False, index=True, nullable=False)
     acid = Column(
         String(512),
         unique=False,
         index=True,
+        nullable=False,
     )  # unique identifier for a component
-    course_id = Column(Integer, index=False)
-    code = Column(Text, index=False)
-    language = Column(Text, index=False)
-    emessage = Column(Text, index=False)
-    comment = Column(Text, index=False)
+    course_id = Column(Integer, index=False, nullable=False)
+    code = Column(Text, index=False, nullable=False)
+    language = Column(Text, index=False, nullable=False)
+    emessage = Column(Text, index=False, nullable=False)
+    comment = Column(Text, index=False, nullable=False)
 
 
 # Used for datafiles and storing questions and their suffix separately.
@@ -293,12 +297,12 @@ class Code(Base, IdMixin):
 class SourceCode(Base, IdMixin):
     __tablename__ = "source_code"
 
-    acid = Column(String(512), index=True)
-    course_id = Column(String(512), index=True)
-    includes = Column(String(512))
-    available_files = Column(String(512))
-    main_code = Column(Text)
-    suffix_code = Column(Text)
+    acid = Column(String(512), index=True, nullable=False)
+    course_id = Column(String(512), index=True, nullable=False)
+    includes = Column(String(512), nullable=False)
+    available_files = Column(String(512), nullable=False)
+    main_code = Column(Text, nullable=False)
+    suffix_code = Column(Text, nullable=False)
 
 
 CodeValidator = sqlalchemy_to_pydantic(Code)
@@ -313,16 +317,16 @@ CodeValidator = sqlalchemy_to_pydantic(Code)
 class Courses(Base, IdMixin):
     __tablename__ = "courses"
     # _`course_name`: The name of this course.
-    course_name = Column(String(512), unique=True)
-    term_start_date = Column(Date)
+    course_name = Column(String(512), unique=True, nullable=False)
+    term_start_date = Column(Date, nullable=False)
     # TODO: Why not use base_course_id instead? _`base_course`: the course from which this course was derived. TODO: If this is a base course, this field should be identical to the course_name_?
-    base_course = Column(String(512), ForeignKey("courses.course_name"))
+    base_course = Column(String(512), ForeignKey("courses.course_name"), nullable=False)
     # TODO: This should go in a different table. Not all courses have a Python/Skuplt component.
-    login_required = Column(Web2PyBoolean)
-    allow_pairs = Column(Web2PyBoolean)
+    login_required = Column(Web2PyBoolean, nullable=False)
+    allow_pairs = Column(Web2PyBoolean, nullable=False)
     student_price = Column(Integer)
-    downloads_enabled = Column(Web2PyBoolean)
-    courselevel = Column(String)
+    downloads_enabled = Column(Web2PyBoolean, nullable=False)
+    courselevel = Column(String, nullable=False)
 
 
 CoursesValidator = sqlalchemy_to_pydantic(Courses)
@@ -333,20 +337,20 @@ CoursesValidator = sqlalchemy_to_pydantic(Courses)
 class AuthUser(Base, IdMixin):
     __tablename__ = "auth_user"
     username = Column(String(512), nullable=False, unique=True)
-    first_name = Column(String(512))
-    last_name = Column(String(512))
-    email = Column(String(512), unique=True)
-    password = Column(String(512))
-    created_on = Column(DateTime())
-    modified_on = Column(DateTime())
-    registration_key = Column(String(512))
-    reset_password_key = Column(String(512))
-    registration_id = Column(String(512))
-    course_id = Column(Integer)
-    course_name = Column(String(512))
-    active = Column(Web2PyBoolean)
-    donated = Column(Web2PyBoolean)
-    accept_tcp = Column(Web2PyBoolean)
+    first_name = Column(String(512), nullable=False)
+    last_name = Column(String(512), nullable=False)
+    email = Column(String(512), unique=True, nullable=False)
+    password = Column(String(512), nullable=False)
+    created_on = Column(DateTime(), nullable=False)
+    modified_on = Column(DateTime(), nullable=False)
+    registration_key = Column(String(512), nullable=False)
+    reset_password_key = Column(String(512), nullable=False)
+    registration_id = Column(String(512), nullable=False)
+    course_id = Column(Integer, nullable=False)
+    course_name = Column(String(512), nullable=False)
+    active = Column(Web2PyBoolean, nullable=False)
+    donated = Column(Web2PyBoolean, nullable=False)
+    accept_tcp = Column(Web2PyBoolean, nullable=False)
 
 
 BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
@@ -371,9 +375,9 @@ class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
 class CourseInstructor(Base, IdMixin):
     __tablename__ = "course_instructor"
     course = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    instructor = Column(Integer, ForeignKey("auth_user.id"))
-    verified = Column(Web2PyBoolean)
-    paid = Column(Web2PyBoolean)
+    instructor = Column(Integer, ForeignKey("auth_user.id"), nullable=False)
+    verified = Column(Web2PyBoolean, nullable=False)
+    paid = Column(Web2PyBoolean, nullable=False)
 
 
 CourseInstructorValidator = sqlalchemy_to_pydantic(CourseInstructor)
@@ -387,8 +391,8 @@ CourseInstructorValidator = sqlalchemy_to_pydantic(CourseInstructor)
 class UserCourse(Base, IdMixin):
     __tablename__ = "user_courses"
 
-    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
-    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"))
+    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False)
+    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
 
 
 # Assignments and Questions
@@ -404,26 +408,26 @@ class Question(Base, IdMixin):
 
     base_course = Column(String(512), nullable=False, index=True)
     name = Column(String(512), nullable=False, index=True)
-    chapter = Column(String(512), index=True)
-    subchapter = Column(String(512), index=True)
-    author = Column(String(512))
-    question = Column(Text)
-    timestamp = Column(DateTime)
-    question_type = Column(String(512))
-    is_private = Column(Web2PyBoolean)
-    htmlsrc = Column(Text)
-    autograde = Column(String(512))
-    practice = Column(Web2PyBoolean)
-    topic = Column(String(512))
-    feedback = Column(Text)
-    from_source = Column(Web2PyBoolean)
-    review_flag = Column(Web2PyBoolean)
-    qnumber = Column(String(512))
-    optional = Column(Web2PyBoolean)
-    description = Column(Text)
-    difficulty = Column(Float(53))
-    pct_on_first = Column(Float(53))
-    mean_clicks_to_correct = Column(Float(53))
+    chapter = Column(String(512), index=True, nullable=False)
+    subchapter = Column(String(512), index=True, nullable=False)
+    author = Column(String(512), nullable=False)
+    question = Column(Text, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    question_type = Column(String(512), nullable=False)
+    is_private = Column(Web2PyBoolean, nullable=False)
+    htmlsrc = Column(Text, nullable=False)
+    autograde = Column(String(512), nullable=False)
+    practice = Column(Web2PyBoolean, nullable=False)
+    topic = Column(String(512), nullable=False)
+    feedback = Column(Text, nullable=False)
+    from_source = Column(Web2PyBoolean, nullable=False)
+    review_flag = Column(Web2PyBoolean, nullable=False)
+    qnumber = Column(String(512), nullable=False)
+    optional = Column(Web2PyBoolean, nullable=False)
+    description = Column(Text, nullable=False)
+    difficulty = Column(Float(53), nullable=False)
+    pct_on_first = Column(Float(53), nullable=False)
+    mean_clicks_to_correct = Column(Float(53), nullable=False)
 
 
 class Assignment(Base, IdMixin):
@@ -433,33 +437,35 @@ class Assignment(Base, IdMixin):
     )
 
     course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
-    name = Column(String(512))
-    points = Column(Integer)
-    released = Column(Web2PyBoolean)
-    description = Column(Text)
-    duedate = Column(DateTime)
-    visible = Column(Web2PyBoolean)
-    threshold_pct = Column(Float(53))
-    allow_self_autograde = Column(Web2PyBoolean)
-    is_timed = Column(Web2PyBoolean)
-    time_limit = Column(Integer)
-    from_source = Column(Web2PyBoolean)
-    nofeedback = Column(Web2PyBoolean)
-    nopause = Column(Web2PyBoolean)
+    name = Column(String(512), nullable=False)
+    points = Column(Integer, nullable=False)
+    released = Column(Web2PyBoolean, nullable=False)
+    description = Column(Text, nullable=False)
+    duedate = Column(DateTime, nullable=False)
+    visible = Column(Web2PyBoolean, nullable=False)
+    threshold_pct = Column(Float(53), nullable=False)
+    allow_self_autograde = Column(Web2PyBoolean, nullable=False)
+    is_timed = Column(Web2PyBoolean, nullable=False)
+    time_limit = Column(Integer, nullable=False)
+    from_source = Column(Web2PyBoolean, nullable=False)
+    nofeedback = Column(Web2PyBoolean, nullable=False)
+    nopause = Column(Web2PyBoolean, nullable=False)
 
 
 class AssignmentQuestion(Base, IdMixin):
     __tablename__ = "assignment_questions"
 
-    assignment_id = Column(ForeignKey("assignments.id", ondelete="CASCADE"))
-    question_id = Column(ForeignKey("questions.id", ondelete="CASCADE"))
-    points = Column(Integer)
-    timed = Column(Web2PyBoolean)
-    autograde = Column(String(512))
-    which_to_grade = Column(String(512))
-    reading_assignment = Column(Web2PyBoolean)
-    sorting_priority = Column(Integer)
-    activities_required = Column(Integer)
+    assignment_id = Column(
+        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
+    )
+    question_id = Column(ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
+    points = Column(Integer, nullable=False)
+    timed = Column(Web2PyBoolean, nullable=False)
+    autograde = Column(String(512), nullable=False)
+    which_to_grade = Column(String(512), nullable=False)
+    reading_assignment = Column(Web2PyBoolean, nullable=False)
+    sorting_priority = Column(Integer, nullable=False)
+    activities_required = Column(Integer, nullable=False)
 
 
 # Grading
@@ -484,10 +490,10 @@ class QuestionGrade(Base, IdMixin):
     sid = Column(String(512), nullable=False)
     course_name = Column(String(512), nullable=False)
     div_id = Column(String(512), nullable=False)
-    score = Column(Float(53))
-    comment = Column(Text)
-    deadline = Column(DateTime)
-    answer_id = Column(Integer)
+    score = Column(Float(53), nullable=False)
+    comment = Column(Text, nullable=False)
+    deadline = Column(DateTime, nullable=False)
+    answer_id = Column(Integer, nullable=False)
 
 
 # The Grade table holds the grade for an entire assignment
@@ -495,13 +501,15 @@ class Grade(Base, IdMixin):
     __tablename__ = "grades"
     __table_args__ = (UniqueConstraint("auth_user", "assignment"),)
 
-    auth_user = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
-    assignment = Column(ForeignKey("assignments.id", ondelete="CASCADE"))
-    score = Column(Float(53))
-    manual_total = Column(Web2PyBoolean)
-    projected = Column(Float(53))
-    lis_result_sourcedid = Column(String(1024))
-    lis_outcome_url = Column(String(1024))
+    auth_user = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False)
+    assignment = Column(
+        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
+    )
+    score = Column(Float(53), nullable=False)
+    manual_total = Column(Web2PyBoolean, nullable=False)
+    projected = Column(Float(53), nullable=False)
+    lis_result_sourcedid = Column(String(1024), nullable=False)
+    lis_outcome_url = Column(String(1024), nullable=False)
 
 
 # Book Structure Tables
@@ -509,20 +517,22 @@ class Grade(Base, IdMixin):
 class Chapter(Base, IdMixin):
     __tablename__ = "chapters"
 
-    chapter_name = Column(String(512))
-    course_id = Column(String(512), index=True)
-    chapter_label = Column(String(512))
-    chapter_num = Column(Integer)
+    chapter_name = Column(String(512), nullable=False)
+    course_id = Column(String(512), index=True, nullable=False)
+    chapter_label = Column(String(512), nullable=False)
+    chapter_num = Column(Integer, nullable=False)
 
 
 class SubChapter(Base, IdMixin):
     __tablename__ = "sub_chapters"
 
-    sub_chapter_name = Column(String(512))
-    chapter_id = Column(ForeignKey("chapters.id", ondelete="CASCADE"), index=True)
-    sub_chapter_label = Column(String(512))
-    skipreading = Column(Web2PyBoolean)
-    sub_chapter_num = Column(Integer)
+    sub_chapter_name = Column(String(512), nullable=False)
+    chapter_id = Column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    sub_chapter_label = Column(String(512), nullable=False)
+    skipreading = Column(Web2PyBoolean, nullable=False)
+    sub_chapter_num = Column(Integer, nullable=False)
 
 
 # Tracking User Progress
@@ -531,22 +541,22 @@ class UserSubChapterProgres(Base, IdMixin):
     __tablename__ = "user_sub_chapter_progress"
 
     user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True)
-    chapter_id = Column(String(512), index=True)
-    sub_chapter_id = Column(String(512), index=True)
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    status = Column(Integer)
-    course_name = Column(String(512))
+    chapter_id = Column(String(512), index=True, nullable=False)
+    sub_chapter_id = Column(String(512), index=True, nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    status = Column(Integer, nullable=False)
+    course_name = Column(String(512), nullable=False)
 
 
 class UserChapterProgres(Base, IdMixin):
     __tablename__ = "user_chapter_progress"
 
-    user_id = Column(String(512))
-    chapter_id = Column(String(512))
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    status = Column(Integer)
+    user_id = Column(String(512), nullable=False)
+    chapter_id = Column(String(512), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    status = Column(Integer, nullable=False)
 
 
 # Tables used by the ``selectquestion`` directive
@@ -556,28 +566,28 @@ class UserChapterProgres(Base, IdMixin):
 class UserExperiment(Base, IdMixin):
     __tablename__ = "user_experiment"
 
-    experiment_id = Column(String(512))
-    sid = Column(String(512))
-    exp_group = Column(Integer)
+    experiment_id = Column(String(512), nullable=False)
+    sid = Column(String(512), nullable=False)
+    exp_group = Column(Integer, nullable=False)
 
 
 class SelectedQuestion(Base, IdMixin):
     __tablename__ = "selected_questions"
 
-    selector_id = Column(String(512))
-    sid = Column(String(512))
-    selected_id = Column(String(512))
-    points = Column(Integer)
-    competency = Column(String(512))
+    selector_id = Column(String(512), nullable=False)
+    sid = Column(String(512), nullable=False)
+    selected_id = Column(String(512), nullable=False)
+    points = Column(Integer, nullable=False)
+    competency = Column(String(512), nullable=False)
 
 
 class Competency(Base, IdMixin):
     __tablename__ = "competency"
 
-    question = Column(ForeignKey("questions.id", ondelete="CASCADE"))
-    competency = Column(String(512))
-    is_primary = Column(Web2PyBoolean)
-    question_name = Column(String(512))
+    question = Column(ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
+    competency = Column(String(512), nullable=False)
+    is_primary = Column(Web2PyBoolean, nullable=False)
+    question_name = Column(String(512), nullable=False)
 
 
 # Course Parameters
@@ -586,28 +596,30 @@ class CourseAttribute(Base, IdMixin):
     __tablename__ = "course_attributes"
     __table_args__ = (Index("course_attr_idx", "course_id", "attr"),)
 
-    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"))
-    attr = Column(String(512))
-    value = Column(Text)
+    course_id = Column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    attr = Column(String(512), nullable=False)
+    value = Column(Text, nullable=False)
 
 
 class CourseLtiMap(Base, IdMixin):
     __tablename__ = "course_lti_map"
 
-    lti_id = Column(Integer)
-    course_id = Column(Integer)
+    lti_id = Column(Integer, nullable=False)
+    course_id = Column(Integer, nullable=False)
 
 
 class LtiKey(Base, IdMixin):
     __tablename__ = "lti_keys"
 
-    consumer = Column(String(512))
-    secret = Column(String(512))
-    application = Column(String(512))
+    consumer = Column(String(512), nullable=False)
+    secret = Column(String(512), nullable=False)
+    application = Column(String(512), nullable=False)
 
 
 class Payment(Base, IdMixin):
     __tablename__ = "payments"
 
-    user_courses_id = Column(ForeignKey("user_courses.id", ondelete="CASCADE"))
-    charge_id = Column(String(255))
+    user_courses_id = Column(
+        ForeignKey("user_courses.id", ondelete="CASCADE"), nullable=False
+    )
+    charge_id = Column(String(255), nullable=False)
