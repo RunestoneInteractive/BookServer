@@ -137,6 +137,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     useinfo_dict = data.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course")
+    useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     useinfo_dict["timestamp"] = datetime.utcnow()
     if data.errinfo != "success":
         useinfo_dict["event"] = "ac_error"
