@@ -15,18 +15,22 @@
 #
 # Standard library
 # ----------------
+import datetime
+from os.path import abspath
+from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
+from pydantic import BaseModel
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
-from ..crud import fetch_last_answer_table_entry
+from ..crud import fetch_code, fetch_last_answer_table_entry
+from ..internal.utils import make_json_response
 from ..schemas import AssessmentRequest
 from ..session import is_instructor
-from ..internal.utils import make_json_response
 
 # Routing
 # =======
@@ -76,3 +80,63 @@ async def get_assessment_results(
     #       res.update(res_update)
     rslogger.debug(f"Returning {row}")
     return make_json_response(detail=row)
+
+
+# Define a simple model for the gethist request.
+# If you just try to specify the two fields as parameters it expects
+# them to be in a query string.
+class HistoryRequest(BaseModel):
+    acid: str
+    sid: Optional[str] = None
+
+
+@router.post("/gethist")
+async def get_history(request: Request, request_data: HistoryRequest):
+    """
+    return the history of saved code by this user for a particular acid
+    :Parameters:
+        - `acid`: id of the active code block
+        - `user`: optional identifier for the owner of the code
+    :Return:
+        - json object with a detail key that references a dictionary
+
+        ::
+
+            { "acid": div_id,
+              "sid" : id of student requested,
+              "history": [code, code, code],
+              "timestamps": [ts, ts, ts]
+            }
+    """
+    acid = request_data.acid
+    sid = request_data.sid
+    # if request_data.sid then we know this is being called from the grading interface
+    # so verify that the actual user is an instructor.
+    if sid:
+        if request.state.user and request.state.user.username != sid:
+            if await is_instructor(request):
+                course_id = request.state.user.course_id
+            else:
+                course_id = None
+        else:
+            raise HTTPException(401)
+
+    elif request.state.user:
+        sid = request.state.user.username
+        course_id = request.state.user.course_id
+    else:
+        sid = None
+        course_id = None
+
+    res = {}
+    if sid:
+        res["acid"] = acid
+        res["sid"] = sid
+        # get the code they saved in chronological order; id order gets that for us
+        r = await fetch_code(sid, acid, course_id)
+        res["history"] = [row.code for row in r]
+        res["timestamps"] = [
+            row.timestamp.replace(tzinfo=datetime.timezone.utc).isoformat() for row in r
+        ]
+
+    return make_json_response(detail=res)
