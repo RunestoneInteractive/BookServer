@@ -369,7 +369,7 @@ async def test_user_1(create_test_user, test_course_1):
 
 # Selenium
 # ========
-# Provide access to Runestone through a web browser using Selenium. There's a lot of shared code between these tests and the Runestone Component tests using Selenium; see :ref:`shared_conftest.py` for details.
+# Provide access to Runestone through a web browser using Selenium. There's a lot of shared code between these tests and the Runestone Component tests using Selenium; see :doc:`runestone/shared_conftest.py` for details.
 #
 # Create an instance of Selenium once per testing session.
 @pytest.fixture(scope="session")

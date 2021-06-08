@@ -28,13 +28,10 @@
 # Standard library
 # ----------------
 import re
-from typing import Type
 
-#
 # Third-party imports
 # -------------------
 from pydantic import validator
-from pydantic.main import BaseModel
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -168,7 +165,7 @@ class AnswerMixin(IdMixin):
 
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
-    # See the `timed exam endpoint parameters <timed exam endpoint parameters>` for documentation on these columns.
+    # See the :ref:`timed exam endpoint parameters` for documentation on these columns..
     correct = Column(Integer)
     incorrect = Column(Integer)
     skipped = Column(Integer)
@@ -352,7 +349,7 @@ class AuthUser(Base, IdMixin):
     accept_tcp = Column(Web2PyBoolean)
 
 
-BaseAuthUserValidator: Type[BaseModel] = sqlalchemy_to_pydantic(AuthUser)
+BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
 
 
 class AuthUserValidator(BaseAuthUserValidator):  # type: ignore

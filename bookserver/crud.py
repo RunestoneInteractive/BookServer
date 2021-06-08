@@ -125,7 +125,7 @@ async def fetch_course(course_name: str) -> CoursesValidator:
         # This modifies the result so that you are getting the ORM object
         # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
         course = res.scalars().one_or_none()
-        return CoursesValidator.from_orm(course) if course else None
+        return CoursesValidator.from_orm(course)
 
 
 async def fetch_base_course(base_course: str) -> CoursesValidator:
@@ -138,7 +138,7 @@ async def fetch_base_course(base_course: str) -> CoursesValidator:
         # This modifies the result so that you are getting the ORM object
         # instead of a Row object. `See <https://docs.sqlalchemy.org/en/14/orm/queryguide.html#selecting-orm-entities-and-attributes>`_
         base_course = res.scalars().one_or_none()
-        return CoursesValidator.from_orm(base_course) if base_course else None
+        return CoursesValidator.from_orm(base_course)
 
 
 async def create_course(course_info: CoursesValidator) -> CoursesValidator:
@@ -155,7 +155,7 @@ async def fetch_user(user_name: str) -> AuthUserValidator:
     async with async_session() as session:
         res = await session.execute(query)
         user = res.scalars().one_or_none()
-    return AuthUserValidator.from_orm(user) if user else None
+    return AuthUserValidator.from_orm(user)
 
 
 async def create_user(user: AuthUserValidator) -> Optional[AuthUserValidator]:
