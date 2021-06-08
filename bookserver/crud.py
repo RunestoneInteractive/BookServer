@@ -220,6 +220,20 @@ async def create_code_entry(data: CodeValidator):
     return CodeValidator.from_orm(new_code)
 
 
+async def fetch_code(sid: str, acid: str, course_id: int):
+    query = select(Code).where(
+        (Code.sid == sid)
+        & (Code.acid == acid)
+        & (Code.course_id == course_id)
+        & (Code.timestamp != None)  # noqa: E711
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+
+        code_list = [CodeValidator.from_orm(x) for x in res.scalars().fetchall()]
+        return code_list
+
+
 # Development and Testing Utils
 # -----------------------------
 # This function is useful for development.  It recreates the database
