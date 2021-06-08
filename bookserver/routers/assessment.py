@@ -16,8 +16,7 @@
 # Standard library
 # ----------------
 import datetime
-from os.path import abspath
-from typing import Optional
+from typing import Optional, Dict, Any
 
 # Third-party imports
 # -------------------
@@ -128,7 +127,7 @@ async def get_history(request: Request, request_data: HistoryRequest):
         sid = None
         course_id = None
 
-    res = {}
+    res: Dict[str, Any] = {}
     if sid:
         res["acid"] = acid
         res["sid"] = sid
