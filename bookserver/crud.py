@@ -225,7 +225,7 @@ async def fetch_code(sid: str, acid: str, course_id: int):
         (Code.sid == sid)
         & (Code.acid == acid)
         & (Code.course_id == course_id)
-        & (Code.timestamp != None)  # noqa: E711
+        & (Code.timestamp != None).order_by(Code.id)  # noqa: E711
     )
     async with async_session() as session:
         res = await session.execute(query)
