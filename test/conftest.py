@@ -200,6 +200,13 @@ def run_bookserver(bookserver_address, pytestconfig):
     for echo_thread in echo_threads:
         echo_thread.start()
 
+    # Terminate the server and celery, printing any output produced.
+    def shut_down():
+        book_server_process.terminate()
+        ##celery_process.terminate()
+        for echo_thread in echo_threads:
+            echo_thread.join()
+
     print("Waiting for the webserver to come up...")
     for tries in range(10):
         try:
@@ -207,21 +214,15 @@ def run_bookserver(bookserver_address, pytestconfig):
             break
         except URLError as e:
             print(e)
-            # Wait for the server to come up.
-            pass
     else:
+        shut_down()
         assert False, "Server not up."
     print("done.\n")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
     yield
 
-    # Terminate the server and schedulers to give web2py time to shut down gracefully.
-    book_server_process.terminate()
-    ##celery_process.terminate()
-    for echo_thread in echo_threads:
-        echo_thread.join()
-
+    shut_down()
 
 # Database
 # ========
