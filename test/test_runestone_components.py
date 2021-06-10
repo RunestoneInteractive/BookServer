@@ -27,6 +27,7 @@ from runestone.poll.test import test_poll
 from runestone.shortanswer.test import test_shortanswer
 from runestone.spreadsheet.test import test_spreadsheet
 from runestone.timed.test import test_timed
+from runestone import runestone_version
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.sql import select
@@ -109,6 +110,11 @@ def selenium_utils_user_1(selenium_utils_user):
 def selenium_utils_user_ac(selenium_utils_user):
     selenium_utils_user.get_book_url("activecode.html")
     return selenium_utils_user
+
+
+@pytest.mark.asyncio
+async def test_runestone_version():
+    assert runestone_version.startswith("6.")
 
 
 @pytest.mark.skip(reason="Need to port more server code first.")
