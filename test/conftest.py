@@ -24,6 +24,7 @@ import datetime
 import os
 import subprocess
 import sys
+import time
 from threading import Thread
 from shutil import rmtree, copytree
 from urllib.error import URLError
@@ -214,6 +215,7 @@ def run_bookserver(bookserver_address, pytestconfig):
             break
         except URLError as e:
             print(e)
+        time.sleep(1)
     else:
         shut_down()
         assert False, "Server not up."
