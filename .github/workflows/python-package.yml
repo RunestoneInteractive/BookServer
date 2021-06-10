@@ -48,4 +48,8 @@ jobs:
         poetry install
     - name: Run the Pre Commit Check Script
       run: |
-        poetry run ./pre_commit_check.py
+        poetry run black --check .
+        poetry run flake8 .
+        poetry run mypy
+        poetry run pytest -s -v
+
