@@ -559,6 +559,19 @@ class UserChapterProgres(Base, IdMixin):
     status = Column(Integer, nullable=False)
 
 
+class UserState(Base, IdMixin):
+    __tablename__ = "user_state"
+
+    user_id = Column(Integer, index=True)
+    course_id = Column(String(512), index=True)
+    last_page_url = Column(String(512))
+    last_page_hash = Column(String(512))
+    last_page_chapter = Column(String(512))
+    last_page_subchapter = Column(String(512))
+    last_page_scroll_location = Column(String(512))
+    last_page_accessed_on = Column(DateTime)
+
+
 # Tables used by the ``selectquestion`` directive
 # -----------------------------------------------
 
