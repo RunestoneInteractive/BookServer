@@ -23,7 +23,7 @@ from pydal.validators import CRYPT
 from fastapi.exceptions import HTTPException
 
 # import sqlalchemy
-from sqlalchemy import and_
+from sqlalchemy import and_, update
 from sqlalchemy.sql import select
 
 # Local application imports
@@ -35,6 +35,7 @@ from .models import (
     CodeValidator,
     CourseInstructor,
     CourseInstructorValidator,
+    UserSubChapterProgres,
     answer_tables,
     AuthUser,
     AuthUserValidator,
@@ -42,6 +43,7 @@ from .models import (
     CoursesValidator,
     Useinfo,
     UseinfoValidation,
+    UserState,
     validation_tables,
 )
 from .config import settings, BookServerConfig
@@ -276,3 +278,39 @@ async def create_initial_courses_users():
                 course_id=12,
             )
         )
+
+
+async def update_user_state(user_data: schemas.LastPageData):
+    stmt = (
+        update(UserState)
+        .where(
+            (UserState.user_id == user_data.user.id)
+            & (UserState.course_id == user_data.course_id)
+        )
+        .values(**user_data.dict())
+    )
+    async with async_session() as session:
+        res = await session.execute(stmt)
+        rslogger.debug(f"{res=}")
+
+
+async def update_sub_chapter_progress(user_data: schemas.LastPageData):
+
+    stmt = (
+        update(UserSubChapterProgres)
+        .where(
+            (UserSubChapterProgres.user_id == user_data.user_id)
+            & (UserSubChapterProgres.chapter_id == user_data.last_page_chapter)
+            & (UserSubChapterProgres.sub_chapter_id == user_data.last_page_subchapter)
+            & (
+                (UserSubChapterProgres.course_name == user_data.course_id)
+                | (
+                    UserSubChapterProgres.course_name == None
+                )  # Back fill for old entries without course
+            )
+        )
+        .values(**user_data.dict())
+    )
+    async with async_session() as session:
+        res = await session.execute(stmt)
+        rslogger.debug(f"{res=}")

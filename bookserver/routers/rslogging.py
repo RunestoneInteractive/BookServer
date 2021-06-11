@@ -18,6 +18,8 @@ from typing import Optional
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Request, Cookie, Response, status
+from pydantic import BaseModel, Field
+from humps import camelize
 
 # Local application imports
 # -------------------------
@@ -28,6 +30,7 @@ from ..crud import (
     create_code_entry,
     create_useinfo_entry,
     fetch_user,
+    update_user_state,
 )
 from ..models import (
     AuthUserValidator,
@@ -35,7 +38,13 @@ from ..models import (
     UseinfoValidation,
     validation_tables,
 )
-from ..schemas import LogItemIncoming, LogRunIncoming, TimezoneRequest
+from ..schemas import (
+    LogItemIncoming,
+    LogRunIncoming,
+    TimezoneRequest,
+    LastPageDataIncoming,
+    LastPageData,
+)
 from ..internal.utils import make_json_response
 
 # Routing
@@ -179,3 +188,145 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 async def same_class(user1: AuthUserValidator, user2: str) -> bool:
     u2 = await fetch_user(user2)
     return user1.course_id == u2.course_id
+
+
+# completion tables
+# =================
+#
+# This section contains implementations of endpoints for tracking progress
+
+
+# updatelastpage
+# --------------
+@router.post("updatelastpage")
+async def updatelastpage(request: Request, request_data: LastPageIncoming):
+    if request_data.last_page_url is None:
+        return  # todo:  log request_data, request.args and request.env.path_info
+
+    lpd = LastPageData(**request_data.dict())
+
+    lpd.last_page_chapter = request_data.last_page_url.split("/")[-2]
+    lpd.last_page_subchapter = ".".join(
+        request_data.last_page_url.split("/")[-1].split(".")[:-1]
+    )
+
+    if request.state.user:
+        lpd.user_id = request.state.user.id
+        await update_user_state(lpd)
+        await update_sub_chapter_progress(lpd)
+
+        # todo: practice stuff came after this -- it does not belong here. But it needs
+        # to be ported somewhere....
+
+
+# def getCompletionStatus():
+#     if auth.user:
+#         lastPageUrl = request.vars.lastPageUrl
+#         lastPageChapter = lastPageUrl.split("/")[-2]
+#         lastPageSubchapter = ".".join(lastPageUrl.split("/")[-1].split(".")[:-1])
+#         result = db(
+#             (db.user_sub_chapter_progress.user_id == auth.user.id)
+#             & (db.user_sub_chapter_progress.chapter_id == lastPageChapter)
+#             & (db.user_sub_chapter_progress.sub_chapter_id == lastPageSubchapter)
+#             & (
+#                 (db.user_sub_chapter_progress.course_name == auth.user.course_name)
+#                 | (
+#                     db.user_sub_chapter_progress.course_name == None
+#                 )  # for backward compatibility
+#             )
+#         ).select(db.user_sub_chapter_progress.status)
+#         rowarray_list = []
+#         if result:
+#             for row in result:
+#                 res = {"completionStatus": row.status}
+#                 rowarray_list.append(res)
+#                 # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
+#                 # we be returning just the *last* status? Or is there no history of status kept anyway?
+#             return json.dumps(rowarray_list)
+#         else:
+#             # haven't seen this Chapter/Subchapter before
+#             # make the insertions into the DB as necessary
+
+#             # we know the subchapter doesn't exist
+#             db.user_sub_chapter_progress.insert(
+#                 user_id=auth.user.id,
+#                 chapter_id=lastPageChapter,
+#                 sub_chapter_id=lastPageSubchapter,
+#                 status=-1,
+#                 start_date=datetime.datetime.utcnow(),
+#                 course_name=auth.user.course_name,
+#             )
+#             # the chapter might exist without the subchapter
+#             result = db(
+#                 (db.user_chapter_progress.user_id == auth.user.id)
+#                 & (db.user_chapter_progress.chapter_id == lastPageChapter)
+#             ).select()
+#             if not result:
+#                 db.user_chapter_progress.insert(
+#                     user_id=auth.user.id, chapter_id=lastPageChapter, status=-1
+#                 )
+#             return json.dumps([{"completionStatus": -1}])
+
+
+# def getAllCompletionStatus():
+#     if auth.user:
+#         result = db(
+#             (db.user_sub_chapter_progress.user_id == auth.user.id)
+#             & (db.user_sub_chapter_progress.course_name == auth.user.course_name)
+#         ).select(
+#             db.user_sub_chapter_progress.chapter_id,
+#             db.user_sub_chapter_progress.sub_chapter_id,
+#             db.user_sub_chapter_progress.status,
+#             db.user_sub_chapter_progress.status,
+#             db.user_sub_chapter_progress.end_date,
+#         )
+#         rowarray_list = []
+#         if result:
+#             for row in result:
+#                 if row.end_date is None:
+#                     endDate = 0
+#                 else:
+#                     endDate = row.end_date.strftime("%d %b, %Y")
+#                 res = {
+#                     "chapterName": row.chapter_id,
+#                     "subChapterName": row.sub_chapter_id,
+#                     "completionStatus": row.status,
+#                     "endDate": endDate,
+#                 }
+#                 rowarray_list.append(res)
+#             return json.dumps(rowarray_list)
+
+
+# @auth.requires_login()
+# def getlastpage():
+#     course = request.vars.course
+#     course = db(db.courses.course_name == course).select(**SELECT_CACHE).first()
+
+#     result = db(
+#         (db.user_state.user_id == auth.user.id)
+#         & (db.user_state.course_id == course.course_name)
+#         & (db.chapters.course_id == course.base_course)
+#         & (db.user_state.last_page_chapter == db.chapters.chapter_label)
+#         & (db.sub_chapters.chapter_id == db.chapters.id)
+#         & (db.user_state.last_page_subchapter == db.sub_chapters.sub_chapter_label)
+#     ).select(
+#         db.user_state.last_page_url,
+#         db.user_state.last_page_hash,
+#         db.chapters.chapter_name,
+#         db.user_state.last_page_scroll_location,
+#         db.sub_chapters.sub_chapter_name,
+#     )
+#     rowarray_list = []
+#     if result:
+#         for row in result:
+#             res = {
+#                 "lastPageUrl": row.user_state.last_page_url,
+#                 "lastPageHash": row.user_state.last_page_hash,
+#                 "lastPageChapter": row.chapters.chapter_name,
+#                 "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
+#                 "lastPageScrollLocation": row.user_state.last_page_scroll_location,
+#             }
+#             rowarray_list.append(res)
+#         return json.dumps(rowarray_list)
+#     else:
+#         db.user_state.insert(user_id=auth.user.id, course_id=course.course_name)
