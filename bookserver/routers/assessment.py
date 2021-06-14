@@ -16,6 +16,7 @@
 # Standard library
 # ----------------
 import datetime
+from email.policy import HTTP
 from typing import Optional, Dict, Any
 
 # Third-party imports
@@ -85,17 +86,21 @@ async def get_assessment_results(
 # If you just try to specify the two fields as parameters it expects
 # them to be in a query string.
 class HistoryRequest(BaseModel):
+    # `acid` : id of the active code block also called div_id
     acid: str
+    # `sid`: optional identifier for the owner of the code (username)
     sid: Optional[str] = None
 
 
 @router.post("/gethist")
 async def get_history(request: Request, request_data: HistoryRequest):
     """
-    return the history of saved code by this user for a particular acid
+    return the history of saved code by this user for a particular
+    active code id (acid) -- known as div_id elsewhere
+
     :Parameters:
-        - `acid`: id of the active code block
-        - `user`: optional identifier for the owner of the code
+        - See HistoryRequest
+
     :Return:
         - json object with a detail key that references a dictionary
 
@@ -116,16 +121,16 @@ async def get_history(request: Request, request_data: HistoryRequest):
             if await is_instructor(request):
                 course_id = request.state.user.course_id
             else:
-                course_id = None
+                raise HTTPException(401)
         else:
             raise HTTPException(401)
-
+    # In this case, the request is simply from a student, so we will use
+    # their logged in username
     elif request.state.user:
         sid = request.state.user.username
         course_id = request.state.user.course_id
     else:
-        sid = None
-        course_id = None
+        raise HTTPException(401)
 
     res: Dict[str, Any] = {}
     if sid:
