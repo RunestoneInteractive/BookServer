@@ -16,7 +16,6 @@
 # Standard library
 # ----------------
 import datetime
-from email.policy import HTTP
 from typing import Optional, Dict, Any
 
 # Third-party imports
