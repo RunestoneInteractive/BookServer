@@ -112,8 +112,7 @@ def selenium_utils_user_ac(selenium_utils_user):
     return selenium_utils_user
 
 
-@pytest.mark.asyncio
-async def test_runestone_version():
+def test_runestone_version():
     assert runestone_version.startswith("6.")
 
 
