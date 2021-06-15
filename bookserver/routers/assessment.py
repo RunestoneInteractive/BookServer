@@ -85,9 +85,9 @@ async def get_assessment_results(
 # If you just try to specify the two fields as parameters it expects
 # them to be in a query string.
 class HistoryRequest(BaseModel):
-    # `acid` : id of the active code block also called div_id
+    # ``acid`` : id of the active code block also called div_id
     acid: str
-    # `sid`: optional identifier for the owner of the code (username)
+    # ``sid``: optional identifier for the owner of the code (username)
     sid: Optional[str] = None
 
 
