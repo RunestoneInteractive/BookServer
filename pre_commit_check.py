@@ -26,7 +26,6 @@ from test.ci_utils import xqt, pushd
 # Checks
 # ======
 def checks():
-    xqt("python -m bookserver")
     xqt(
         # Run this first, since it's quick and should always succeed.
         "black --check .",
