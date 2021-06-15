@@ -96,6 +96,7 @@ async def get_history(request: Request, request_data: HistoryRequest):
     """
     return the history of saved code by this user for a particular
     active code id (acid) -- known as div_id elsewhere
+    See :ref:`addHistoryScrubber`
 
     :Parameters:
         - See HistoryRequest
