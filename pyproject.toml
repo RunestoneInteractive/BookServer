@@ -34,10 +34,10 @@ asyncpg = "^0.22.0"
 SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
 # runestone = "^5.6.1" # comment out for now as unit testing fails the install due to version mismatch
+pyhumps = "^3.0.2"
 
 # Development dependencies
 # ========================
-pyhumps = "^3.0.2"
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 pytest = "^6.2.0"

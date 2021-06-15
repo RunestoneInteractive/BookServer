@@ -31,6 +31,8 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import schemas
 from .models import (
+    Chapter,
+    SubChapter,
     Code,
     CodeValidator,
     CourseInstructor,
@@ -328,3 +330,42 @@ async def update_sub_chapter_progress(user_data: schemas.LastPageData):
     async with async_session() as session:
         res = await session.execute(stmt)
         rslogger.debug(f"{res=}")
+
+
+async def fetch_last_page(user: AuthUserValidator, course_name: str):
+    course = await fetch_course(course_name)
+
+    query = (
+        select(
+            [
+                UserState.last_page_url,
+                UserState.last_page_hash,
+                Chapter.chapter_name,
+                UserState.last_page_scroll_location,
+                SubChapter.sub_chapter_name,
+            ]
+        )
+        .select_from(
+            UserState.join(
+                Chapter, UserState.last_page_chapter == Chapter.chapter_label
+            ).join(
+                SubChapter,
+                (
+                    (SubChapter.chapter_id == Chapter.id)
+                    & (UserState.last_page_subchapter == SubChapter.sub_chapter_label)
+                ),
+            )
+        )
+        .where(
+            (UserState.user_id == user.id)
+            & (UserState.course_id == course.course_name)
+            & (Chapter.course_id == course.base_course)
+        )
+        .order_by(UserState.last_page_accessed_on.desc())
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+
+        last_page = res.scalars().first()
+        return last_page

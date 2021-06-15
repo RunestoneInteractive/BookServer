@@ -17,9 +17,8 @@ from typing import Optional
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie, Response, status
-from pydantic import BaseModel, Field
-from humps import camelize
+from fastapi import APIRouter, Request, Cookie, Response, status, HTTPException
+
 
 # Local application imports
 # -------------------------
@@ -29,8 +28,10 @@ from ..crud import (
     create_answer_table_entry,
     create_code_entry,
     create_useinfo_entry,
+    fetch_last_page,
     fetch_user,
     update_user_state,
+    update_sub_chapter_progress,
 )
 from ..models import (
     AuthUserValidator,
@@ -199,8 +200,8 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 
 # updatelastpage
 # --------------
-@router.post("updatelastpage")
-async def updatelastpage(request: Request, request_data: LastPageIncoming):
+@router.post("/updatelastpage")
+async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
 
@@ -297,37 +298,27 @@ async def updatelastpage(request: Request, request_data: LastPageIncoming):
 #                 rowarray_list.append(res)
 #             return json.dumps(rowarray_list)
 
+#
+# See :ref:`decorateTableOfContents`
+#
+@router.get("/getlastpage")
+def getlastpage(request: Request, course: str):
+    if not request.state.user:
+        raise HTTPException(401)
 
-# @auth.requires_login()
-# def getlastpage():
-#     course = request.vars.course
-#     course = db(db.courses.course_name == course).select(**SELECT_CACHE).first()
+    result = fetch_last_page(request.state.user, course)
 
-#     result = db(
-#         (db.user_state.user_id == auth.user.id)
-#         & (db.user_state.course_id == course.course_name)
-#         & (db.chapters.course_id == course.base_course)
-#         & (db.user_state.last_page_chapter == db.chapters.chapter_label)
-#         & (db.sub_chapters.chapter_id == db.chapters.id)
-#         & (db.user_state.last_page_subchapter == db.sub_chapters.sub_chapter_label)
-#     ).select(
-#         db.user_state.last_page_url,
-#         db.user_state.last_page_hash,
-#         db.chapters.chapter_name,
-#         db.user_state.last_page_scroll_location,
-#         db.sub_chapters.sub_chapter_name,
-#     )
-#     rowarray_list = []
-#     if result:
-#         for row in result:
-#             res = {
-#                 "lastPageUrl": row.user_state.last_page_url,
-#                 "lastPageHash": row.user_state.last_page_hash,
-#                 "lastPageChapter": row.chapters.chapter_name,
-#                 "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
-#                 "lastPageScrollLocation": row.user_state.last_page_scroll_location,
-#             }
-#             rowarray_list.append(res)
-#         return json.dumps(rowarray_list)
-#     else:
-#         db.user_state.insert(user_id=auth.user.id, course_id=course.course_name)
+    rowarray_list = []
+    if result:
+        for row in result:
+            res = {
+                "lastPageUrl": row.user_state.last_page_url,
+                "lastPageHash": row.user_state.last_page_hash,
+                "lastPageChapter": row.chapters.chapter_name,
+                "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
+                "lastPageScrollLocation": row.user_state.last_page_scroll_location,
+            }
+            rowarray_list.append(res)
+        return json.dumps(rowarray_list)
+    else:
+        db.user_state.insert(user_id=auth.user.id, course_id=course.course_name)

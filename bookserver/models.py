@@ -562,14 +562,17 @@ class UserChapterProgres(Base, IdMixin):
 class UserState(Base, IdMixin):
     __tablename__ = "user_state"
 
-    user_id = Column(Integer, index=True)
-    course_id = Column(String(512), index=True)
-    last_page_url = Column(String(512))
-    last_page_hash = Column(String(512))
-    last_page_chapter = Column(String(512))
-    last_page_subchapter = Column(String(512))
+    user_id = Column(
+        ForeignKey("auth_user.id"),
+        index=True,
+    )
+    course_name = Column(String(512), index=True, nullable=False)
+    last_page_url = Column(String(512), nullable=False)
+    last_page_hash = Column(String(512), nullable=False)
+    last_page_chapter = Column(String(512), nullable=False)
+    last_page_subchapter = Column(String(512), nullable=False)
     last_page_scroll_location = Column(String(512))
-    last_page_accessed_on = Column(DateTime)
+    last_page_accessed_on = Column(DateTime, nullable=False)
 
 
 # Tables used by the ``selectquestion`` directive
