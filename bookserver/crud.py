@@ -37,7 +37,10 @@ from .models import (
     CodeValidator,
     CourseInstructor,
     CourseInstructorValidator,
-    UserSubChapterProgres,
+    UserChapterProgress,
+    UserChapterProgressValidator,
+    UserSubChapterProgress,
+    UserSubChapterProgressValidator,
     answer_tables,
     AuthUser,
     AuthUserValidator,
@@ -46,6 +49,7 @@ from .models import (
     Useinfo,
     UseinfoValidation,
     UserState,
+    UserStateValidator,
     validation_tables,
 )
 from .config import settings, BookServerConfig
@@ -225,11 +229,15 @@ async def create_code_entry(data: CodeValidator):
 
 
 async def fetch_code(sid: str, acid: str, course_id: int):
-    query = select(Code).where(
-        (Code.sid == sid)
-        & (Code.acid == acid)
-        & (Code.course_id == course_id)
-        & (Code.timestamp != None).order_by(Code.id)  # noqa: E711
+    query = (
+        select(Code)
+        .where(
+            (Code.sid == sid)
+            & (Code.acid == acid)
+            & (Code.course_id == course_id)
+            & (Code.timestamp != None)  # noqa: E711
+        )
+        .order_by(Code.id)
     )
     async with async_session() as session:
         res = await session.execute(query)
@@ -280,6 +288,11 @@ async def create_initial_courses_users():
                 course_name=c,
                 base_course=c,
                 term_start_date=datetime.date(2000, 1, 1),
+                login_required=False,
+                allow_pairs=False,
+                downloads_enabled=False,
+                courselevel="",
+                institution="",
             )
             await create_course(new_course)
         # make a user
@@ -292,8 +305,23 @@ async def create_initial_courses_users():
                 email="testuser1@example.com",
                 course_name="overview",
                 course_id=12,
+                donated=True,
+                active=True,
+                accept_tcp=True,
+                created_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+                modified_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+                registration_key="",
+                registration_id="",
+                reset_password_key="",
             )
         )
+
+
+async def create_user_state_entry(user_id: int, course_name: str):
+    new_us = UserState(user_id=user_id, course_name=course_name)
+    async with async_session.begin() as session:
+        session.add(new_us)
+    return UserStateValidator.from_orm(new_us)
 
 
 async def update_user_state(user_data: schemas.LastPageData):
@@ -313,15 +341,15 @@ async def update_user_state(user_data: schemas.LastPageData):
 async def update_sub_chapter_progress(user_data: schemas.LastPageData):
 
     stmt = (
-        update(UserSubChapterProgres)
+        update(UserSubChapterProgress)
         .where(
-            (UserSubChapterProgres.user_id == user_data.user_id)
-            & (UserSubChapterProgres.chapter_id == user_data.last_page_chapter)
-            & (UserSubChapterProgres.sub_chapter_id == user_data.last_page_subchapter)
+            (UserSubChapterProgress.user_id == user_data.user_id)
+            & (UserSubChapterProgress.chapter_id == user_data.last_page_chapter)
+            & (UserSubChapterProgress.sub_chapter_id == user_data.last_page_subchapter)
             & (
-                (UserSubChapterProgres.course_name == user_data.course_id)
+                (UserSubChapterProgress.course_name == user_data.course_id)
                 | (
-                    UserSubChapterProgres.course_name == None
+                    UserSubChapterProgress.course_name == None
                 )  # Back fill for old entries without course
             )
         )
@@ -345,20 +373,12 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
                 SubChapter.sub_chapter_name,
             ]
         )
-        .select_from(
-            UserState.join(
-                Chapter, UserState.last_page_chapter == Chapter.chapter_label
-            ).join(
-                SubChapter,
-                (
-                    (SubChapter.chapter_id == Chapter.id)
-                    & (UserState.last_page_subchapter == SubChapter.sub_chapter_label)
-                ),
-            )
-        )
         .where(
             (UserState.user_id == user.id)
-            & (UserState.course_id == course.course_name)
+            & (UserState.last_page_chapter == Chapter.chapter_label)
+            & (UserState.course_name == course.course_name)
+            & (SubChapter.chapter_id == Chapter.id)
+            & (UserState.last_page_subchapter == SubChapter.sub_chapter_label)
             & (Chapter.course_id == course.base_course)
         )
         .order_by(UserState.last_page_accessed_on.desc())
@@ -369,3 +389,58 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
 
         last_page = res.scalars().first()
         return last_page
+
+
+async def fetch_user_sub_chapter_progress(
+    user, last_page_chapter, last_page_subchapter
+):
+
+    query = select(UserSubChapterProgress.status).where(
+        (UserSubChapterProgress.user_id == user.id)
+        & (UserSubChapterProgress.chapter_id == last_page_chapter)
+        & (UserSubChapterProgress.sub_chapter_id == last_page_subchapter)
+        & (UserSubChapterProgress.course_name == user.course_name)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return res.scalars().fetchall()
+
+
+async def create_user_sub_chapter_progress_entry(
+    user, last_page_chapter, last_page_subchapter
+):
+
+    new_uspe = UserSubChapterProgress(
+        user_id=user.id,
+        chapter_id=last_page_chapter,
+        sub_chapter_id=last_page_subchapter,
+        status=-1,
+        start_date=datetime.datetime.utcnow(),
+        course_name=user.course_name,
+    )
+    async with async_session.begin() as session:
+        session.add(new_uspe)
+    return UserSubChapterProgressValidator.from_orm(new_uspe)
+
+
+async def fetch_user_chapter_progress(user, last_page_chapter):
+    query = select(UserChapterProgress).where(
+        (db.user_chapter_progress.user_id == user.id)
+        & (UserChapterProgress.chapter_id == last_page_chapter)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return UserChapterProgressValidator(res.scalars().first())
+
+
+async def create_user_chapter_progress_entry(user, last_page_chapter, status):
+    new_ucp = UserChapterProgress(
+        user_id=user.id, chapter_id=last_page_chapter, status=status
+    )
+    async with async_session.begin() as session:
+        session.add(new_ucp)
+    return UserChapterProgressValidator.from_orm(new_ucp)

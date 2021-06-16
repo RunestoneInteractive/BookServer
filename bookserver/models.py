@@ -537,43 +537,48 @@ class SubChapter(Base, IdMixin):
 
 # Tracking User Progress
 # ----------------------
-class UserSubChapterProgres(Base, IdMixin):
+class UserSubChapterProgress(Base, IdMixin):
     __tablename__ = "user_sub_chapter_progress"
 
     user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True)
     chapter_id = Column(String(512), index=True, nullable=False)
     sub_chapter_id = Column(String(512), index=True, nullable=False)
     start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
     course_name = Column(String(512), nullable=False)
 
 
-class UserChapterProgres(Base, IdMixin):
+UserSubChapterProgressValidator = sqlalchemy_to_pydantic(UserSubChapterProgress)
+
+
+class UserChapterProgress(Base, IdMixin):
     __tablename__ = "user_chapter_progress"
 
     user_id = Column(String(512), nullable=False)
     chapter_id = Column(String(512), nullable=False)
     start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
+
+
+UserChapterProgressValidator = sqlalchemy_to_pydantic(UserChapterProgress)
 
 
 class UserState(Base, IdMixin):
     __tablename__ = "user_state"
 
-    user_id = Column(
-        ForeignKey("auth_user.id"),
-        index=True,
-    )
+    user_id = Column(ForeignKey("auth_user.id"), index=True, nullable=False)
     course_name = Column(String(512), index=True, nullable=False)
-    last_page_url = Column(String(512), nullable=False)
-    last_page_hash = Column(String(512), nullable=False)
-    last_page_chapter = Column(String(512), nullable=False)
-    last_page_subchapter = Column(String(512), nullable=False)
+    last_page_url = Column(String(512))
+    last_page_hash = Column(String(512))
+    last_page_chapter = Column(String(512))
+    last_page_subchapter = Column(String(512))
     last_page_scroll_location = Column(String(512))
-    last_page_accessed_on = Column(DateTime, nullable=False)
+    last_page_accessed_on = Column(DateTime)
 
+
+UserStateValidator = sqlalchemy_to_pydantic(UserState)
 
 # Tables used by the ``selectquestion`` directive
 # -----------------------------------------------

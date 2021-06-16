@@ -26,12 +26,17 @@ from ..applogger import rslogger
 from ..crud import (
     EVENT2TABLE,
     create_answer_table_entry,
+    create_user_chapter_progress_entry,
     create_code_entry,
     create_useinfo_entry,
+    create_user_state_entry,
+    create_user_sub_chapter_progress_entry,
     fetch_last_page,
+    fetch_user_chapter_progress,
+    fetch_user_sub_chapter_progress,
     fetch_user,
-    update_user_state,
     update_sub_chapter_progress,
+    update_user_state,
 )
 from ..models import (
     AuthUserValidator,
@@ -127,6 +132,7 @@ def set_tz_offset(
 @router.post("/runlog")
 async def runlog(request: Request, response: Response, data: LogRunIncoming):
     # First add a useinfo entry for this run
+    rslogger.debug(f"INCOMING: {data}")
     if request.state.user:
         if data.course != request.state.user.course_name:
             return make_json_response(
@@ -147,7 +153,6 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     useinfo_dict = data.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course")
-    useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     useinfo_dict["timestamp"] = datetime.utcnow()
     if data.errinfo != "success":
         useinfo_dict["event"] = "ac_error"
@@ -160,7 +165,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
     await create_useinfo_entry(UseinfoValidation(**useinfo_dict))
 
     # Now add an entry to the code table
-
+    useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     if data.to_save:
         useinfo_dict["course_id"] = request.state.user.course_id
         entry = CodeValidator(**useinfo_dict)
@@ -200,7 +205,7 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 
 # updatelastpage
 # --------------
-@router.post("/updatelastpage")
+@router.get("/updatelastpage")
 async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
@@ -221,53 +226,41 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         # to be ported somewhere....
 
 
-# def getCompletionStatus():
-#     if auth.user:
-#         lastPageUrl = request.vars.lastPageUrl
-#         lastPageChapter = lastPageUrl.split("/")[-2]
-#         lastPageSubchapter = ".".join(lastPageUrl.split("/")[-1].split(".")[:-1])
-#         result = db(
-#             (db.user_sub_chapter_progress.user_id == auth.user.id)
-#             & (db.user_sub_chapter_progress.chapter_id == lastPageChapter)
-#             & (db.user_sub_chapter_progress.sub_chapter_id == lastPageSubchapter)
-#             & (
-#                 (db.user_sub_chapter_progress.course_name == auth.user.course_name)
-#                 | (
-#                     db.user_sub_chapter_progress.course_name == None
-#                 )  # for backward compatibility
-#             )
-#         ).select(db.user_sub_chapter_progress.status)
-#         rowarray_list = []
-#         if result:
-#             for row in result:
-#                 res = {"completionStatus": row.status}
-#                 rowarray_list.append(res)
-#                 # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
-#                 # we be returning just the *last* status? Or is there no history of status kept anyway?
-#             return json.dumps(rowarray_list)
-#         else:
-#             # haven't seen this Chapter/Subchapter before
-#             # make the insertions into the DB as necessary
+# _getCompletionStatus
+# --------------------
+@router.get("/getCompletionStatus")
+async def getCompletionStatus(request: Request, lastPageUrl: str):
+    if request.state.user:
+        last_page_chapter = lastPageUrl.split("/")[-2]
+        last_page_subchapter = ".".join(lastPageUrl.split("/")[-1].split(".")[:-1])
+        result = await fetch_user_sub_chapter_progress(
+            request.state.user, last_page_chapter, last_page_subchapter
+        )
+        rowarray_list = []
+        if result:
+            for row in result:
+                res = {"completionStatus": row.status}
+                rowarray_list.append(res)
+                # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
+                # we be returning just the *last* status? Or is there no history of status kept anyway?
+            return make_json_response(detail=rowarray_list)
+        else:
+            # haven't seen this Chapter/Subchapter before
+            # make the insertions into the DB as necessary
 
-#             # we know the subchapter doesn't exist
-#             db.user_sub_chapter_progress.insert(
-#                 user_id=auth.user.id,
-#                 chapter_id=lastPageChapter,
-#                 sub_chapter_id=lastPageSubchapter,
-#                 status=-1,
-#                 start_date=datetime.datetime.utcnow(),
-#                 course_name=auth.user.course_name,
-#             )
-#             # the chapter might exist without the subchapter
-#             result = db(
-#                 (db.user_chapter_progress.user_id == auth.user.id)
-#                 & (db.user_chapter_progress.chapter_id == lastPageChapter)
-#             ).select()
-#             if not result:
-#                 db.user_chapter_progress.insert(
-#                     user_id=auth.user.id, chapter_id=lastPageChapter, status=-1
-#                 )
-#             return json.dumps([{"completionStatus": -1}])
+            # we know the subchapter doesn't exist
+            await create_user_sub_chapter_progress_entry(
+                request.state.user, last_page_chapter, last_page_subchapter
+            )
+            # the chapter might exist without the subchapter
+            result = fetch_user_chapter_progress(request.state.user, last_page_chapter)
+            if not result:
+                await create_user_chapter_progress_entry(
+                    request.state.user, last_page_chapter, -1
+                )
+            return make_json_response(detail=[{"completionStatus": -1}])
+    else:
+        raise HTTPException(401)
 
 
 # def getAllCompletionStatus():
@@ -302,23 +295,21 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
 # See :ref:`decorateTableOfContents`
 #
 @router.get("/getlastpage")
-def getlastpage(request: Request, course: str):
+async def getlastpage(request: Request, course: str):
     if not request.state.user:
         raise HTTPException(401)
 
-    result = fetch_last_page(request.state.user, course)
+    row = await fetch_last_page(request.state.user, course)
 
-    rowarray_list = []
-    if result:
-        for row in result:
-            res = {
-                "lastPageUrl": row.user_state.last_page_url,
-                "lastPageHash": row.user_state.last_page_hash,
-                "lastPageChapter": row.chapters.chapter_name,
-                "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
-                "lastPageScrollLocation": row.user_state.last_page_scroll_location,
-            }
-            rowarray_list.append(res)
-        return json.dumps(rowarray_list)
+    if row:
+        res = {
+            "lastPageUrl": row.user_state.last_page_url,
+            "lastPageHash": row.user_state.last_page_hash,
+            "last_page_chapter": row.chapters.chapter_name,
+            "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
+            "lastPageScrollLocation": row.user_state.last_page_scroll_location,
+        }
+        return make_json_response(detail=res)
     else:
-        db.user_state.insert(user_id=auth.user.id, course_id=course.course_name)
+        res = await create_user_state_entry(request.state.user.id, course)
+        return make_json_response(detail=res)
