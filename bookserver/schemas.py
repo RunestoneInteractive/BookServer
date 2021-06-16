@@ -162,8 +162,8 @@ class LogRunIncoming(BaseModelNone):
 class LastPageDataIncoming(BaseModel):
     last_page_url: str  # = Field(None, alias="lastPageUrl") is the manual way
     course_id: str = Field(None, alias="course")
-    completion_flag: str
-    last_page_scroll_location: str
+    completion_flag: int
+    last_page_scroll_location: int
     # todo: this should really be an int
 
     # We can automatically create the aliases!

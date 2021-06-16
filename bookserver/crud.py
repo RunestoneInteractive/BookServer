@@ -349,7 +349,7 @@ async def update_sub_chapter_progress(user_data: schemas.LastPageData):
             & (
                 (UserSubChapterProgress.course_name == user_data.course_id)
                 | (
-                    UserSubChapterProgress.course_name == None
+                    UserSubChapterProgress.course_name == None  # noqa 711
                 )  # Back fill for old entries without course
             )
         )
@@ -392,20 +392,29 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
 
 
 async def fetch_user_sub_chapter_progress(
-    user, last_page_chapter, last_page_subchapter
+    user, last_page_chapter=None, last_page_subchapter=None
 ):
 
-    query = select(UserSubChapterProgress.status).where(
-        (UserSubChapterProgress.user_id == user.id)
-        & (UserSubChapterProgress.chapter_id == last_page_chapter)
-        & (UserSubChapterProgress.sub_chapter_id == last_page_subchapter)
-        & (UserSubChapterProgress.course_name == user.course_name)
+    where_clause = (UserSubChapterProgress.user_id == user.id) & (
+        UserSubChapterProgress.course_name == user.course_name
     )
+
+    if last_page_chapter:
+        where_clause = (
+            where_clause
+            & (UserSubChapterProgress.chapter_id == last_page_chapter)
+            & (UserSubChapterProgress.sub_chapter_id == last_page_subchapter)
+        )
+
+    query = select(UserSubChapterProgress).where(where_clause)
 
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
-        return res.scalars().fetchall()
+        return [
+            UserSubChapterProgressValidator.from_orm(x)
+            for x in res.scalars().fetchall()
+        ]
 
 
 async def create_user_sub_chapter_progress_entry(
@@ -427,7 +436,7 @@ async def create_user_sub_chapter_progress_entry(
 
 async def fetch_user_chapter_progress(user, last_page_chapter):
     query = select(UserChapterProgress).where(
-        (db.user_chapter_progress.user_id == user.id)
+        (UserChapterProgress.user_id == user.id)
         & (UserChapterProgress.chapter_id == last_page_chapter)
     )
 

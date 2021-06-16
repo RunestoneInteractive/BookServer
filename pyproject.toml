@@ -38,7 +38,6 @@ pyhumps = "^3.0.2"
 
 # Development dependencies
 # ========================
-pyhumps = "^3.0.2"
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 pytest = "^6.2.0"

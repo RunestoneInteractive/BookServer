@@ -205,7 +205,7 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 
 # updatelastpage
 # --------------
-@router.get("/updatelastpage")
+@router.post("/updatelastpage")
 async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
@@ -240,7 +240,7 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
         if result:
             rslogger.debug(f"{result=}")
             for row in result:
-                res = {"completionStatus": row}
+                res = {"completionStatus": row.status}
                 rowarray_list.append(res)
                 # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
                 # we be returning just the *last* status? Or is there no history of status kept anyway?
@@ -264,33 +264,31 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
         raise HTTPException(401)
 
 
-# def getAllCompletionStatus():
-#     if auth.user:
-#         result = db(
-#             (db.user_sub_chapter_progress.user_id == auth.user.id)
-#             & (db.user_sub_chapter_progress.course_name == auth.user.course_name)
-#         ).select(
-#             db.user_sub_chapter_progress.chapter_id,
-#             db.user_sub_chapter_progress.sub_chapter_id,
-#             db.user_sub_chapter_progress.status,
-#             db.user_sub_chapter_progress.status,
-#             db.user_sub_chapter_progress.end_date,
-#         )
-#         rowarray_list = []
-#         if result:
-#             for row in result:
-#                 if row.end_date is None:
-#                     endDate = 0
-#                 else:
-#                     endDate = row.end_date.strftime("%d %b, %Y")
-#                 res = {
-#                     "chapterName": row.chapter_id,
-#                     "subChapterName": row.sub_chapter_id,
-#                     "completionStatus": row.status,
-#                     "endDate": endDate,
-#                 }
-#                 rowarray_list.append(res)
-#             return json.dumps(rowarray_list)
+# _getAllCompletionStatus
+# -----------------------
+@router.get("/getAllCompletionStatus")
+async def getAllCompletionStatus(request: Request):
+    if request.state.user:
+        result = await fetch_user_sub_chapter_progress(request.state.user)
+
+        rowarray_list = []
+        if result:
+            for row in result:
+                if row.end_date is None:
+                    endDate = 0
+                else:
+                    endDate = row.end_date.strftime("%d %b, %Y")
+                res = {
+                    "chapterName": row.chapter_id,
+                    "subChapterName": row.sub_chapter_id,
+                    "completionStatus": row.status,
+                    "endDate": endDate,
+                }
+                rowarray_list.append(res)
+            return make_json_response(detail=rowarray_list)
+    else:
+        raise HTTPException(401)
+
 
 #
 # See :ref:`decorateTableOfContents`
