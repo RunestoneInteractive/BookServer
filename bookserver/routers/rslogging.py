@@ -238,8 +238,9 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
         )
         rowarray_list = []
         if result:
+            rslogger.debug(f"{result=}")
             for row in result:
-                res = {"completionStatus": row.status}
+                res = {"completionStatus": row}
                 rowarray_list.append(res)
                 # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
                 # we be returning just the *last* status? Or is there no history of status kept anyway?
