@@ -89,6 +89,11 @@ async def serve_page(
 ):
     rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
+    if user:
+        logged_in = "true"
+    else:
+        logged_in = "false"
+
     course_row = await fetch_course(user.course_name)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
@@ -131,7 +136,7 @@ async def serve_page(
         allow_pairs="false",
         activity_info={},
         settings=settings,
-        is_logged_in="false",
+        is_logged_in=logged_in,
         is_instructor="true",
         enable_compare_me="true",
         readings=[],
