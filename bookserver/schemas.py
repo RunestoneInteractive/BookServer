@@ -159,7 +159,7 @@ class LogRunIncoming(BaseModelNone):
 
 # Schemas for Completion Data
 # ---------------------------
-class LastPageDataIncoming(BaseModel):
+class LastPageDataIncoming(BaseModelNone):
     last_page_url: str  # = Field(None, alias="lastPageUrl") is the manual way
     course_id: str = Field(None, alias="course")
     completion_flag: int
@@ -171,7 +171,11 @@ class LastPageDataIncoming(BaseModel):
         alias_generator = camelize
 
 
-class LastPageData(LastPageDataIncoming):
+class LastPageData(BaseModelNone):
+    last_page_url: str
+    course_name: str = Field(None, alias="course_id")
+    completion_flag: int
+    last_page_scroll_location: int
     last_page_chapter: str
     last_page_subchapter: str
     last_page_accessed_on: datetime

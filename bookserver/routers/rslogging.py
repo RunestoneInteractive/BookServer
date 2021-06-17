@@ -210,13 +210,16 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
 
-    lpd = LastPageData(**request_data.dict())
+    lpd = request_data.dict()
+    rslogger.debug(f"{lpd=}")
 
-    lpd.last_page_chapter = request_data.last_page_url.split("/")[-2]
-    lpd.last_page_subchapter = ".".join(
+    lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
+    lpd["last_page_subchapter"] = ".".join(
         request_data.last_page_url.split("/")[-1].split(".")[:-1]
     )
-
+    lpd["last_page_accessed_on"] = datetime.utcnow()
+    lpd["user_id"] = request.state.user.id
+    lpd = LastPageData(**lpd)
     if request.state.user:
         lpd.user_id = request.state.user.id
         await update_user_state(lpd)
@@ -251,7 +254,7 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
 
             # we know the subchapter doesn't exist
             await create_user_sub_chapter_progress_entry(
-                request.state.user, last_page_chapter, last_page_subchapter
+                request.state.user, last_page_chapter, last_page_subchapter, status=0
             )
             # the chapter might exist without the subchapter
             result = fetch_user_chapter_progress(request.state.user, last_page_chapter)
@@ -299,14 +302,14 @@ async def getlastpage(request: Request, course: str):
         raise HTTPException(401)
 
     row = await fetch_last_page(request.state.user, course)
-
+    rslogger.debug(f"ROW = {row}")
     if row:
         res = {
-            "lastPageUrl": row.user_state.last_page_url,
-            "lastPageHash": row.user_state.last_page_hash,
-            "last_page_chapter": row.chapters.chapter_name,
-            "lastPageSubchapter": row.sub_chapters.sub_chapter_name,
-            "lastPageScrollLocation": row.user_state.last_page_scroll_location,
+            "lastPageUrl": row.last_page_url,
+            "lastPageHash": row.last_page_hash,
+            "lastPageChapter": row.chapter_name,
+            "lastPageSubchapter": row.sub_chapter_name,
+            "lastPageScrollLocation": row.last_page_scroll_location,
         }
         return make_json_response(detail=res)
     else:

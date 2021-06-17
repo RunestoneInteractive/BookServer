@@ -574,7 +574,7 @@ class UserState(Base, IdMixin):
     last_page_hash = Column(String(512))
     last_page_chapter = Column(String(512))
     last_page_subchapter = Column(String(512))
-    last_page_scroll_location = Column(String(512))
+    last_page_scroll_location = Column(Integer)
     last_page_accessed_on = Column(DateTime)
 
 

@@ -12,6 +12,7 @@
 #
 # Standard library
 # ----------------
+from collections import namedtuple
 from typing import List, Optional
 import datetime
 
@@ -325,21 +326,32 @@ async def create_user_state_entry(user_id: int, course_name: str):
 
 
 async def update_user_state(user_data: schemas.LastPageData):
+    ud = user_data.dict()
+    ud.pop("completion_flag")
+    rslogger.debug(f"user data = {ud}")
     stmt = (
         update(UserState)
         .where(
-            (UserState.user_id == user_data.user.id)
-            & (UserState.course_id == user_data.course_id)
+            (UserState.user_id == user_data.user_id)
+            & (UserState.course_name == user_data.course_name)
         )
-        .values(**user_data.dict())
+        .values(**ud)
     )
-    async with async_session() as session:
+    async with async_session.begin() as session:
         res = await session.execute(stmt)
-        rslogger.debug(f"{res=}")
+    rslogger.debug("SUCCESS")
+    return res
+    rslogger.debug(f"{res=}")
 
 
 async def update_sub_chapter_progress(user_data: schemas.LastPageData):
-
+    ud = user_data.dict()
+    ud.pop("last_page_url")
+    ud.pop("last_page_scroll_location")
+    ud.pop("last_page_accessed_on")
+    ud["status"] = ud.pop("completion_flag")
+    ud["chapter_id"] = ud.pop("last_page_chapter")
+    ud["sub_chapter_id"] = ud.pop("last_page_subchapter")
     stmt = (
         update(UserSubChapterProgress)
         .where(
@@ -347,17 +359,16 @@ async def update_sub_chapter_progress(user_data: schemas.LastPageData):
             & (UserSubChapterProgress.chapter_id == user_data.last_page_chapter)
             & (UserSubChapterProgress.sub_chapter_id == user_data.last_page_subchapter)
             & (
-                (UserSubChapterProgress.course_name == user_data.course_id)
+                (UserSubChapterProgress.course_name == user_data.course_name)
                 | (
                     UserSubChapterProgress.course_name == None  # noqa 711
                 )  # Back fill for old entries without course
             )
         )
-        .values(**user_data.dict())
+        .values(**ud)
     )
-    async with async_session() as session:
-        res = await session.execute(stmt)
-        rslogger.debug(f"{res=}")
+    async with async_session.begin() as session:
+        await session.execute(stmt)
 
 
 async def fetch_last_page(user: AuthUserValidator, course_name: str):
@@ -386,9 +397,11 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
 
     async with async_session() as session:
         res = await session.execute(query)
-
-        last_page = res.scalars().first()
-        return last_page
+        # for A query like this one with columns from multiple tables
+        # res.first() returns a tuple
+        rslogger.debug(f"LP {res}")
+        PageData = namedtuple("PageData", [col for col in res.keys()])
+        return PageData(*res.first())
 
 
 async def fetch_user_sub_chapter_progress(
@@ -418,14 +431,14 @@ async def fetch_user_sub_chapter_progress(
 
 
 async def create_user_sub_chapter_progress_entry(
-    user, last_page_chapter, last_page_subchapter
+    user, last_page_chapter, last_page_subchapter, status=-1
 ):
 
     new_uspe = UserSubChapterProgress(
         user_id=user.id,
         chapter_id=last_page_chapter,
         sub_chapter_id=last_page_subchapter,
-        status=-1,
+        status=status,
         start_date=datetime.datetime.utcnow(),
         course_name=user.course_name,
     )
