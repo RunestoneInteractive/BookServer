@@ -194,8 +194,6 @@ exclude_patterns = [
     "sphinx-enki-info.txt",
     # TODO: Notes here. I assume this is produced by the coverage run in the test suite? A link to that point in the code would be nice.
     "test/htmlcov",
-    # `Alembic <alembic/toctree>`_ stores auto-generated migration scripts `here <https://alembic.sqlalchemy.org/en/latest/tutorial.html#the-migration-environment>`_.
-    "alembic/versions",
 ]
 
 # `default_role <http://sphinx-doc.org/config.html#confval-default_role>`_: The

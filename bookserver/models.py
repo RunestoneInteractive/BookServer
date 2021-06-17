@@ -41,7 +41,6 @@ from sqlalchemy import (
     String,
     Date,
     DateTime,
-    MetaData,
     Text,
     types,
     Float,
@@ -89,10 +88,6 @@ class Web2PyBoolean(types.TypeDecorator):
 
 # Schema Definition
 # =================
-# this object is a container for the table objects and can be used by alembic to autogenerate
-# the migration information.
-metadata = MetaData()
-
 
 # Provide a container to store information about each type of Runestone Component.
 class RunestoneComponentDict:
