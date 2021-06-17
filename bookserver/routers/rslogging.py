@@ -205,28 +205,34 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 
 # updatelastpage
 # --------------
+# see :ref:`processPageState`
 @router.post("/updatelastpage")
 async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
-
-    lpd = request_data.dict()
-    rslogger.debug(f"{lpd=}")
-
-    lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
-    lpd["last_page_subchapter"] = ".".join(
-        request_data.last_page_url.split("/")[-1].split(".")[:-1]
-    )
-    lpd["last_page_accessed_on"] = datetime.utcnow()
-    lpd["user_id"] = request.state.user.id
-    lpd = LastPageData(**lpd)
     if request.state.user:
-        lpd.user_id = request.state.user.id
-        await update_user_state(lpd)
-        await update_sub_chapter_progress(lpd)
+        lpd = request_data.dict()
+        rslogger.debug(f"{lpd=}")
+
+        lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
+        lpd["last_page_subchapter"] = ".".join(
+            request_data.last_page_url.split("/")[-1].split(".")[:-1]
+        )
+        lpd["last_page_accessed_on"] = datetime.utcnow()
+        lpd["user_id"] = request.state.user.id
+
+        lpdo: LastPageData = LastPageData(**lpd)
+        await update_user_state(lpdo)
+        await update_sub_chapter_progress(lpdo)
+        # The components don't ever look at a result from this
+        # endpoint, but it seems like we should return some
+        # indication of success. See below.
+    else:
+        raise HTTPException(401)
 
         # todo: practice stuff came after this -- it does not belong here. But it needs
         # to be ported somewhere....
+    return make_json_response(detail="Success")
 
 
 # _getCompletionStatus
@@ -251,7 +257,6 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
         else:
             # haven't seen this Chapter/Subchapter before
             # make the insertions into the DB as necessary
-
             # we know the subchapter doesn't exist
             await create_user_sub_chapter_progress_entry(
                 request.state.user, last_page_chapter, last_page_subchapter, status=0
@@ -269,6 +274,9 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
 
 # _getAllCompletionStatus
 # -----------------------
+# This is called to decorate the table of contents for a book
+# See :ref:`decorateTableOfContents`
+#
 @router.get("/getAllCompletionStatus")
 async def getAllCompletionStatus(request: Request):
     if request.state.user:

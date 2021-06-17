@@ -400,7 +400,7 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
         # for A query like this one with columns from multiple tables
         # res.first() returns a tuple
         rslogger.debug(f"LP {res}")
-        PageData = namedtuple("PageData", [col for col in res.keys()])
+        PageData = namedtuple("PageData", [col for col in res.keys()])  # type: ignore
         return PageData(*res.first())
 
 

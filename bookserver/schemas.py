@@ -17,7 +17,7 @@ from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 # Third-party imports
 # -------------------
 from pydantic import BaseModel, BaseConfig, create_model, constr, validator, Field
-from humps import camelize
+from humps import camelize  # type: ignore
 
 # Local application imports
 # -------------------------
