@@ -63,18 +63,19 @@ async def check_not_null():
     async with async_session() as session:
         for table_name, table in Base.metadata.tables.items():
             for column in table.columns:
-                query = select(table).where(column == None)  # noqa: E711. SQLAlchemy requires ``==`` to correctly create the query; it can't overload the ``is`` operator.
-                res = (await session.execute(query)).fetchall()
-                if res:
-                    not_null_count += 1
-                    print(f"Table {table_name}, column {column.key} has {len(res)} NULL records; here are 10:")
-                    for row in res[0:9]:
-                        def shorten(s):
-                            s = str(s)
-                            return s if len(s) < 20 else s[0:20] + "..."
-                        # The result isn't an ORM object, so use this to display it.
-                        s = ", ".join(f"{k}={shorten(row[k])}" for k in row.keys())
-                        print(f"  {s}")
+                if not column.nullable:
+                    query = select(table).where(column == None)  # noqa: E711. SQLAlchemy requires ``==`` to correctly create the query; it can't overload the ``is`` operator.
+                    res = (await session.execute(query)).fetchall()
+                    if res:
+                        not_null_count += 1
+                        print(f"Column {table_name}.{column.key} has {len(res)} NULL records, such as:")
+                        for row in res[0:9]:
+                            def shorten(s):
+                                s = str(s)
+                                return s if len(s) < 20 else s[0:20] + "..."
+                            # The result isn't an ORM object, so use this to display it.
+                            s = ", ".join(f"{k}={shorten(row[k])}" for k in row.keys())
+                            print(f"  {s}")
     print(f"Done; found {not_null_count} columns with constraint violations.")
 
 
