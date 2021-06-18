@@ -17,6 +17,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.sql import select
 
 # Local application imports
 # -------------------------
@@ -52,6 +53,29 @@ async def init_models():
             await conn.run_sync(Base.metadata.drop_all)
 
         await conn.run_sync(Base.metadata.create_all)
+        await check_not_null()
+
+
+# Look for any records that violate non-null constraints.
+async def check_not_null():
+    print("Searching for NOT NULL constraint violations..."),
+    not_null_count = 0
+    async with async_session() as session:
+        for table_name, table in Base.metadata.tables.items():
+            for column in table.columns:
+                query = select(table).where(column == None)  # noqa: E711. SQLAlchemy requires ``==`` to correctly create the query; it can't overload the ``is`` operator.
+                res = (await session.execute(query)).fetchall()
+                if res:
+                    not_null_count += 1
+                    print(f"Table {table_name}, column {column.key} has {len(res)} NULL records; here are 10:")
+                    for row in res[0:9]:
+                        def shorten(s):
+                            s = str(s)
+                            return s if len(s) < 20 else s[0:20] + "..."
+                        # The result isn't an ORM object, so use this to display it.
+                        s = ", ".join(f"{k}={shorten(row[k])}" for k in row.keys())
+                        print(f"  {s}")
+    print(f"Done; found {not_null_count} columns with constraint violations.")
 
 
 # If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop of truncate tables (see `bookserver_session`).
