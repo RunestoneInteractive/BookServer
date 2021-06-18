@@ -309,7 +309,7 @@ class Code(Base, IdMixin):
     code = Column(Text, index=False, nullable=False)
     language = Column(Text, nullable=False)
     emessage = Column(Text, nullable=False)
-    comment = Column(Text, nullable=False)
+    comment = Column(Text)
 
 
 # Used for datafiles and storing questions and their suffix separately.
@@ -518,7 +518,7 @@ class QuestionGrade(Base, IdMixin):
     score = Column(Float(53))
     comment = Column(Text, nullable=False)
     deadline = Column(DateTime)
-    # Grades before the improved autograded and manually-scored grades lack this.
+    # Grades before the improved autograded and manually-scored grades lack this. Since it can refer to an ID from many different tables, don't make it a constraint.
     answer_id = Column(Integer)
 
 
@@ -537,7 +537,6 @@ class Grade(Base, IdMixin):
     # If all questions in the assignment don't have a score, this won't either.
     score = Column(Float(53))
     manual_total = Column(Web2PyBoolean, nullable=False)
-    projected = Column(Float(53), nullable=False)
     # Not all grades will be reportable via LTI.
     lis_result_sourcedid = Column(String(1024))
     lis_outcome_url = Column(String(1024))
@@ -578,7 +577,8 @@ class UserSubChapterProgress(Base, IdMixin):
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
-    course_name = Column(String(512), index=True, nullable=False)
+    # Older courses lack this; all newer courses should have one.
+    course_name = Column(String(512), index=True)
 
 
 UserSubChapterProgressValidator = sqlalchemy_to_pydantic(UserSubChapterProgress)

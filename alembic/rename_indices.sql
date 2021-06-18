@@ -6,9 +6,6 @@
 -- TODO:
 --
 -- -    Should we allow xxx_answers.correct to be NULL? What about xxx_answers.answer? (For example, mchoice_answers.correct or mchoice_answers.answer)?
--- -    Should we allow code.comment to be NULL?
--- -    What's the purpose of grades.projected? I can't see it being used anywhere.
--- -    Many (>200, 000) user_sub_chapter_progress.course_name records are NULL. This seems like an error rather than a need to change the constraint.
 
 
 
@@ -68,6 +65,13 @@ update course_instructor set paid='F' where paid is null;
 update questions set from_source='F' where from_source is null;
 update grades set manual_total='F' where manual_total is null;
 update sub_chapters set sub_chapter_num=999 where sub_chapter_num is null;
+
+-- Fix old JS producing NULL, probably when clicking on "check me" before providing an answer.
+update mchoice_answers set correct='F' where correct is null;
+update mchoice_answers set answer='' where answer is null;
+update fitb_answers set correct='F' where correct is null;
+update fitb_answers set answer='' where answer is null;
+
 
 
 -- Delete junk from the database.
