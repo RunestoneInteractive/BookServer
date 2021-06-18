@@ -347,6 +347,7 @@ class Courses(Base, IdMixin):
     allow_pairs = Column(Web2PyBoolean, nullable=False)
     student_price = Column(Integer)
     downloads_enabled = Column(Web2PyBoolean, nullable=False)
+    # Earlier courses didn't have this specified, so allow these old records to remain that way. New records should always specify this value.
     courselevel = Column(String, nullable=False)
     institution = Column(String)
 
@@ -513,10 +514,12 @@ class QuestionGrade(Base, IdMixin):
     sid = Column(String(512), nullable=False)
     course_name = Column(String(512), nullable=False)
     div_id = Column(String(512), nullable=False)
-    score = Column(Float(53), nullable=False)
+    # Manually-graded questions may be unscored (a NULL score).
+    score = Column(Float(53))
     comment = Column(Text, nullable=False)
-    deadline = Column(DateTime, nullable=False)
-    answer_id = Column(Integer, nullable=False)
+    deadline = Column(DateTime)
+    # Grades before the improved autograded and manually-scored grades lack this.
+    answer_id = Column(Integer)
 
 
 # The Grade table holds the grade for an entire assignment
@@ -531,11 +534,13 @@ class Grade(Base, IdMixin):
     assignment = Column(
         ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
     )
-    score = Column(Float(53), nullable=False)
+    # If all questions in the assignment don't have a score, this won't either.
+    score = Column(Float(53))
     manual_total = Column(Web2PyBoolean, nullable=False)
     projected = Column(Float(53), nullable=False)
-    lis_result_sourcedid = Column(String(1024), nullable=False)
-    lis_outcome_url = Column(String(1024), nullable=False)
+    # Not all grades will be reportable via LTI.
+    lis_result_sourcedid = Column(String(1024))
+    lis_outcome_url = Column(String(1024))
 
 
 # Book Structure Tables
@@ -569,6 +574,7 @@ class UserSubChapterProgress(Base, IdMixin):
     user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True)
     chapter_id = Column(String(512), index=True, nullable=False)
     sub_chapter_id = Column(String(512), index=True, nullable=False)
+    # Initial values for this don't have dates.
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
@@ -583,6 +589,7 @@ class UserChapterProgress(Base, IdMixin):
 
     user_id = Column(String(512), nullable=False)
     chapter_id = Column(String(512), nullable=False)
+    # Initial values for this don't have dates.
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
