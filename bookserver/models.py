@@ -61,6 +61,8 @@ from .schemas import BaseModelNone, sqlalchemy_to_pydantic
 class Web2PyBoolean(types.TypeDecorator):
     impl = types.CHAR(1)
     python_type = bool
+    # From the `docs <https://docs.sqlalchemy.org/en/14/core/custom_types.html#sqlalchemy.types.TypeDecorator.cache_ok>`_: "The requirements for cacheable elements is that they are hashable and also that they indicate the same SQL rendered for expressions using this type every time for a given cache value."
+    cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value:
