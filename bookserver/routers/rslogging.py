@@ -228,6 +228,7 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         # endpoint, but it seems like we should return some
         # indication of success. See below.
     else:
+        rslogger.debug("Not Authorized for update last page")
         raise HTTPException(401)
 
         # todo: practice stuff came after this -- it does not belong here. But it needs
@@ -262,7 +263,9 @@ async def getCompletionStatus(request: Request, lastPageUrl: str):
                 request.state.user, last_page_chapter, last_page_subchapter, status=0
             )
             # the chapter might exist without the subchapter
-            result = fetch_user_chapter_progress(request.state.user, last_page_chapter)
+            result = await fetch_user_chapter_progress(
+                request.state.user, last_page_chapter
+            )
             if not result:
                 await create_user_chapter_progress_entry(
                     request.state.user, last_page_chapter, -1

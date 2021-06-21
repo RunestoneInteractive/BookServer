@@ -57,8 +57,9 @@ router = APIRouter(
 # :index:`todo`: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
+    course_row = await fetch_course(course)
     filepath = safe_join(
-        settings.book_path, course, "build", course, "_static", filepath
+        settings.book_path, course, "build", course_row.base_course, "_static", filepath
     )
     rslogger.debug(f"GETTING: {filepath}")
     return FileResponse(filepath)

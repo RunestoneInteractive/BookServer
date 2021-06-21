@@ -531,8 +531,8 @@ async def test_toc_decorators(selenium_utils_user, bookserver_session):
     su.wait.until(element_has_css_class((By.ID, cbid), "buttonConfirmCompletion"))
 
     su.get_book_url("index.html")
-    # jtc = su.driver.find_element_by_id("jump-to-chapter")
-    # assert jtc is not null
+    jtc = su.driver.find_element_by_id("jump-to-chapter")
+    assert jtc is not null
 
     complete = su.driver.find_element_by_class_name("completed")
     assert complete is not null

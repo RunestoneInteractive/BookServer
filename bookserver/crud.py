@@ -460,12 +460,15 @@ async def fetch_user_chapter_progress(user, last_page_chapter):
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
-        return UserChapterProgressValidator(res.scalars().first())
+        return UserChapterProgressValidator.from_orm(res.scalars().first())
 
 
 async def create_user_chapter_progress_entry(user, last_page_chapter, status):
     new_ucp = UserChapterProgress(
-        user_id=user.id, chapter_id=last_page_chapter, status=status
+        user_id=user.id,
+        chapter_id=last_page_chapter,
+        status=status,
+        start_date=datetime.datetime.utcnow(),
     )
     async with async_session.begin() as session:
         session.add(new_ucp)
