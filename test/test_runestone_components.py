@@ -24,12 +24,14 @@ from runestone.fitb.test import test_fitb
 from runestone.mchoice.test import test_assess
 from runestone.parsons.test import test_parsons
 from runestone.poll.test import test_poll
+from runestone.shared_conftest import element_has_css_class
 from runestone.shortanswer.test import test_shortanswer
 from runestone.spreadsheet.test import test_spreadsheet
 from runestone.timed.test import test_timed
 from runestone import runestone_version
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from sqlalchemy import null
 from sqlalchemy.sql import select
 
 # Local imports
@@ -509,3 +511,28 @@ async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_div
 @pytest.mark.asyncio
 async def test_timed_1(selenium_utils_user_timed, bookserver_session):
     await _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")
+
+
+# progress tests
+
+
+@pytest.mark.asyncio
+async def test_toc_decorators(selenium_utils_user, bookserver_session):
+    su = selenium_utils_user
+    href = "test_chapter_1/subchapter_a.html"
+    su.get_book_url(href)
+    # find #completionButton and click on it
+    cbid = "completionButton"
+    cb = su.driver.find_element_by_id(cbid)
+    assert cb is not None
+    cb.click()
+    # Then go back to index and search for toctree-l2 and active or completed
+    # cll = cb.get_attribute
+    su.wait.until(element_has_css_class((By.ID, cbid), "buttonConfirmCompletion"))
+
+    su.get_book_url("index.html")
+    # jtc = su.driver.find_element_by_id("jump-to-chapter")
+    # assert jtc is not null
+
+    complete = su.driver.find_element_by_class_name("completed")
+    assert complete is not null

@@ -321,5 +321,6 @@ async def getlastpage(request: Request, course: str):
         }
         return make_json_response(detail=res)
     else:
+        rslogger.debug("Creating user state entry")
         res = await create_user_state_entry(request.state.user.id, course)
         return make_json_response(detail=res)

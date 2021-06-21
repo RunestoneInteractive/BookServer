@@ -341,7 +341,6 @@ async def update_user_state(user_data: schemas.LastPageData):
         res = await session.execute(stmt)
     rslogger.debug("SUCCESS")
     return res
-    rslogger.debug(f"{res=}")
 
 
 async def update_sub_chapter_progress(user_data: schemas.LastPageData):
@@ -401,7 +400,12 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
         # res.first() returns a tuple
         rslogger.debug(f"LP {res}")
         PageData = namedtuple("PageData", [col for col in res.keys()])  # type: ignore
-        return PageData(*res.first())
+        rdata = res.first()
+        rslogger.debug(f"{rdata=}")
+        if rdata:
+            return PageData(*rdata)
+        else:
+            return None
 
 
 async def fetch_user_sub_chapter_progress(
