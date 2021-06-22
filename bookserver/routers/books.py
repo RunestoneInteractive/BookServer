@@ -62,16 +62,23 @@ async def get_static(course: str, filepath: str):
         settings.book_path, course, "build", course_row.base_course, "_static", filepath
     )
     rslogger.debug(f"GETTING: {filepath}")
-    return FileResponse(filepath)
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    else:
+        raise HTTPException(404)
 
 
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
+    course_row = await fetch_course(course)
     filepath = safe_join(
-        settings.book_path, course, "build", course, "_images", filepath
+        settings.book_path, course, "build", course_row.base_course, "_images", filepath
     )
     rslogger.debug(f"GETTING: {filepath}")
-    return FileResponse(filepath)
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    else:
+        raise HTTPException(404)
 
 
 # Basic page renderer
