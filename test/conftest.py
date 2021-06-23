@@ -76,6 +76,13 @@ def pytest_addoption(parser):
         help="Skip initialization of the test database.",
     )
 
+    # This runs the server in a separate window with a usable console. A developer can add ``import pdb; pdb.set_trace()`` at any point in the bookserver to invoke the debugger and understand what's happening. The same technique also works well in the tests -- stop at a certain point in the test and (if running a Selenium-based test) look at the JavaScript console, or examine local variables in Python, etc.
+    parser.addoption(
+        "--server_debug",
+        action="store_true",
+        help="Enable server debug mode.",
+    )
+
 
 # .. _code_coverage:
 #
@@ -147,20 +154,15 @@ def run_bookserver(bookserver_address, pytestconfig):
                 "{} -m runestone deploy".format(sys.executable),
             )
 
-    # For debug:
-    #
-    # #.    Uncomment the next three lines.
-    # #.    Set ``WEB2PY_CONFIG`` to ``test``; all the other usual Runestone environment variables must also be set.
-    # #.    Run ``python -m celery --app=scheduled_builder worker --pool=gevent --concurrency=4 --loglevel=info`` from ``applications/runestone/modules`` to use the scheduler. I'm assuming the redis server (which the tests needs regardless of debug) is also running.
-    # #.    Run a test (in a separate window). When the debugger stops at the lines below:
-    #
-    #       #.  Run web2py manually to see all debug messages. Use a command line like ``python web2py.py -a pass``.
-    #       #.  After web2py is started, type "c" then enter to continue the debugger and actually run the tests.
-    ##import pdb; pdb.set_trace()
-    ##yield
-    ##return
-
-    # Start the bookserver and the (eventually) the scheduler. TODO: if an exception occurs, then this process isn't killed.
+    # Start the bookserver and the scheduler.
+    if pytestconfig.getoption("server_debug"):
+        # Don't redirect stdio, so the developer can see and interact with it.
+        kwargs = {}
+    else:
+        kwargs = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if is_win:
+        # This is required on Windows to be able to stop the web server cleanly.
+        kwargs.update(dict(creationflags=subprocess.CREATE_NEW_CONSOLE))
     book_server_process = subprocess.Popen(
         [
             sys.executable,
@@ -170,13 +172,11 @@ def run_bookserver(bookserver_address, pytestconfig):
             "-m",
             "bookserver",
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
-        # This is required on Windows to be able to stop the web server cleanly.
-        **(dict(creationflags=subprocess.CREATE_NEW_CONSOLE) if is_win else {}),
+        **kwargs,
     )
+
     # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
     if False:
         # TODO: implement server-side grading. Until then, not needed.
@@ -193,10 +193,9 @@ def run_bookserver(bookserver_address, pytestconfig):
             ],
             # Celery must be run in the ``modules`` directory, where the worker is defined.
             # cwd="{}/modules".format(rs_path),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             # Produce text (not binary) output for nice output in ``echo()`` below.
             universal_newlines=True,
+            **kwargs,
         )
 
     # Start a thread to read bookserver output and echo it.
