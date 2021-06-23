@@ -32,6 +32,7 @@ from urllib.request import urlopen
 
 # Third-party imports
 # -------------------
+import console_ctrl
 from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
@@ -53,7 +54,7 @@ from bookserver.db import async_session, engine
 from bookserver.crud import create_user, create_course, fetch_base_course
 from bookserver.main import app
 from bookserver.models import AuthUserValidator, CoursesValidator
-from .ci_utils import xqt, pushd
+from .ci_utils import is_win, xqt, pushd
 
 
 # Pytest setup
@@ -163,6 +164,7 @@ def run_bookserver(bookserver_address, pytestconfig):
         stderr=subprocess.PIPE,
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
+        creationflags=subprocess.CREATE_NEW_CONSOLE,
     )
     # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
     if False:
@@ -203,6 +205,17 @@ def run_bookserver(bookserver_address, pytestconfig):
 
     # Terminate the server and celery, printing any output produced.
     def shut_down():
+        if is_win:
+            # Send a ctrl-c to the web server, so that it can shut down cleanly and record the coverage data. On Windows, using ``book_server_process.terminate()`` produces no coverage data.
+            console_ctrl.send_ctrl_c(book_server_process.pid)
+            try:
+                book_server_process.wait(2)
+            except subprocess.TimeoutExpired:
+                # If that didn't work, just kill it.
+                book_server_process.terminate()
+        else:
+            # On Unix, this shuts the webserver down cleanly.
+            book_server_process.terminate()
         book_server_process.terminate()
         ##celery_process.terminate()
         for echo_thread in echo_threads:
