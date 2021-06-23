@@ -175,7 +175,7 @@ def run_bookserver(bookserver_address, pytestconfig):
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
         # This is required on Windows to be able to stop the web server cleanly.
-        creationflags=subprocess.CREATE_NEW_CONSOLE,
+        **(dict(creationflags=subprocess.CREATE_NEW_CONSOLE) if is_win else {}),
     )
     # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
     if False:
