@@ -21,6 +21,7 @@
 # Standard library
 # ----------------
 import datetime
+import io
 import os
 import subprocess
 import sys
@@ -33,6 +34,7 @@ from urllib.request import urlopen
 # Third-party imports
 # -------------------
 import console_ctrl
+import coverage
 from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
@@ -47,14 +49,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.sql import text
 
+# Ugly hack: start code coverage here. The imports below load code that must be covered. This seems cleaner than other solutions (create a separate pytest plugin just for coverage, put coverage code in a ``conftest.py`` that's imported before this one.)
+cov = coverage.Coverage()
+cov.start()
+
 # Local imports
 # -------------
-from bookserver.config import DatabaseType, settings
-from bookserver.db import async_session, engine
-from bookserver.crud import create_user, create_course, fetch_base_course
-from bookserver.main import app
-from bookserver.models import AuthUserValidator, CoursesValidator
-from .ci_utils import is_win, xqt, pushd
+# These all need a ``noqa; E402`` comment, since they come after the hack above.
+from bookserver.config import DatabaseType, settings  # noqa; E402
+from bookserver.db import async_session, engine  # noqa; E402
+from bookserver.crud import create_user, create_course, fetch_base_course  # noqa; E402
+from bookserver.main import app  # noqa; E402
+from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
+from .ci_utils import is_win, xqt, pushd  # noqa; E402
 
 
 # Pytest setup
@@ -70,21 +77,28 @@ def pytest_addoption(parser):
     )
 
 
+# .. _code_coverage:
+#
+# Code coverage
+# -------------
+# Getting code coverage to work in tricky. This is because code coverage must be collected while running pytest and while running the webserver. Since these run in parallel, trying to create a single coverage data file doesn't work. Therefore, we must set coverage's `parallel flag to True <parallel=True>`, so that each data file will be uniquely named. After pytest finishes, combine these two data files to produce a coverage result. While pytest-cov would be ideal, it `overrides <https://pytest-cov.readthedocs.io/en/latest/config.html>`_ the ``parallel`` flag (sigh).
+#
+# A simpler solution: invoke ``coverage run -m pytest``, then ``coverage combine``, then ``coverage report``. I opted for this complexity, to make it easy to just invoke pytest and get coverage with no further steps.
+#
 # Output a coverage report when testing is done. See https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_terminal_summary.
 def pytest_terminal_summary(terminalreporter):
-    try:
-        cp = xqt(
-            "{} -m coverage report".format(sys.executable),
-            # Capture the output from the report.
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
-    except subprocess.CalledProcessError as e:
-        res = "Error in coverage report.\n{}".format(e.stdout + e.stderr)
-    else:
-        res = cp.stdout + cp.stderr
-    terminalreporter.write_line(res)
+    cov.stop()
+    cov.save()
+    # Combine this (pytest) coverage with the webserver coverage.
+    cov.combine()
+
+    # Report on this combined data.
+    f = io.StringIO()
+    cov.report(file=f)
+    terminalreporter.write(f.getvalue())
+
+    # The ``combine()`` call doesn't erase the pytest coverage file, perhaps because this object still references it. Clean that up, since the combined coverage is now stored in a separate file named ``.coverage`` (while pytest coverage was stored in ``.coverage.unique-file-name``).
+    cov.erase()
 
 
 # Server prep and run
@@ -133,8 +147,6 @@ def run_bookserver(bookserver_address, pytestconfig):
                 "{} -m runestone deploy".format(sys.executable),
             )
 
-    xqt("{} -m coverage erase".format(sys.executable))
-
     # For debug:
     #
     # #.    Uncomment the next three lines.
@@ -155,8 +167,6 @@ def run_bookserver(bookserver_address, pytestconfig):
             "-m",
             "coverage",
             "run",
-            "--append",
-            "--source=bookserver",
             "-m",
             "bookserver",
         ],

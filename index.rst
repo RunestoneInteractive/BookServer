@@ -28,6 +28,7 @@ Development support
     .flake8
     mypy.ini
     tox.ini
+    .coveragerc
 
 
 Documentation generation

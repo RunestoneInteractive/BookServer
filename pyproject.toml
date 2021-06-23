@@ -77,8 +77,8 @@ build-backend = "poetry.core.masonry.api"
 # ====================
 [tool.pytest.ini_options]
 minversion = "6.0"
+# Ignore source code produced by Sphinx. This happens because the source text for literate programming pages is a source file.
 addopts = "--ignore=_build"
-#collect_ignore = ["_build"]
 # The `pytest-env <https://github.com/MobileDynasty/pytest-env>`_ plugin sets these environment variables. Set them here, before imports, since bookserver imports read from the environment variables.
 env = [
     "BOOK_SERVER_CONFIG=test",
