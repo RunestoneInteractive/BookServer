@@ -15,13 +15,14 @@
 from collections import namedtuple
 from typing import List, Optional
 import datetime
+import json
 
 
 # Third-party imports
 # -------------------
 from .db import async_session
-from pydal.validators import CRYPT
 from fastapi.exceptions import HTTPException
+from pydal.validators import CRYPT
 
 # import sqlalchemy
 from sqlalchemy import and_, update
@@ -30,10 +31,14 @@ from sqlalchemy.sql import select
 # Local application imports
 # -------------------------
 from .applogger import rslogger
+from .config import settings, BookServerConfig
+from .internal.utils import http_422error_detail
 from . import schemas
 from .models import (
+    answer_tables,
+    AuthUser,
+    AuthUserValidator,
     Chapter,
-    SubChapter,
     Code,
     CodeValidator,
     CourseInstructor,
@@ -42,19 +47,17 @@ from .models import (
     UserChapterProgressValidator,
     UserSubChapterProgress,
     UserSubChapterProgressValidator,
-    answer_tables,
-    AuthUser,
-    AuthUserValidator,
     Courses,
     CoursesValidator,
+    Question,
+    runestone_component_dict,
+    SubChapter,
     Useinfo,
     UseinfoValidation,
     UserState,
     UserStateValidator,
     validation_tables,
 )
-from .config import settings, BookServerConfig
-from .internal.utils import http_422error_detail
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -92,21 +95,20 @@ async def create_answer_table_entry(
     event: str,
 ) -> schemas.LogItemIncoming:
     rslogger.debug(f"hello from create at {log_entry}")
-    table_name = EVENT2TABLE[event]
-    tbl = answer_tables[table_name]
-    new_entry = tbl(**log_entry.dict())
+    rcd = runestone_component_dict[EVENT2TABLE[event]]
+    new_entry = rcd.model(**log_entry.dict())  # type: ignore
     async with async_session.begin() as session:
         session.add(new_entry)
 
     rslogger.debug(f"returning {new_entry}")
-    return validation_tables[table_name].from_orm(new_entry)
+    return rcd.validator.from_orm(new_entry)  # type: ignore
 
 
 async def fetch_last_answer_table_entry(
     query_data: schemas.AssessmentRequest,
 ) -> schemas.LogItemIncoming:
-    assessment = EVENT2TABLE[query_data.event]
-    tbl = answer_tables[assessment]
+    rcd = runestone_component_dict[EVENT2TABLE[query_data.event]]
+    tbl = rcd.model
     query = (
         select(tbl)
         .where(
@@ -121,7 +123,7 @@ async def fetch_last_answer_table_entry(
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
-        return validation_tables[assessment].from_orm(res.scalars().first())
+        return rcd.validator.from_orm(res.scalars().first())  # type: ignore
 
 
 # Courses
@@ -195,7 +197,7 @@ async def fetch_instructor_courses(
 ) -> List[CourseInstructorValidator]:
     """
     return a list of courses for which the given userid is an instructor.
-    If the optional course_id value is included then retur the row for that
+    If the optional course_id value is included then return the row for that
     course to verify that instructor_id is an instructor for course_id
     """
     query = select(CourseInstructor)
@@ -219,8 +221,6 @@ async def fetch_instructor_courses(
 
 # Code
 # ----
-
-
 async def create_code_entry(data: CodeValidator) -> CodeValidator:
     new_code = Code(**data.dict())
     async with async_session.begin() as session:
@@ -240,6 +240,29 @@ async def fetch_code(sid: str, acid: str, course_id: int) -> List[CodeValidator]
 
         code_list = [CodeValidator.from_orm(x) for x in res.scalars().fetchall()]
         return code_list
+
+
+# Server-side grading
+# -------------------
+# Return the feedback associated with this question if this question should be graded on the server instead of on the client; otherwise, return None.
+async def is_server_feedback(div_id, course):
+    # Get the information about this question.
+    query = (
+        select(Question, Courses)
+        .where(Question.name == div_id)
+        .join(Courses, Question.base_course == Courses.base_course)
+        .where(Courses.course_name == course)
+    )
+    async with async_session() as session:
+        query_results = (await session.execute(query)).first()
+
+        # Get the feedback, if it exists.
+        feedback = query_results and query_results.Question.feedback
+        # If there's feedback and a login is required (necessary for server-side grading), return the decoded feedback.
+        if feedback and query_results.Courses.login_required:
+            return json.loads(feedback)
+        # Otherwise, grade on the client.
+        return None
 
 
 # Development and Testing Utils

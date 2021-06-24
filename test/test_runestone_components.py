@@ -215,11 +215,10 @@ async def test_dnd_1(selenium_utils_user_1, bookserver_session):
 # Fitb
 # ----
 # Test server-side logic in FITB questions.
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_fitb_1(selenium_utils_user_1, bookserver_session):
     async def fitb_check_common_fields(index, div_id):
-        answer, correct, percent = check_common_fields(
+        answer, correct, percent = await check_common_fields(
             selenium_utils_user_1,
             bookserver_session,
             select(FitbAnswers).where(FitbAnswers.div_id == div_id),
@@ -246,10 +245,14 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
     )
 
     test_fitb.test_fitb4(selenium_utils_user_1)
-    assert fitb_check_common_fields(3, "test_fitb_string") == (["red", "away"], True, 1)
+    assert await fitb_check_common_fields(3, "test_fitb_string") == (
+        ["red", "away"],
+        True,
+        1,
+    )
 
     test_fitb.test_fitboneblank_too_low(selenium_utils_user_1)
-    assert fitb_check_common_fields(0, "test_fitb_number") == ([" 6"], False, 0)
+    assert await fitb_check_common_fields(0, "test_fitb_number") == ([" 6"], False, 0)
 
     test_fitb.test_fitboneblank_wildcard(selenium_utils_user_1)
     assert await fitb_check_common_fields(1, "test_fitb_number") == (
