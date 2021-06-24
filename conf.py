@@ -149,6 +149,7 @@ CodeChat_lexer_for_glob = {
     ".gitignore": "INI",
     ".flake8": "INI",
     "requirements-rtd.txt": "INI",
+    ".coveragerc": "INI",
 }
 
 # `source_encoding <http://sphinx-doc.org/config.html#confval-source_encoding>`_:

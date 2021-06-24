@@ -1,8 +1,10 @@
+; ***********************************
+; |docname| - Configure code coverage
+; ***********************************
 [run]
-omit =
-    _build
-    docs
-    ci_utils
+source=bookserver
+# _`parallel=True` is required for `code_coverage` to work correctly.
+parallel=True
 
 [html]
 directory = test/htmlcov
