@@ -164,7 +164,8 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     await create_useinfo_entry(UseinfoValidation(**useinfo_dict))
 
-    # Now add an entry to the code table
+    # Now add an entry to the code table - in the code table we use the name
+    # acid (activecode id) instead of div_id -- just to be difficult
     useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     if data.to_save:
         useinfo_dict["course_id"] = request.state.user.course_id
@@ -214,6 +215,9 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         lpd = request_data.dict()
         rslogger.debug(f"{lpd=}")
 
+        # last_page_url is going to be .../runestone/books/published/course/chapter/subchapter.html
+        # We will treat the second to last element as the chapter and the final element
+        # minus the .html as the subchapter
         lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
         lpd["last_page_subchapter"] = ".".join(
             request_data.last_page_url.split("/")[-1].split(".")[:-1]

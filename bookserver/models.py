@@ -327,6 +327,7 @@ class Courses(Base, IdMixin):
     student_price = Column(Integer)
     downloads_enabled = Column(Web2PyBoolean, nullable=False)
     courselevel = Column(String, nullable=False)
+    institution = Column(String)
 
 
 CoursesValidator = sqlalchemy_to_pydantic(Courses)
