@@ -64,7 +64,9 @@ class Settings(BaseSettings):
     book_server_config: BookServerConfig = "development"  # type: ignore
 
     # The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
-    _book_server_path: str = pkg_resources.resource_filename("bookserver", "")
+    _book_server_path: str = str(
+        Path(pkg_resources.resource_filename("bookserver", "")).absolute()
+    )
 
     # Database setup: this must be an async connection; for example:
     #
