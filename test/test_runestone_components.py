@@ -148,7 +148,6 @@ async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
 
 # ClickableArea
 # -------------
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_clickable_area_1(selenium_utils_user_1, bookserver_session):
     div_id = "test_clickablearea_1"
@@ -378,7 +377,6 @@ async def test_poll_1(selenium_utils_user_1, bookserver_session):
 
 # Short answer
 # ------------
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_short_answer_1(selenium_utils_user_1, bookserver_session):
     id = "test_short_answer_1"

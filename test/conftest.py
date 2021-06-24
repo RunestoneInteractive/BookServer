@@ -21,6 +21,7 @@
 # Standard library
 # ----------------
 import datetime
+import io
 import os
 import subprocess
 import sys
@@ -32,6 +33,8 @@ from urllib.request import urlopen
 
 # Third-party imports
 # -------------------
+import console_ctrl
+import coverage
 from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
@@ -46,14 +49,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.sql import text
 
+# Ugly hack: start code coverage here. The imports below load code that must be covered. This seems cleaner than other solutions (create a separate pytest plugin just for coverage, put coverage code in a ``conftest.py`` that's imported before this one.)
+cov = coverage.Coverage()
+cov.start()
+
 # Local imports
 # -------------
-from bookserver.config import DatabaseType, settings
-from bookserver.db import async_session, engine
-from bookserver.crud import create_user, create_course, fetch_base_course
-from bookserver.main import app
-from bookserver.models import AuthUserValidator, CoursesValidator
-from .ci_utils import xqt, pushd
+# These all need a ``noqa; E402`` comment, since they come after the hack above.
+from bookserver.config import DatabaseType, settings  # noqa; E402
+from bookserver.db import async_session, engine  # noqa; E402
+from bookserver.crud import create_user, create_course, fetch_base_course  # noqa; E402
+from bookserver.main import app  # noqa; E402
+from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
+from .ci_utils import is_win, xqt, pushd  # noqa; E402
 
 
 # Pytest setup
@@ -68,22 +76,36 @@ def pytest_addoption(parser):
         help="Skip initialization of the test database.",
     )
 
+    # This runs the server in a separate window with a usable console. A developer can add ``import pdb; pdb.set_trace()`` at any point in the bookserver to invoke the debugger and understand what's happening. The same technique also works well in the tests -- stop at a certain point in the test and (if running a Selenium-based test) look at the JavaScript console, or examine local variables in Python, etc.
+    parser.addoption(
+        "--server_debug",
+        action="store_true",
+        help="Enable server debug mode.",
+    )
 
+
+# .. _code_coverage:
+#
+# Code coverage
+# -------------
+# Getting code coverage to work in tricky. This is because code coverage must be collected while running pytest and while running the webserver. Since these run in parallel, trying to create a single coverage data file doesn't work. Therefore, we must set coverage's `parallel flag to True <parallel=True>`, so that each data file will be uniquely named. After pytest finishes, combine these two data files to produce a coverage result. While pytest-cov would be ideal, it `overrides <https://pytest-cov.readthedocs.io/en/latest/config.html>`_ the ``parallel`` flag (sigh).
+#
+# A simpler solution: invoke ``coverage run -m pytest``, then ``coverage combine``, then ``coverage report``. I opted for this complexity, to make it easy to just invoke pytest and get coverage with no further steps.
+#
 # Output a coverage report when testing is done. See https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_terminal_summary.
 def pytest_terminal_summary(terminalreporter):
-    try:
-        cp = xqt(
-            "{} -m coverage report".format(sys.executable),
-            # Capture the output from the report.
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
-    except subprocess.CalledProcessError as e:
-        res = "Error in coverage report.\n{}".format(e.stdout + e.stderr)
-    else:
-        res = cp.stdout + cp.stderr
-    terminalreporter.write_line(res)
+    cov.stop()
+    cov.save()
+    # Combine this (pytest) coverage with the webserver coverage.
+    cov.combine()
+
+    # Report on this combined data.
+    f = io.StringIO()
+    cov.report(file=f)
+    terminalreporter.write(f.getvalue())
+
+    # The ``combine()`` call doesn't erase the pytest coverage file, perhaps because this object still references it. Clean that up, since the combined coverage is now stored in a separate file named ``.coverage`` (while pytest coverage was stored in ``.coverage.unique-file-name``).
+    cov.erase()
 
 
 # Server prep and run
@@ -132,38 +154,29 @@ def run_bookserver(bookserver_address, pytestconfig):
                 "{} -m runestone deploy".format(sys.executable),
             )
 
-    xqt("{} -m coverage erase".format(sys.executable))
-
-    # For debug:
-    #
-    # #.    Uncomment the next three lines.
-    # #.    Set ``WEB2PY_CONFIG`` to ``test``; all the other usual Runestone environment variables must also be set.
-    # #.    Run ``python -m celery --app=scheduled_builder worker --pool=gevent --concurrency=4 --loglevel=info`` from ``applications/runestone/modules`` to use the scheduler. I'm assuming the redis server (which the tests needs regardless of debug) is also running.
-    # #.    Run a test (in a separate window). When the debugger stops at the lines below:
-    #
-    #       #.  Run web2py manually to see all debug messages. Use a command line like ``python web2py.py -a pass``.
-    #       #.  After web2py is started, type "c" then enter to continue the debugger and actually run the tests.
-    ##import pdb; pdb.set_trace()
-    ##yield
-    ##return
-
-    # Start the bookserver and the (eventually) the scheduler. TODO: if an exception occurs, then this process isn't killed.
+    # Start the bookserver and the scheduler.
+    if pytestconfig.getoption("server_debug"):
+        # Don't redirect stdio, so the developer can see and interact with it.
+        kwargs = {}
+    else:
+        kwargs = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if is_win:
+        # This is required on Windows to be able to stop the web server cleanly.
+        kwargs.update(dict(creationflags=subprocess.CREATE_NEW_CONSOLE))
     book_server_process = subprocess.Popen(
         [
             sys.executable,
             "-m",
             "coverage",
             "run",
-            "--append",
-            "--source=bookserver",
             "-m",
             "bookserver",
         ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
+        **kwargs,
     )
+
     # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
     if False:
         # TODO: implement server-side grading. Until then, not needed.
@@ -180,10 +193,9 @@ def run_bookserver(bookserver_address, pytestconfig):
             ],
             # Celery must be run in the ``modules`` directory, where the worker is defined.
             # cwd="{}/modules".format(rs_path),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             # Produce text (not binary) output for nice output in ``echo()`` below.
             universal_newlines=True,
+            **kwargs,
         )
 
     # Start a thread to read bookserver output and echo it.
@@ -203,6 +215,17 @@ def run_bookserver(bookserver_address, pytestconfig):
 
     # Terminate the server and celery, printing any output produced.
     def shut_down():
+        if is_win:
+            # Send a ctrl-c to the web server, so that it can shut down cleanly and record the coverage data. On Windows, using ``book_server_process.terminate()`` produces no coverage data.
+            console_ctrl.send_ctrl_c(book_server_process.pid)
+            try:
+                book_server_process.wait(2)
+            except subprocess.TimeoutExpired:
+                # If that didn't work, just kill it.
+                book_server_process.terminate()
+        else:
+            # On Unix, this shuts the webserver down cleanly.
+            book_server_process.terminate()
         book_server_process.terminate()
         ##celery_process.terminate()
         for echo_thread in echo_threads:
