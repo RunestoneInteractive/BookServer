@@ -9,9 +9,10 @@
 #
 # Standard library
 # ----------------
+from datetime import datetime
 import os.path
 import posixpath
-from datetime import datetime
+import re
 
 # Third-party imports
 # -------------------
@@ -54,16 +55,19 @@ router = APIRouter(
 # Note the use of the ``path``` type for filepath in the decoration.  If you don't use path it
 # seems to only get you the ``next`` part of the path ``/pre/vious/next/the/rest``.
 #
-# :index:`todo`: **Routes for draft (instructor-only) books.**
-@router.get("/published/{course:str}/_static/{filepath:path}")
-async def get_static(course: str, filepath: str):
+# Todo: **Routes for draft (instructor-only) books.**
+@router.get("/published/{course:str}/_images/{filepath:path}")
+async def get_image(course: str, filepath: str):
+    # Get the course row so we can use the base_course
+    # We would like to serve book pages with the actual course name in the URL
+    # instead of the base course.  This is a necessary step.
     course_row = await fetch_course(course)
     filepath = safe_join(
         settings.book_path,
         course_row.base_course,
         "build",
         course_row.base_course,
-        "_static",
+        "_images",
         filepath,
     )
     rslogger.debug(f"GETTING: {filepath}")
@@ -73,15 +77,18 @@ async def get_static(course: str, filepath: str):
         raise HTTPException(404)
 
 
-@router.get("/published/{course:str}/_images/{filepath:path}")
+@router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_image(course: str, filepath: str):
+    # Get the course row so we can use the base_course
+    # We would like to serve book pages with the actual course name in the URL
+    # instead of the base course.  This is a necessary step.
     course_row = await fetch_course(course)
     filepath = safe_join(
         settings.book_path,
         course_row.base_course,
         "build",
         course_row.base_course,
-        "_images",
+        "_static",
         filepath,
     )
     rslogger.debug(f"GETTING: {filepath}")
@@ -107,6 +114,8 @@ async def serve_page(
 ):
     rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
+    # Since these values are going to be read by javascript we
+    # need to use lowercase true and false.
     if user:
         logged_in = "true"
     else:

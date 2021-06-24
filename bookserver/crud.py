@@ -229,15 +229,10 @@ async def create_code_entry(data: CodeValidator):
     return CodeValidator.from_orm(new_code)
 
 
-async def fetch_code(sid: str, acid: str, course_id: int):
+async def fetch_code(sid: str, acid: str, course_id: int) -> List[CodeValidator]:
     query = (
         select(Code)
-        .where(
-            (Code.sid == sid)
-            & (Code.acid == acid)
-            & (Code.course_id == course_id)
-            & (Code.timestamp != None)  # noqa: E711
-        )
+        .where((Code.sid == sid) & (Code.acid == acid) & (Code.course_id == course_id))
         .order_by(Code.id)
     )
     async with async_session() as session:
@@ -318,7 +313,7 @@ async def create_initial_courses_users():
         )
 
 
-async def create_user_state_entry(user_id: int, course_name: str):
+async def create_user_state_entry(user_id: int, course_name: str) -> UserStateValidator:
     new_us = UserState(user_id=user_id, course_name=course_name)
     async with async_session.begin() as session:
         session.add(new_us)
@@ -340,7 +335,6 @@ async def update_user_state(user_data: schemas.LastPageData):
     async with async_session.begin() as session:
         res = await session.execute(stmt)
     rslogger.debug("SUCCESS")
-    return res
 
 
 async def update_sub_chapter_progress(user_data: schemas.LastPageData):
