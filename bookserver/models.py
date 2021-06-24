@@ -94,7 +94,7 @@ class Web2PyBoolean(types.TypeDecorator):
 metadata = MetaData()
 
 
-# Provide a container to store information about each type of Runestone Component.
+# Provide a container to store information about each type of Runestone Component. While a namedtuple would be better, this can't be used since the fields aren't modifiable after creation; see the comment on `init_graders <init_graders>`.
 class RunestoneComponentDict:
     def __init__(self, model: Type[Base], validator: Type[BaseModelNone]):
         self.grader = None
@@ -106,7 +106,7 @@ class RunestoneComponentDict:
 runestone_component_dict: Dict[str, RunestoneComponentDict] = {}
 
 
-# Provide a decorator for a class that populates this table.
+# _`register_answer_table`: Provide a decorator for a class that populates this table.
 def register_answer_table(
     sql_alchemy_cls: Type[Base],
 ) -> Type[Base]:
@@ -277,10 +277,10 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
 @register_answer_table
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
-    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me.
+    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me. Migrate this to use a ``Text`` field type instead.
     answer = Column(String(512), nullable=False)
-    # A grade between 0 and 100.
-    correct = Column(Float(), nullable=False)
+    # A grade between 0 and 100. None means it the student hasn't submitted an answer yet. This was added before the ``percent`` field most other question types now have; it servers the same role, but stores the answer as a percentage. (The ``percent`` field in other questions stores values between 0 and 1.)
+    correct = Column(Float())
     __table_args__ = (Index("idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
 
 

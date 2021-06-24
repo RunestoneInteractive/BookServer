@@ -94,6 +94,7 @@ def pytest_addoption(parser):
 # Getting code coverage to work in tricky. This is because code coverage must be collected while running pytest and while running the webserver. Since these run in parallel, trying to create a single coverage data file doesn't work. Therefore, we must set coverage's `parallel flag to True <parallel=True>`, so that each data file will be uniquely named. After pytest finishes, combine these two data files to produce a coverage result. While pytest-cov would be ideal, it `overrides <https://pytest-cov.readthedocs.io/en/latest/config.html>`_ the ``parallel`` flag (sigh).
 #
 # A simpler solution: invoke ``coverage run -m pytest``, then ``coverage combine``, then ``coverage report``. I opted for this complexity, to make it easy to just invoke pytest and get coverage with no further steps.
+#
 # Output a coverage report when testing is done. See the `docs <https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec>`__.pytest_terminal_summary.
 def pytest_terminal_summary(terminalreporter):
     cov.stop()
@@ -185,27 +186,25 @@ def run_bookserver(bookserver_address, pytestconfig):
         **kwargs,
     )
 
-    # Run Celery. Per https://github.com/celery/celery/issues/3422, it sounds like celery doesn't support coverage, so omit it.
-    if False:
-        # TODO: implement server-side grading. Until then, not needed.
-        celery_process = subprocess.Popen(  # noqa: F841
-            prefix_args
-            + [
-                sys.executable,
-                "-m",
-                "celery",
-                "--app=scheduled_builder",
-                "worker",
-                "--pool=gevent",
-                "--concurrency=4",
-                "--loglevel=info",
-            ],
-            # Celery must be run in the ``modules`` directory, where the worker is defined.
-            # cwd="{}/modules".format(rs_path),
-            # Produce text (not binary) output for nice output in ``echo()`` below.
-            universal_newlines=True,
-            **kwargs,
-        )
+    # Run Celery. Per `Celery issue #3422 <https://github.com/celery/celery/issues/3422>`_, there are problems with coverage and Celery. This seems to work.
+    celery_process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "-m",
+            "celery",
+            "--app=bookserver.internal.scheduled_builder",
+            "worker",
+            "--pool=threads",
+            "--concurrency=4",
+            "--loglevel=info",
+        ],
+        # Produce text (not binary) output for nice output in ``echo()`` below.
+        universal_newlines=True,
+        **kwargs,
+    )
 
     # Start a thread to read bookserver output and echo it.
     print_lock = Lock()
@@ -221,25 +220,29 @@ def run_bookserver(bookserver_address, pytestconfig):
 
     echo_threads = [
         Thread(target=echo, args=(book_server_process, "book server")),
-        ##Thread(target=echo, args=(celery_process, "celery process")),
+        Thread(target=echo, args=(celery_process, "celery process")),
     ]
     for echo_thread in echo_threads:
         echo_thread.start()
 
-    # Terminate the server and celery, printing any output produced.
-    def shut_down():
+    def terminate_process(process):
         if is_win:
-            # Send a ctrl-c to the web server, so that it can shut down cleanly and record the coverage data. On Windows, using ``book_server_process.terminate()`` produces no coverage data.
-            console_ctrl.send_ctrl_c(book_server_process.pid)
+            # Send a ctrl-c to the web server, so that it can shut down cleanly and record the coverage data. On Windows, using ``process.terminate()`` produces no coverage data.
+            console_ctrl.send_ctrl_c(process.pid)
             try:
-                book_server_process.wait(2)
+                process.wait(5)
             except subprocess.TimeoutExpired:
                 # If that didn't work, just kill it.
-                book_server_process.terminate()
+                print("Warning: unable to cleanly end process. Terminating.")
+                process.terminate()
         else:
             # On Unix, this shuts the webserver down cleanly.
-            book_server_process.terminate()
-        ##celery_process.terminate()
+            process.terminate()
+
+    # Terminate the server and celery, printing any output produced.
+    def shut_down():
+        terminate_process(book_server_process)
+        terminate_process(celery_process)
         for echo_thread in echo_threads:
             echo_thread.join()
 
