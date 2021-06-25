@@ -188,7 +188,8 @@ def run_bookserver(bookserver_address, pytestconfig):
 
     # Run Celery. Per `Celery issue #3422 <https://github.com/celery/celery/issues/3422>`_, there are problems with coverage and Celery. This seems to work.
     celery_process = subprocess.Popen(
-        [
+        prefix_args
+        + [
             sys.executable,
             "-m",
             "coverage",
