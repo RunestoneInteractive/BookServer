@@ -20,7 +20,7 @@
 #
 # Local application imports
 # -------------------------
-from test.ci_utils import xqt, pushd
+from test.ci_utils import xqt
 
 
 # Checks
@@ -39,10 +39,9 @@ def checks():
         # -E    Don’t use a saved environment (the structure caching all cross-references), but rebuild it completely.
         # -a    If given, always write all output files.
         "sphinx-build -E -a . _build",
+        # Finally, unit tests -- the hardest to get right.
+        "pytest -s -v",
     )
-    # Finally, unit tests -- the hardest to get right.
-    with pushd("test"):
-        xqt("pytest -s -v")
 
 
 # .. attention:: Coverage Reports
