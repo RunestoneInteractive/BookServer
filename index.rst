@@ -27,8 +27,6 @@ Development support
     .gitignore
     .flake8
     mypy.ini
-    tox.ini
-    .coveragerc
 
 
 Documentation generation
@@ -47,6 +45,7 @@ License
     :maxdepth: 1
 
     LICENSE
+
 
 Indices and tables
 ==================
