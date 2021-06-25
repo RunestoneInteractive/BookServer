@@ -13,7 +13,7 @@
 # Standard library
 # ----------------
 from collections import namedtuple
-from typing import List, Optional, NamedTuple
+from typing import List, Optional
 import datetime
 
 
