@@ -118,6 +118,27 @@ def test_runestone_version():
     assert runestone_version.startswith("6.")
 
 
+@pytest.mark.skip(reason="Brad has no idea what he is doing.")
+@pytest.mark.asyncio
+async def test_runlog(selenium_utils_user, bookserver_session):
+    su = selenium_utils_user
+    href = "activecode.html"
+    su.get_book_url(href)
+    div_id = "test_activecode_2a"
+    ac2a = su.driver.find_element_by_id(div_id)
+    button = ac2a.find_element_by_class_name("run-button")
+    assert button
+    button.click()
+
+    async def ac_check_runlog(div_id):
+        row = await get_answer(
+            bookserver_session, select(Code).where(Code.acid == div_id), 1
+        )
+        assert row
+
+    await ac_check_runlog(div_id)
+
+
 @pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
