@@ -61,7 +61,7 @@ from bookserver.db import async_session, engine  # noqa; E402
 from bookserver.crud import create_user, create_course, fetch_base_course  # noqa; E402
 from bookserver.main import app  # noqa; E402
 from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
-from .ci_utils import is_win, xqt, pushd  # noqa; E402
+from .ci_utils import is_linux, is_darwin, is_win, xqt, pushd  # noqa; E402
 
 
 # Pytest setup
@@ -155,16 +155,24 @@ def run_bookserver(bookserver_address, pytestconfig):
             )
 
     # Start the bookserver and the scheduler.
+    prefix_args = []
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
+        # TODO: these come from `SO <https://stackoverflow.com/a/19308462/16038919>`_ but are not tested.
+        if is_linux:
+            # This is a guess, and will depend on your distro. Fix as necessary. Another common choice: ``["xterm", "-e"]``.
+            prefix_args = ["gnome-terminal", "-x"]
+        elif is_darwin:
+            prefix_args = ["open", "-W", "-a", "Terminal.app"]
     else:
         kwargs = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if is_win:
         # This is required on Windows to be able to stop the web server cleanly.
         kwargs.update(dict(creationflags=subprocess.CREATE_NEW_CONSOLE))
     book_server_process = subprocess.Popen(
-        [
+        prefix_args
+        + [
             sys.executable,
             "-m",
             "coverage",
@@ -181,7 +189,8 @@ def run_bookserver(bookserver_address, pytestconfig):
     if False:
         # TODO: implement server-side grading. Until then, not needed.
         celery_process = subprocess.Popen(  # noqa: F841
-            [
+            prefix_args
+            + [
                 sys.executable,
                 "-m",
                 "celery",
