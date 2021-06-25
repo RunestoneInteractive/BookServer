@@ -112,6 +112,8 @@ class LogItemIncoming(BaseModelNone):
     subchapter: Optional[str]
     # used by parsons
     source: Optional[str]
+    # used by dnd
+    min_height: Optional[int]
 
 
 class AssessmentRequest(BaseModelNone):
