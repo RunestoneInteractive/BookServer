@@ -12,7 +12,6 @@
 from datetime import datetime
 import os.path
 import posixpath
-import re
 
 # Third-party imports
 # -------------------
@@ -55,47 +54,40 @@ router = APIRouter(
 # Note the use of the ``path``` type for filepath in the decoration.  If you don't use path it
 # seems to only get you the ``next`` part of the path ``/pre/vious/next/the/rest``.
 #
+
+
+async def return_static_asset(course, kind, filepath):
+    course_row = await fetch_course(course)
+    filepath = safe_join(
+        settings.book_path,
+        course_row.base_course,
+        "build",
+        course_row.base_course,
+        kind,
+        filepath,
+    )
+    rslogger.debug(f"GETTING: {filepath}")
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    else:
+        raise HTTPException(404)
+
+
 # Todo: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
     # Get the course row so we can use the base_course
     # We would like to serve book pages with the actual course name in the URL
     # instead of the base course.  This is a necessary step.
-    course_row = await fetch_course(course)
-    filepath = safe_join(
-        settings.book_path,
-        course_row.base_course,
-        "build",
-        course_row.base_course,
-        "_images",
-        filepath,
-    )
-    rslogger.debug(f"GETTING: {filepath}")
-    if os.path.exists(filepath):
-        return FileResponse(filepath)
-    else:
-        raise HTTPException(404)
+    return await return_static_asset(course, "_images", filepath)
 
 
 @router.get("/published/{course:str}/_static/{filepath:path}")
-async def get_image(course: str, filepath: str):
+async def get_static(course: str, filepath: str):
     # Get the course row so we can use the base_course
     # We would like to serve book pages with the actual course name in the URL
     # instead of the base course.  This is a necessary step.
-    course_row = await fetch_course(course)
-    filepath = safe_join(
-        settings.book_path,
-        course_row.base_course,
-        "build",
-        course_row.base_course,
-        "_static",
-        filepath,
-    )
-    rslogger.debug(f"GETTING: {filepath}")
-    if os.path.exists(filepath):
-        return FileResponse(filepath)
-    else:
-        raise HTTPException(404)
+    return await return_static_asset(course, "_static", filepath)
 
 
 # Basic page renderer

@@ -13,7 +13,7 @@
 # Standard library
 # ----------------
 from collections import namedtuple
-from typing import List, Optional
+from typing import List, Optional, NamedTuple
 import datetime
 
 
@@ -221,7 +221,7 @@ async def fetch_instructor_courses(
 # ----
 
 
-async def create_code_entry(data: CodeValidator):
+async def create_code_entry(data: CodeValidator) -> CodeValidator:
     new_code = Code(**data.dict())
     async with async_session.begin() as session:
         session.add(new_code)
@@ -322,6 +322,8 @@ async def create_user_state_entry(user_id: int, course_name: str) -> UserStateVa
 
 async def update_user_state(user_data: schemas.LastPageData):
     ud = user_data.dict()
+    # LastPageData contains information for both user_state and user_sub_chapter_progress tables
+    # we do not need the completion flag in the user_state table
     ud.pop("completion_flag")
     rslogger.debug(f"user data = {ud}")
     stmt = (
@@ -333,7 +335,7 @@ async def update_user_state(user_data: schemas.LastPageData):
         .values(**ud)
     )
     async with async_session.begin() as session:
-        res = await session.execute(stmt)
+        await session.execute(stmt)
     rslogger.debug("SUCCESS")
 
 
@@ -404,7 +406,7 @@ async def fetch_last_page(user: AuthUserValidator, course_name: str):
 
 async def fetch_user_sub_chapter_progress(
     user, last_page_chapter=None, last_page_subchapter=None
-):
+) -> UserSubChapterProgressValidator:
 
     where_clause = (UserSubChapterProgress.user_id == user.id) & (
         UserSubChapterProgress.course_name == user.course_name
@@ -430,7 +432,7 @@ async def fetch_user_sub_chapter_progress(
 
 async def create_user_sub_chapter_progress_entry(
     user, last_page_chapter, last_page_subchapter, status=-1
-):
+) -> UserSubChapterProgressValidator:
 
     new_uspe = UserSubChapterProgress(
         user_id=user.id,
@@ -445,7 +447,9 @@ async def create_user_sub_chapter_progress_entry(
     return UserSubChapterProgressValidator.from_orm(new_uspe)
 
 
-async def fetch_user_chapter_progress(user, last_page_chapter):
+async def fetch_user_chapter_progress(
+    user, last_page_chapter
+) -> UserChapterProgressValidator:
     query = select(UserChapterProgress).where(
         (UserChapterProgress.user_id == user.id)
         & (UserChapterProgress.chapter_id == last_page_chapter)
@@ -457,7 +461,9 @@ async def fetch_user_chapter_progress(user, last_page_chapter):
         return UserChapterProgressValidator.from_orm(res.scalars().first())
 
 
-async def create_user_chapter_progress_entry(user, last_page_chapter, status):
+async def create_user_chapter_progress_entry(
+    user, last_page_chapter, status
+) -> UserChapterProgressValidator:
     new_ucp = UserChapterProgress(
         user_id=user.id,
         chapter_id=last_page_chapter,
