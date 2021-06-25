@@ -9,9 +9,9 @@
 #
 # Standard library
 # ----------------
+from datetime import datetime
 import os.path
 import posixpath
-from datetime import datetime
 
 # Third-party imports
 # -------------------
@@ -54,23 +54,40 @@ router = APIRouter(
 # Note the use of the ``path``` type for filepath in the decoration.  If you don't use path it
 # seems to only get you the ``next`` part of the path ``/pre/vious/next/the/rest``.
 #
-# :index:`todo`: **Routes for draft (instructor-only) books.**
-@router.get("/published/{course:str}/_static/{filepath:path}")
-async def get_static(course: str, filepath: str):
+
+
+async def return_static_asset(course, kind, filepath):
+    course_row = await fetch_course(course)
     filepath = safe_join(
-        settings.book_path, course, "build", course, "_static", filepath
+        settings.book_path,
+        course_row.base_course,
+        "build",
+        course_row.base_course,
+        kind,
+        filepath,
     )
     rslogger.debug(f"GETTING: {filepath}")
-    return FileResponse(filepath)
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    else:
+        raise HTTPException(404)
 
 
+# Todo: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
-    filepath = safe_join(
-        settings.book_path, course, "build", course, "_images", filepath
-    )
-    rslogger.debug(f"GETTING: {filepath}")
-    return FileResponse(filepath)
+    # Get the course row so we can use the base_course
+    # We would like to serve book pages with the actual course name in the URL
+    # instead of the base course.  This is a necessary step.
+    return await return_static_asset(course, "_images", filepath)
+
+
+@router.get("/published/{course:str}/_static/{filepath:path}")
+async def get_static(course: str, filepath: str):
+    # Get the course row so we can use the base_course
+    # We would like to serve book pages with the actual course name in the URL
+    # instead of the base course.  This is a necessary step.
+    return await return_static_asset(course, "_static", filepath)
 
 
 # Basic page renderer
@@ -89,6 +106,13 @@ async def serve_page(
 ):
     rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
+    # Since these values are going to be read by javascript we
+    # need to use lowercase true and false.
+    if user:
+        logged_in = "true"
+    else:
+        logged_in = "false"
+
     course_row = await fetch_course(user.course_name)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
@@ -131,7 +155,7 @@ async def serve_page(
         allow_pairs="false",
         activity_info={},
         settings=settings,
-        is_logged_in="false",
+        is_logged_in=logged_in,
         is_instructor="true",
         enable_compare_me="true",
         readings=[],

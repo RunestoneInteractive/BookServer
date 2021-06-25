@@ -17,6 +17,7 @@ from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 # Third-party imports
 # -------------------
 from pydantic import BaseModel, BaseConfig, create_model, constr, validator, Field
+from humps import camelize  # type: ignore
 
 # Local application imports
 # -------------------------
@@ -154,3 +155,28 @@ class LogRunIncoming(BaseModelNone):
     suffix: Optional[str]
     partner: Optional[str]
     sid: Optional[str]
+
+
+# Schemas for Completion Data
+# ---------------------------
+class LastPageDataIncoming(BaseModelNone):
+    last_page_url: str  # = Field(None, alias="lastPageUrl") is the manual way
+    course_id: str = Field(None, alias="course")
+    completion_flag: int
+    last_page_scroll_location: int
+    # todo: this should really be an int
+
+    # We can automatically create the aliases!
+    class Config:
+        alias_generator = camelize
+
+
+class LastPageData(BaseModelNone):
+    last_page_url: str
+    course_name: str = Field(None, alias="course_id")
+    completion_flag: int
+    last_page_scroll_location: int
+    last_page_chapter: str
+    last_page_subchapter: str
+    last_page_accessed_on: datetime
+    user_id: int

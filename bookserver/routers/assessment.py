@@ -133,14 +133,13 @@ async def get_history(request: Request, request_data: HistoryRequest):
         raise HTTPException(401)
 
     res: Dict[str, Any] = {}
-    if sid:
-        res["acid"] = acid
-        res["sid"] = sid
-        # get the code they saved in chronological order; id order gets that for us
-        r = await fetch_code(sid, acid, course_id)
-        res["history"] = [row.code for row in r]
-        res["timestamps"] = [
-            row.timestamp.replace(tzinfo=datetime.timezone.utc).isoformat() for row in r
-        ]
+    res["acid"] = acid
+    res["sid"] = sid
+    # get the code they saved in chronological order; id order gets that for us
+    r = await fetch_code(sid, acid, course_id)  # type: ignore
+    res["history"] = [row.code for row in r]
+    res["timestamps"] = [
+        row.timestamp.replace(tzinfo=datetime.timezone.utc).isoformat() for row in r
+    ]
 
     return make_json_response(detail=res)

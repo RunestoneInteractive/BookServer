@@ -83,7 +83,7 @@ async def login(
         # raise InvalidCredentialsException
         return RedirectResponse("/auth/login")
     else:
-        rslogger.debug(f"{user.username}")
+        rslogger.debug(f"Got a user {user.username} check password")
         # The password in the web2py database is formatted as follows:
         # alg$salt$hash
         # We need to grab the salt and provide that to the CRYPT function
@@ -98,14 +98,18 @@ async def login(
     access_token = auth_manager.create_access_token(
         data={"sub": user.username}, expires=timedelta(hours=12)
     )
-    response = RedirectResponse(
-        "http://localhost:8080/books/published/overview/index.html"
-    )
+    redirect_to = f"/books/published/{user.course_name}/index.html"
+    rslogger.debug(f"Sending user to {redirect_to}")
+    response = RedirectResponse(redirect_to)
     # *Important* We need to set the cookie here for the redirect in order for
     # the next page to validate.  This will also set the cookie in the browser
     # for future pages.
     auth_manager.set_cookie(response, access_token)
     return response
+
+
+# todo: Write a second version of validate that returns the token as json
+# this can be used by the docs/testing system.
 
 
 @router.post("/newuser")
