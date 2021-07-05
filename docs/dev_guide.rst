@@ -3,6 +3,25 @@ Development guidelines
 **********************
 This document covers guidelines for developers contributing to this project.
 
+Installation
+============
+
+#.  Create a folder to store Runestone-related files. In the following documentation, it's called ``runestone_root``, but any name is fine.
+#.  Clone the `Runestone Components repo <https://github.com/RunestoneInteractive/RunestoneComponents>`_ from the ``runestone_root`` directory, then check out the ``bookserver`` branch.
+#.  Clone `this <https://github.com/bnmnetp/BookServer>`_ repo from the ``runestone_root`` directory. At this point, your directory structure should look like::
+
+        runestone_root/
+            BookServer/
+            RunestoneComponents/
+
+#.  `Install poetry <https://python-poetry.org/docs/#installation>`_.
+#.  From the command line / terminal, change to the ``runestone_root/BookServer`` then execute ``poetry install``. It will install both the BookServer and the Runestone Components.
+
+Use:
+
+Either prefix all commands with ``poetry run`` (such as ``poetry run bookserver``) or type ``poetry shell`` at a terminal / command prompt to gain access to the BookServer venv. Follow the author directions to install a book, build it, run the server, etc.
+
+
 Documentation
 =============
 *   Write documentation using ReStruturedText files instead of Markdown -- RST supports more Sphinx features.
@@ -37,13 +56,13 @@ When this passes:
 *   Pull from upstream, then `rebase your pull request <https://www.atlassian.com/git/tutorials/merging-vs-rebasing>`_ if necessary to ensure there will be no merge conflicts.
 *   Submit your pull request, then verify that CI tests pass.
 
-1. No committing to main directly. Mostly a reminder for myself 
-
-1. In principle I like the idea of rebasing a branch I'm working on locally.
-But after I publish that branch and make it a PR, no more rebasing after the branch is public.
-2. The main branch should be protected on GitHub so that tests must pass and have an approving review from at least one committer. Ideally this would be someone other than the person who makes the PR but in practice this is hard when people get busy and don't have time to review. Plus I think its fine for self review in small simple cases or emergency bug fixes.
-3. Are a required part of a PR -- we have the opportunity to get our coverage at 100% in these early stages and keep it there as we build out this new server.
-4. I like using semantic versioning, and I've found that doing a weekly release for runestone components works well.  We will strive to follow the same schedule here.
+Rules
+^^^^^
+#.  No committing to main directly. Mostly a reminder for myself.
+#.  In principle I like the idea of rebasing a branch I'm working on locally. But after I publish that branch and make it a PR, no more rebasing after the branch is public.
+#.  The main branch should be protected on GitHub so that tests must pass and have an approving review from at least one committer. Ideally this would be someone other than the person who makes the PR but in practice this is hard when people get busy and don't have time to review. Plus I think its fine for self review in small simple cases or emergency bug fixes.
+#.  Are a required part of a PR -- we have the opportunity to get our coverage at 100% in these early stages and keep it there as we build out this new server.
+#.  I like using semantic versioning, and I've found that doing a weekly release for runestone components works well.  We will strive to follow the same schedule here.
 
 Imports
 -------
