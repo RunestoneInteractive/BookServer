@@ -26,7 +26,7 @@ import os
 import subprocess
 import sys
 import time
-from threading import Thread
+from threading import Lock, Thread
 from shutil import rmtree, copytree
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -49,19 +49,22 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy.sql import text
 
-# Ugly hack: start code coverage here. The imports below load code that must be covered. This seems cleaner than other solutions (create a separate pytest plugin just for coverage, put coverage code in a ``conftest.py`` that's imported before this one.)
+# Local imports
+# -------------
+# Put the book server in test mode, since the following imports will look at this setting.
+os.environ["BOOK_SERVER_CONFIG"] = "test"
+
+# Start code coverage here. The imports below load code that must be covered. This seems cleaner than other solutions (create a separate pytest plugin just for coverage, put coverage code in a ``conftest.py`` that's imported before this one.)
 cov = coverage.Coverage()
 cov.start()
 
-# Local imports
-# -------------
-# These all need a ``noqa; E402`` comment, since they come after the hack above.
+# These all need a ``noqa: E402`` comment, since they come after the statements above.
 from bookserver.config import DatabaseType, settings  # noqa; E402
 from bookserver.db import async_session, engine  # noqa; E402
 from bookserver.crud import create_user, create_course, fetch_base_course  # noqa; E402
 from bookserver.main import app  # noqa; E402
 from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
-from .ci_utils import is_win, xqt, pushd  # noqa; E402
+from .ci_utils import is_linux, is_darwin, is_win, xqt, pushd  # noqa; E402
 
 
 # Pytest setup
@@ -91,21 +94,18 @@ def pytest_addoption(parser):
 # Getting code coverage to work in tricky. This is because code coverage must be collected while running pytest and while running the webserver. Since these run in parallel, trying to create a single coverage data file doesn't work. Therefore, we must set coverage's `parallel flag to True <parallel=True>`, so that each data file will be uniquely named. After pytest finishes, combine these two data files to produce a coverage result. While pytest-cov would be ideal, it `overrides <https://pytest-cov.readthedocs.io/en/latest/config.html>`_ the ``parallel`` flag (sigh).
 #
 # A simpler solution: invoke ``coverage run -m pytest``, then ``coverage combine``, then ``coverage report``. I opted for this complexity, to make it easy to just invoke pytest and get coverage with no further steps.
-#
-# Output a coverage report when testing is done. See https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_terminal_summary.
+# Output a coverage report when testing is done. See the `docs <https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec>`__.pytest_terminal_summary.
 def pytest_terminal_summary(terminalreporter):
     cov.stop()
     cov.save()
-    # Combine this (pytest) coverage with the webserver coverage.
-    cov.combine()
+    # Combine this (pytest) coverage with the webserver coverage. Use a new object, since the ``cov`` object is tried to the data file produced by the pytest run. Otherwise, the report is correct, but the resulting ``.coverage`` data file is empty.
+    cov_all = coverage.Coverage()
+    cov_all.combine()
 
     # Report on this combined data.
     f = io.StringIO()
-    cov.report(file=f)
+    cov_all.report(file=f)
     terminalreporter.write(f.getvalue())
-
-    # The ``combine()`` call doesn't erase the pytest coverage file, perhaps because this object still references it. Clean that up, since the combined coverage is now stored in a separate file named ``.coverage`` (while pytest coverage was stored in ``.coverage.unique-file-name``).
-    cov.erase()
 
 
 # Server prep and run
@@ -155,16 +155,24 @@ def run_bookserver(bookserver_address, pytestconfig):
             )
 
     # Start the bookserver and the scheduler.
+    prefix_args = []
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
+        # TODO: these come from `SO <https://stackoverflow.com/a/19308462/16038919>`_ but are not tested.
+        if is_linux:
+            # This is a guess, and will depend on your distro. Fix as necessary. Another common choice: ``["xterm", "-e"]``.
+            prefix_args = ["gnome-terminal", "-x"]
+        elif is_darwin:
+            prefix_args = ["open", "-W", "-a", "Terminal.app"]
     else:
         kwargs = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if is_win:
         # This is required on Windows to be able to stop the web server cleanly.
         kwargs.update(dict(creationflags=subprocess.CREATE_NEW_CONSOLE))
     book_server_process = subprocess.Popen(
-        [
+        prefix_args
+        + [
             sys.executable,
             "-m",
             "coverage",
@@ -181,7 +189,8 @@ def run_bookserver(bookserver_address, pytestconfig):
     if False:
         # TODO: implement server-side grading. Until then, not needed.
         celery_process = subprocess.Popen(  # noqa: F841
-            [
+            prefix_args
+            + [
                 sys.executable,
                 "-m",
                 "celery",
@@ -199,12 +208,16 @@ def run_bookserver(bookserver_address, pytestconfig):
         )
 
     # Start a thread to read bookserver output and echo it.
+    print_lock = Lock()
+
     def echo(popen_obj, description_str):
         stdout, stderr = popen_obj.communicate()
-        print("\n" "{} stdout\n" "--------------------\n".format(description_str))
-        print(stdout)
-        print("\n" "{} stderr\n" "--------------------\n".format(description_str))
-        print(stderr)
+        # Use a lock to keep output together.
+        with print_lock:
+            print("\n" "{} stdout\n" "--------------------\n".format(description_str))
+            print(stdout)
+            print("\n" "{} stderr\n" "--------------------\n".format(description_str))
+            print(stderr)
 
     echo_threads = [
         Thread(target=echo, args=(book_server_process, "book server")),
@@ -226,7 +239,6 @@ def run_bookserver(bookserver_address, pytestconfig):
         else:
             # On Unix, this shuts the webserver down cleanly.
             book_server_process.terminate()
-        book_server_process.terminate()
         ##celery_process.terminate()
         for echo_thread in echo_threads:
             echo_thread.join()

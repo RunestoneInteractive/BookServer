@@ -1,7 +1,7 @@
 **************************
 Testing for the BookServer
 **************************
-To run the tests, execute ``poetry run pytest`` from this subdirectory. FastAPI takes care of starting up a server!
+To run the tests, execute ``poetry run pytest`` from the parent of this subdirectory; running them here causes code coverage failures.
 
 Here is the `pytest configuration`.
 
@@ -25,4 +25,6 @@ TODO: the doc structure should be
     test_runestone_components.py
     conftest.py
     ci_utils.py
+    ../tox.ini
+    ../.coveragerc
     ../.github/workflows/python-package.yml

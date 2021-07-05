@@ -12,6 +12,7 @@
 #
 # Standard library
 # ----------------
+from collections import namedtuple
 from typing import List, Optional
 import datetime
 
@@ -23,7 +24,7 @@ from pydal.validators import CRYPT
 from fastapi.exceptions import HTTPException
 
 # import sqlalchemy
-from sqlalchemy import and_
+from sqlalchemy import and_, update
 from sqlalchemy.sql import select
 
 # Local application imports
@@ -31,10 +32,16 @@ from sqlalchemy.sql import select
 from .applogger import rslogger
 from . import schemas
 from .models import (
+    Chapter,
+    SubChapter,
     Code,
     CodeValidator,
     CourseInstructor,
     CourseInstructorValidator,
+    UserChapterProgress,
+    UserChapterProgressValidator,
+    UserSubChapterProgress,
+    UserSubChapterProgressValidator,
     answer_tables,
     AuthUser,
     AuthUserValidator,
@@ -42,6 +49,8 @@ from .models import (
     CoursesValidator,
     Useinfo,
     UseinfoValidation,
+    UserState,
+    UserStateValidator,
     validation_tables,
 )
 from .config import settings, BookServerConfig
@@ -212,7 +221,7 @@ async def fetch_instructor_courses(
 # ----
 
 
-async def create_code_entry(data: CodeValidator):
+async def create_code_entry(data: CodeValidator) -> CodeValidator:
     new_code = Code(**data.dict())
     async with async_session.begin() as session:
         session.add(new_code)
@@ -220,12 +229,11 @@ async def create_code_entry(data: CodeValidator):
     return CodeValidator.from_orm(new_code)
 
 
-async def fetch_code(sid: str, acid: str, course_id: int):
-    query = select(Code).where(
-        (Code.sid == sid)
-        & (Code.acid == acid)
-        & (Code.course_id == course_id)
-        & (Code.timestamp != None).order_by(Code.id)  # noqa: E711
+async def fetch_code(sid: str, acid: str, course_id: int) -> List[CodeValidator]:
+    query = (
+        select(Code)
+        .where((Code.sid == sid) & (Code.acid == acid) & (Code.course_id == course_id))
+        .order_by(Code.id)
     )
     async with async_session() as session:
         res = await session.execute(query)
@@ -276,6 +284,11 @@ async def create_initial_courses_users():
                 course_name=c,
                 base_course=c,
                 term_start_date=datetime.date(2000, 1, 1),
+                login_required=False,
+                allow_pairs=False,
+                downloads_enabled=False,
+                courselevel="",
+                institution="",
             )
             await create_course(new_course)
         # make a user
@@ -288,5 +301,175 @@ async def create_initial_courses_users():
                 email="testuser1@example.com",
                 course_name="overview",
                 course_id=12,
+                donated=True,
+                active=True,
+                accept_tcp=True,
+                created_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+                modified_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+                registration_key="",
+                registration_id="",
+                reset_password_key="",
             )
         )
+
+
+async def create_user_state_entry(user_id: int, course_name: str) -> UserStateValidator:
+    new_us = UserState(user_id=user_id, course_name=course_name)
+    async with async_session.begin() as session:
+        session.add(new_us)
+    return UserStateValidator.from_orm(new_us)
+
+
+async def update_user_state(user_data: schemas.LastPageData):
+    ud = user_data.dict()
+    # LastPageData contains information for both user_state and user_sub_chapter_progress tables
+    # we do not need the completion flag in the user_state table
+    ud.pop("completion_flag")
+    rslogger.debug(f"user data = {ud}")
+    stmt = (
+        update(UserState)
+        .where(
+            (UserState.user_id == user_data.user_id)
+            & (UserState.course_name == user_data.course_name)
+        )
+        .values(**ud)
+    )
+    async with async_session.begin() as session:
+        await session.execute(stmt)
+    rslogger.debug("SUCCESS")
+
+
+async def update_sub_chapter_progress(user_data: schemas.LastPageData):
+    ud = user_data.dict()
+    ud.pop("last_page_url")
+    ud.pop("last_page_scroll_location")
+    ud.pop("last_page_accessed_on")
+    ud["status"] = ud.pop("completion_flag")
+    ud["chapter_id"] = ud.pop("last_page_chapter")
+    ud["sub_chapter_id"] = ud.pop("last_page_subchapter")
+    stmt = (
+        update(UserSubChapterProgress)
+        .where(
+            (UserSubChapterProgress.user_id == user_data.user_id)
+            & (UserSubChapterProgress.chapter_id == user_data.last_page_chapter)
+            & (UserSubChapterProgress.sub_chapter_id == user_data.last_page_subchapter)
+            & (
+                (UserSubChapterProgress.course_name == user_data.course_name)
+                | (
+                    UserSubChapterProgress.course_name == None  # noqa 711
+                )  # Back fill for old entries without course
+            )
+        )
+        .values(**ud)
+    )
+    async with async_session.begin() as session:
+        await session.execute(stmt)
+
+
+async def fetch_last_page(user: AuthUserValidator, course_name: str):
+    course = await fetch_course(course_name)
+
+    query = (
+        select(
+            [
+                UserState.last_page_url,
+                UserState.last_page_hash,
+                Chapter.chapter_name,
+                UserState.last_page_scroll_location,
+                SubChapter.sub_chapter_name,
+            ]
+        )
+        .where(
+            (UserState.user_id == user.id)
+            & (UserState.last_page_chapter == Chapter.chapter_label)
+            & (UserState.course_name == course.course_name)
+            & (SubChapter.chapter_id == Chapter.id)
+            & (UserState.last_page_subchapter == SubChapter.sub_chapter_label)
+            & (Chapter.course_id == course.base_course)
+        )
+        .order_by(UserState.last_page_accessed_on.desc())
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        # for A query like this one with columns from multiple tables
+        # res.first() returns a tuple
+        rslogger.debug(f"LP {res}")
+        PageData = namedtuple("PageData", [col for col in res.keys()])  # type: ignore
+        rdata = res.first()
+        rslogger.debug(f"{rdata=}")
+        if rdata:
+            return PageData(*rdata)
+        else:
+            return None
+
+
+async def fetch_user_sub_chapter_progress(
+    user, last_page_chapter=None, last_page_subchapter=None
+) -> UserSubChapterProgressValidator:
+
+    where_clause = (UserSubChapterProgress.user_id == user.id) & (
+        UserSubChapterProgress.course_name == user.course_name
+    )
+
+    if last_page_chapter:
+        where_clause = (
+            where_clause
+            & (UserSubChapterProgress.chapter_id == last_page_chapter)
+            & (UserSubChapterProgress.sub_chapter_id == last_page_subchapter)
+        )
+
+    query = select(UserSubChapterProgress).where(where_clause)
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return [
+            UserSubChapterProgressValidator.from_orm(x)
+            for x in res.scalars().fetchall()
+        ]
+
+
+async def create_user_sub_chapter_progress_entry(
+    user, last_page_chapter, last_page_subchapter, status=-1
+) -> UserSubChapterProgressValidator:
+
+    new_uspe = UserSubChapterProgress(
+        user_id=user.id,
+        chapter_id=last_page_chapter,
+        sub_chapter_id=last_page_subchapter,
+        status=status,
+        start_date=datetime.datetime.utcnow(),
+        course_name=user.course_name,
+    )
+    async with async_session.begin() as session:
+        session.add(new_uspe)
+    return UserSubChapterProgressValidator.from_orm(new_uspe)
+
+
+async def fetch_user_chapter_progress(
+    user, last_page_chapter
+) -> UserChapterProgressValidator:
+    query = select(UserChapterProgress).where(
+        (UserChapterProgress.user_id == user.id)
+        & (UserChapterProgress.chapter_id == last_page_chapter)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return UserChapterProgressValidator.from_orm(res.scalars().first())
+
+
+async def create_user_chapter_progress_entry(
+    user, last_page_chapter, status
+) -> UserChapterProgressValidator:
+    new_ucp = UserChapterProgress(
+        user_id=user.id,
+        chapter_id=last_page_chapter,
+        status=status,
+        start_date=datetime.datetime.utcnow(),
+    )
+    async with async_session.begin() as session:
+        session.add(new_ucp)
+    return UserChapterProgressValidator.from_orm(new_ucp)

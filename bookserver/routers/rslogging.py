@@ -17,7 +17,8 @@ from typing import Optional
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie, Response, status
+from fastapi import APIRouter, Request, Cookie, Response, status, HTTPException
+
 
 # Local application imports
 # -------------------------
@@ -25,9 +26,17 @@ from ..applogger import rslogger
 from ..crud import (
     EVENT2TABLE,
     create_answer_table_entry,
+    create_user_chapter_progress_entry,
     create_code_entry,
     create_useinfo_entry,
+    create_user_state_entry,
+    create_user_sub_chapter_progress_entry,
+    fetch_last_page,
+    fetch_user_chapter_progress,
+    fetch_user_sub_chapter_progress,
     fetch_user,
+    update_sub_chapter_progress,
+    update_user_state,
 )
 from ..models import (
     AuthUserValidator,
@@ -35,7 +44,13 @@ from ..models import (
     UseinfoValidation,
     validation_tables,
 )
-from ..schemas import LogItemIncoming, LogRunIncoming, TimezoneRequest
+from ..schemas import (
+    LogItemIncoming,
+    LogRunIncoming,
+    TimezoneRequest,
+    LastPageDataIncoming,
+    LastPageData,
+)
 from ..internal.utils import make_json_response
 
 # Routing
@@ -117,6 +132,7 @@ def set_tz_offset(
 @router.post("/runlog")
 async def runlog(request: Request, response: Response, data: LogRunIncoming):
     # First add a useinfo entry for this run
+    rslogger.debug(f"INCOMING: {data}")
     if request.state.user:
         if data.course != request.state.user.course_name:
             return make_json_response(
@@ -137,7 +153,6 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     useinfo_dict = data.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course")
-    useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     useinfo_dict["timestamp"] = datetime.utcnow()
     if data.errinfo != "success":
         useinfo_dict["event"] = "ac_error"
@@ -149,8 +164,9 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
     await create_useinfo_entry(UseinfoValidation(**useinfo_dict))
 
-    # Now add an entry to the code table
-
+    # Now add an entry to the code table - in the code table we use the name
+    # acid (activecode id) instead of div_id -- just to be difficult
+    useinfo_dict["acid"] = useinfo_dict.pop("div_id")
     if data.to_save:
         useinfo_dict["course_id"] = request.state.user.course_id
         entry = CodeValidator(**useinfo_dict)
@@ -180,3 +196,138 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 async def same_class(user1: AuthUserValidator, user2: str) -> bool:
     u2 = await fetch_user(user2)
     return user1.course_id == u2.course_id
+
+
+# completion tables
+# =================
+#
+# This section contains implementations of endpoints for tracking progress
+
+
+# updatelastpage
+# --------------
+# see :ref:`processPageState`
+@router.post("/updatelastpage")
+async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
+    if request_data.last_page_url is None:
+        return  # todo:  log request_data, request.args and request.env.path_info
+    if request.state.user:
+        lpd = request_data.dict()
+        rslogger.debug(f"{lpd=}")
+
+        # last_page_url is going to be .../runestone/books/published/course/chapter/subchapter.html
+        # We will treat the second to last element as the chapter and the final element
+        # minus the .html as the subchapter
+        lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
+        lpd["last_page_subchapter"] = ".".join(
+            request_data.last_page_url.split("/")[-1].split(".")[:-1]
+        )
+        lpd["last_page_accessed_on"] = datetime.utcnow()
+        lpd["user_id"] = request.state.user.id
+
+        lpdo: LastPageData = LastPageData(**lpd)
+        await update_user_state(lpdo)
+        await update_sub_chapter_progress(lpdo)
+        # The components don't ever look at a result from this
+        # endpoint, but it seems like we should return some
+        # indication of success. See below.
+    else:
+        rslogger.debug("Not Authorized for update last page")
+        raise HTTPException(401)
+
+        # todo: practice stuff came after this -- it does not belong here. But it needs
+        # to be ported somewhere....
+    return make_json_response(detail="Success")
+
+
+# _getCompletionStatus
+# --------------------
+@router.get("/getCompletionStatus")
+async def getCompletionStatus(request: Request, lastPageUrl: str):
+    if request.state.user:
+        last_page_chapter = lastPageUrl.split("/")[-2]
+        last_page_subchapter = ".".join(lastPageUrl.split("/")[-1].split(".")[:-1])
+        result = await fetch_user_sub_chapter_progress(
+            request.state.user, last_page_chapter, last_page_subchapter
+        )
+        rowarray_list = []
+        if result:
+            rslogger.debug(f"{result=}")
+            for row in result:
+                res = {"completionStatus": row.status}
+                rowarray_list.append(res)
+                # question: since the javascript in user-highlights.js is going to look only at the first row, shouldn't
+                # we be returning just the *last* status? Or is there no history of status kept anyway?
+            return make_json_response(detail=rowarray_list)
+        else:
+            # haven't seen this Chapter/Subchapter before
+            # make the insertions into the DB as necessary
+            # we know the subchapter doesn't exist
+            await create_user_sub_chapter_progress_entry(
+                request.state.user, last_page_chapter, last_page_subchapter, status=0
+            )
+            # the chapter might exist without the subchapter
+            result = await fetch_user_chapter_progress(
+                request.state.user, last_page_chapter
+            )
+            if not result:
+                await create_user_chapter_progress_entry(
+                    request.state.user, last_page_chapter, -1
+                )
+            return make_json_response(detail=[{"completionStatus": -1}])
+    else:
+        raise HTTPException(401)
+
+
+# _getAllCompletionStatus
+# -----------------------
+# This is called to decorate the table of contents for a book
+# See :ref:`decorateTableOfContents`
+#
+@router.get("/getAllCompletionStatus")
+async def getAllCompletionStatus(request: Request):
+    if request.state.user:
+        result = await fetch_user_sub_chapter_progress(request.state.user)
+
+        rowarray_list = []
+        if result:
+            for row in result:
+                if row.end_date is None:
+                    endDate = 0
+                else:
+                    endDate = row.end_date.strftime("%d %b, %Y")
+                res = {
+                    "chapterName": row.chapter_id,
+                    "subChapterName": row.sub_chapter_id,
+                    "completionStatus": row.status,
+                    "endDate": endDate,
+                }
+                rowarray_list.append(res)
+            return make_json_response(detail=rowarray_list)
+    else:
+        raise HTTPException(401)
+
+
+#
+# See :ref:`decorateTableOfContents`
+#
+@router.get("/getlastpage")
+async def getlastpage(request: Request, course: str):
+    if not request.state.user:
+        raise HTTPException(401)
+
+    row = await fetch_last_page(request.state.user, course)
+    rslogger.debug(f"ROW = {row}")
+    if row:
+        res = {
+            "lastPageUrl": row.last_page_url,
+            "lastPageHash": row.last_page_hash,
+            "lastPageChapter": row.chapter_name,
+            "lastPageSubchapter": row.sub_chapter_name,
+            "lastPageScrollLocation": row.last_page_scroll_location,
+        }
+        return make_json_response(detail=res)
+    else:
+        rslogger.debug("Creating user state entry")
+        res = await create_user_state_entry(request.state.user.id, course)
+        return make_json_response(detail=res)
