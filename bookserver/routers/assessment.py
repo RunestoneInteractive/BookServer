@@ -26,7 +26,14 @@ from pydantic import BaseModel
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
-from ..crud import fetch_code, fetch_last_answer_table_entry
+from ..crud import (
+    count_useinfo_for,
+    fetch_code,
+    fetch_course,
+    fetch_last_answer_table_entry,
+    fetch_last_poll_response,
+    fetch_poll_summary,
+)
 from ..internal.utils import make_json_response
 from ..schemas import AssessmentRequest
 from ..session import is_instructor
@@ -143,3 +150,151 @@ async def get_history(request: Request, request_data: HistoryRequest):
     ]
 
     return make_json_response(detail=res)
+
+
+# Used by :ref:`compareAnswers`
+@router.get("/getaggregateresults")
+async def getaggregateresults(request: Request, div_id: str, course: str):
+    question = div_id
+    course_name = course
+
+    if not request.state.user:
+        return make_json_response(
+            status=status.HTTP_401_UNAUTHORIZED,
+            detail=dict(answerDict={}, misc={}, emess="You must be logged in"),
+        )
+
+    if course_name in (
+        "thinkcspy",
+        "pythonds",
+        "fopp",
+        "csawesome",
+        "apcsareview",
+        "StudentCSP",
+    ):
+        start_date = datetime.datetime.utcnow() - datetime.timedelta(days=90)
+    else:
+        course = await fetch_course(course_name)
+        start_date = course.term_start_date
+
+    result = await count_useinfo_for(question, course_name, start_date)
+
+    tdata = {}
+    tot = 0
+    for row in result:
+        tdata[row[0]] = row[1]
+        tot += row[1]
+
+    tot = float(tot)
+    rdata = {}
+    miscdata = {}
+    correct = ""
+    if tot > 0:
+        for key in tdata:
+            all_a = key.split(":")
+            try:
+                answer = all_a[1]
+                if "correct" in key:
+                    correct = answer
+                count = int(tdata[key])
+                if answer in rdata:
+                    count += rdata[answer] / 100.0 * tot
+                pct = round(count / tot * 100.0)
+
+                if answer != "undefined" and answer != "":
+                    rdata[answer] = pct
+            except Exception as e:
+                rslogger.error("Bad data for %s data is %s -- %s" % (question, key, e))
+
+    miscdata["correct"] = correct
+    miscdata["course"] = course
+
+    returnDict = dict(answerDict=rdata, misc=miscdata)
+
+    # if instructor:
+    # There is little value to doing this now when the instructor
+    # Dashboard provides more and better detail
+    #     resultList = _getStudentResults(question)
+    #     returnDict["reslist"] = resultList
+
+    return make_json_response(detail=returnDict)
+
+
+@router.get("/getpollresults")
+async def getpollresults(request: Request, course: str, div_id: str):
+
+    # fetch summary of poll answers
+    result = await fetch_poll_summary(div_id, course)
+
+    opt_counts = {}
+
+    for row in result:
+        rslogger.debug(row)
+        val = int(row[0])
+        opt_counts[val] = row[1]
+
+    opt_num = max(opt_counts.keys()) if opt_counts else 0
+    for i in range(opt_num):
+        if i not in opt_counts:
+            opt_counts[i] = 0
+    # opt_list holds the option numbers from smallest to largest
+    # count_list[i] holds the count of responses that chose option i
+    opt_list = sorted(opt_counts.keys())
+    count_list = []
+    for i in opt_list:
+        count_list.append(opt_counts[i])
+
+    total = sum(opt_counts.values())
+    user_res = None
+    if request.state.user:
+        user_res = await fetch_last_poll_response(
+            request.state.user.username, course, div_id
+        )
+    if user_res:
+        my_vote = user_res.act
+    else:
+        my_vote = -1
+
+    return make_json_response(
+        detail=dict(total=total, opt_counts=opt_counts, div_id=div_id, my_vote=my_vote)
+    )
+
+
+# def gettop10Answers():
+#     course = request.vars.course
+#     question = request.vars.div_id
+#     response.headers["content-type"] = "application/json"
+#     rows = []
+
+#     try:
+#         dbcourse = db(db.courses.course_name == course).select(**SELECT_CACHE).first()
+#         count_expr = db.fitb_answers.answer.count()
+#         rows = db(
+#             (db.fitb_answers.div_id == question)
+#             & (db.fitb_answers.course_name == course)
+#             & (db.fitb_answers.timestamp > dbcourse.term_start_date)
+#         ).select(
+#             db.fitb_answers.answer,
+#             count_expr,
+#             groupby=db.fitb_answers.answer,
+#             orderby=~count_expr,
+#             limitby=(0, 10),
+#         )
+#         res = [
+#             {"answer": clean(row.fitb_answers.answer), "count": row[count_expr]}
+#             for row in rows
+#         ]
+#     except Exception as e:
+#         logger.debug(e)
+#         res = "error in query"
+
+#     miscdata = {"course": course}
+#     _getCorrectStats(
+#         miscdata, "fillb"
+#     )  # TODO: rewrite _getCorrectStats to use xxx_answers
+
+#     if auth.user and verifyInstructorStatus(course, auth.user.id):  # noqa: F405
+#         resultList = _getStudentResults(question)
+#         miscdata["reslist"] = resultList
+
+#     return json.dumps([res, miscdata])

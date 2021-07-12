@@ -24,8 +24,8 @@ from pydal.validators import CRYPT
 from fastapi.exceptions import HTTPException
 
 # import sqlalchemy
-from sqlalchemy import and_, update
-from sqlalchemy.sql import select
+from sqlalchemy import and_, update, func
+from sqlalchemy.sql import select, text
 
 # Local application imports
 # -------------------------
@@ -83,6 +83,38 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
     return UseinfoValidation.from_orm(new_entry)
 
 
+async def count_useinfo_for(div_id: str, course_name: str, start_date: str):
+    query = (
+        select(Useinfo.act, func.count(Useinfo.act).label("count"))
+        .where(
+            (Useinfo.div_id == div_id)
+            & (Useinfo.course_id == course_name)
+            & (Useinfo.timestamp > start_date)
+        )
+        .group_by(Useinfo.act)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"res = {res}")
+        return res.all()
+
+
+async def fetch_poll_summary(div_id, course_name):
+
+    query = text(
+        """select act, count(*) from useinfo
+        join (select sid,  max(id) mid
+        from useinfo where event='poll' and div_id = :div_id and course_id = :course_name group by sid) as T
+        on id = T.mid group by act"""
+    )
+
+    async with async_session() as session:
+        rows = await session.execute(
+            query, params=dict(div_id=div_id, course_name=course_name)
+        )
+        return rows.all()
+
+
 # xxx_answers
 # -----------
 async def create_answer_table_entry(
@@ -122,6 +154,21 @@ async def fetch_last_answer_table_entry(
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
         return validation_tables[assessment].from_orm(res.scalars().first())
+
+
+async def fetch_last_poll_response(sid: str, course_name: str, poll_id: str):
+    query = (
+        select(Useinfo.act)
+        .where(
+            (Useinfo.sid == sid)
+            & (Useinfo.course_id == course_name)
+            & (Useinfo.div_id == poll_id)
+        )
+        .order_by(Useinfo.id.desc())
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        return res.first()
 
 
 # Courses
