@@ -29,12 +29,15 @@ from bleach import clean
 from ..applogger import rslogger
 from ..crud import (
     count_useinfo_for,
+    create_selected_question,
     fetch_code,
     fetch_course,
     fetch_last_answer_table_entry,
     fetch_last_poll_response,
     fetch_poll_summary,
+    fetch_selected_question,
     fetch_top10_fitb,
+    update_selected_question,
 )
 from ..internal.utils import make_json_response
 from ..schemas import AssessmentRequest
@@ -269,6 +272,10 @@ async def gettop10Answers(request: Request, course: str, div_id: str):
     rows = []
 
     dbcourse = await fetch_course(course)
+    # returns a list that looks like this:
+    # [(["12"], 2), (["22"], 1), (["11"], 1), (["10"], 1)]
+    # the first element of each tuple is a list of the responses to 1 or more blanks
+    # the second element of each tuple is the count
     rows = await fetch_top10_fitb(dbcourse, div_id)
     rslogger.debug(f"{rows=}")
     res = [{"answer": clean(row[0]), "count": row[1]} for row in rows]
@@ -276,3 +283,32 @@ async def gettop10Answers(request: Request, course: str, div_id: str):
     miscdata = {"course": course}
 
     return make_json_response(detail=dict(res=res, miscdata=miscdata))
+
+
+@router.get("/set_selected_question")
+async def set_selected_question(request: Request, metaid: str, selected: str):
+    """
+    This endpoint is used by the selectquestion problems that allow the
+    student to select the problem they work on.  For example they may have
+    a programming problem that can be solved with writing code, or they
+    can switch to a parsons problem if necessary.
+
+    Called from :ref:`toggleSet`
+
+    Caller must provide:
+    * ``metaid`` -- the id of the selectquestion
+    * ``selected`` -- the id of the real question chosen by the student
+    """
+    if not request.state.user:
+        return make_json_response(
+            status=status.HTTP_401_UNAUTHORIZED, detail="not logged in"
+        )
+    sid = request.state.user.username
+    selector_id = metaid
+    selected_id = selected
+    rslogger.debug(f"USQ - {selector_id} --> {selected_id} for {sid}")
+    qrecord = await fetch_selected_question(sid, selector_id)
+    if qrecord:
+        await update_selected_question(sid, selector_id, selected_id)
+    else:
+        await create_selected_question(sid, selector_id, selected_id)

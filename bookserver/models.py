@@ -603,6 +603,9 @@ class SelectedQuestion(Base, IdMixin):
     competency = Column(String(512), nullable=False)
 
 
+SelectedQuestionValidator = sqlalchemy_to_pydantic(SelectedQuestion)
+
+
 class Competency(Base, IdMixin):
     __tablename__ = "competency"
 

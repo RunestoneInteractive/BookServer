@@ -33,6 +33,8 @@ from .applogger import rslogger
 from . import schemas
 from .models import (
     Chapter,
+    SelectedQuestion,
+    SelectedQuestionValidator,
     SubChapter,
     Code,
     CodeValidator,
@@ -538,3 +540,52 @@ async def create_user_chapter_progress_entry(
     async with async_session.begin() as session:
         session.add(new_ucp)
     return UserChapterProgressValidator.from_orm(new_ucp)
+
+
+#
+# Select Question Support
+# -----------------------
+
+
+async def create_selected_question(
+    sid: str,
+    selector_id: str,
+    selected_id: str,
+    points: Optional[int] = None,
+    competency: Optional[str] = None,
+) -> SelectedQuestionValidator:
+    new_sqv = SelectedQuestion(
+        sid=sid,
+        selector_id=selector_id,
+        selected_id=selected_id,
+        points=points,
+        competency=competency,
+    )
+    async with async_session.begin() as session:
+        session.add(new_sqv)
+    return SelectedQuestionValidator.from_orm(new_sqv)
+
+
+async def fetch_selected_question(sid: str, selector_id) -> SelectedQuestionValidator:
+    query = select(SelectedQuestion).where(
+        (SelectedQuestion.sid == sid) & (SelectedQuestion.selector_id == selector_id)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return SelectedQuestionValidator.from_orm(res.scalars().first())
+
+
+async def update_selected_question(sid: str, selector_id: str, selected_id: str):
+    stmt = (
+        update(SelectedQuestion)
+        .where(
+            (SelectedQuestion.sid == sid)
+            & (SelectedQuestion.selector_id == selector_id)
+        )
+        .values(selected_id=selected_id)
+    )
+    async with async_session.begin() as session:
+        await session.execute(stmt)
+    rslogger.debug("SUCCESS")
