@@ -22,6 +22,7 @@ from typing import Optional, Dict, Any
 # -------------------
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
+from bleach import clean
 
 # Local application imports
 # -------------------------
@@ -33,6 +34,7 @@ from ..crud import (
     fetch_last_answer_table_entry,
     fetch_last_poll_response,
     fetch_poll_summary,
+    fetch_top10_fitb,
 )
 from ..internal.utils import make_json_response
 from ..schemas import AssessmentRequest
@@ -260,41 +262,17 @@ async def getpollresults(request: Request, course: str, div_id: str):
     )
 
 
-# def gettop10Answers():
-#     course = request.vars.course
-#     question = request.vars.div_id
-#     response.headers["content-type"] = "application/json"
-#     rows = []
+# Called from :ref:`compareFITBAnswers`
+#
+@router.get("/gettop10Answers")
+async def gettop10Answers(request: Request, course: str, div_id: str):
+    rows = []
 
-#     try:
-#         dbcourse = db(db.courses.course_name == course).select(**SELECT_CACHE).first()
-#         count_expr = db.fitb_answers.answer.count()
-#         rows = db(
-#             (db.fitb_answers.div_id == question)
-#             & (db.fitb_answers.course_name == course)
-#             & (db.fitb_answers.timestamp > dbcourse.term_start_date)
-#         ).select(
-#             db.fitb_answers.answer,
-#             count_expr,
-#             groupby=db.fitb_answers.answer,
-#             orderby=~count_expr,
-#             limitby=(0, 10),
-#         )
-#         res = [
-#             {"answer": clean(row.fitb_answers.answer), "count": row[count_expr]}
-#             for row in rows
-#         ]
-#     except Exception as e:
-#         logger.debug(e)
-#         res = "error in query"
+    dbcourse = await fetch_course(course)
+    rows = await fetch_top10_fitb(dbcourse, div_id)
+    rslogger.debug(f"{rows=}")
+    res = [{"answer": clean(row[0]), "count": row[1]} for row in rows]
 
-#     miscdata = {"course": course}
-#     _getCorrectStats(
-#         miscdata, "fillb"
-#     )  # TODO: rewrite _getCorrectStats to use xxx_answers
+    miscdata = {"course": course}
 
-#     if auth.user and verifyInstructorStatus(course, auth.user.id):  # noqa: F405
-#         resultList = _getStudentResults(question)
-#         miscdata["reslist"] = resultList
-
-#     return json.dumps([res, miscdata])
+    return make_json_response(detail=dict(res=res, miscdata=miscdata))

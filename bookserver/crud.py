@@ -115,6 +115,24 @@ async def fetch_poll_summary(div_id, course_name):
         return rows.all()
 
 
+async def fetch_top10_fitb(dbcourse, div_id):
+    tbl = answer_tables["fitb_answers"]
+    query = (
+        select(tbl.answer, func.count(tbl.answer).label("count"))
+        .where(
+            (tbl.div_id == div_id)
+            & (tbl.course_name == dbcourse.course_name)
+            & (tbl.timestamp > dbcourse.term_start_date)
+        )
+        .group_by(tbl.answer)
+        .order_by(func.count(tbl.answer).desc())
+        .limit(10)
+    )
+    async with async_session() as session:
+        rows = await session.execute(query)
+        return rows.all()
+
+
 # xxx_answers
 # -----------
 async def create_answer_table_entry(
