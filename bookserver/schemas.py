@@ -180,3 +180,18 @@ class LastPageData(BaseModelNone):
     last_page_subchapter: str
     last_page_accessed_on: datetime
     user_id: int
+
+
+class SelectQRequest(BaseModel):
+    selector_id: str
+    questions: Optional[str]
+    proficiency: Optional[str]
+    points: Optional[int]
+    min_difficulty: Optional[float]
+    max_difficulty: Optional[float]
+    not_seen_ever: Optional[bool]
+    autogradable: Optional[bool]
+    primary: Optional[bool]
+    AB: Optional[bool]
+    toggleOptions: Optional[str]
+    timedWrapper: Optional[str]

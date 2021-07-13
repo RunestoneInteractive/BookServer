@@ -15,6 +15,7 @@
 #
 # Standard library
 # ----------------
+import random
 import datetime
 from typing import Optional, Dict, Any
 
@@ -30,17 +31,24 @@ from ..applogger import rslogger
 from ..crud import (
     count_useinfo_for,
     create_selected_question,
+    create_user_experiment_entry,
+    fetch_assignment_question,
     fetch_code,
     fetch_course,
     fetch_last_answer_table_entry,
     fetch_last_poll_response,
+    fetch_matching_questions,
     fetch_poll_summary,
+    fetch_previous_selections,
+    fetch_question,
     fetch_selected_question,
     fetch_top10_fitb,
+    fetch_user_experiment,
+    fetch_viewed_questions,
     update_selected_question,
 )
 from ..internal.utils import make_json_response
-from ..schemas import AssessmentRequest
+from ..schemas import AssessmentRequest, SelectQRequest
 from ..session import is_instructor
 
 # Routing
@@ -312,3 +320,130 @@ async def set_selected_question(request: Request, metaid: str, selected: str):
         await update_selected_question(sid, selector_id, selected_id)
     else:
         await create_selected_question(sid, selector_id, selected_id)
+
+
+@router.post("/get_question_source")
+async def get_question_source(request: Request, request_data: SelectQRequest):
+    """Called from the selectquestion directive
+    There are 4 cases:
+
+    1. If there is only 1 question in the question list then return the html source for it.
+    2. If there are multiple questions then choose a question at random
+    3. If a proficiency is selected then select a random question that tests that proficiency
+    4. If the question is an AB question then see if this student is an A or a B or assign them to one randomly.
+
+    In the last two cases, first check to see if there is a question for this student for this
+    component that was previously selected.
+
+    Returns:
+        json: html source for this question
+    """
+    prof = False
+    points = request_data.points
+    rslogger.debug(f"POINTS = {points}")
+    not_seen_ever = request_data.not_seen_ever
+    is_ab = request_data.AB
+    selector_id = request_data.selector_id
+    assignment_name = request_data.timedWrapper
+    toggle = request_data.toggleOptions
+
+    # If the question has a :points: option then those points are the default
+    # however sometimes questions are entered in the web ui without the :points:
+    # and points are assigned in the UI instead.  If this is part of an
+    # assignment or timed exam AND the points are set in the web UI we will
+    # use the points from the UI over the :points:  If this is an assignment
+    # or exam that is totally written in RST then  the points in the UI will match
+    # the points from the assignment anyway.
+    if assignment_name:
+        aq = fetch_assignment_question(assignment_name, selector_id)
+        ui_points = aq.points
+        rslogger.debug(
+            f"Assignment Points for {assignment_name}, {selector_id} = {ui_points}"
+        )
+        if ui_points:
+            points = ui_points.points
+
+    questionlist = await fetch_matching_questions(request_data)
+
+    if not questionlist:
+        rslogger.error(f"No questions found for proficiency {prof}")
+        return make_json_response(
+            detail=f"<p>No Questions found for proficiency: {prof}</p>"
+        )
+    sid = request.state.user.username
+
+    rslogger.debug(f"is_ab is {is_ab}")
+    if is_ab:
+
+        res = await fetch_user_experiment(sid, is_ab)
+        if not res:
+            exp_group = random.randrange(2)
+            await create_user_experiment_entry(sid, is_ab, exp_group)
+            rslogger.debug(f"added {sid} to {is_ab} group {exp_group}")
+        else:
+            exp_group = res
+
+        rslogger.debug(f"experimental group is {exp_group}")
+
+        prev_selection = await fetch_selected_question(sid, selector_id)
+
+        if prev_selection:
+            questionid = prev_selection.selected_id
+        else:
+            questionid = questionlist[exp_group]
+
+    if not is_ab:
+        poss = set()
+        if not_seen_ever:
+            seenq = await fetch_viewed_questions(sid, questionlist)
+            seen = set([x.div_id for x in seenq])
+            poss = set(questionlist)
+            questionlist = list(poss - seen)
+
+        if len(questionlist) == 0 and len(poss) > 0:
+            questionlist = list(poss)
+
+        htmlsrc = ""
+
+        prev_selection = await fetch_selected_question(sid, selector_id)
+
+        if prev_selection:
+            questionid = prev_selection.selected_id
+        else:
+            # Eliminate any previous exam questions for this student
+            prev_questions = fetch_previous_selections(sid)
+
+            prev_questions = set(prev_questions)
+            possible = set(questionlist)
+            questionlist = list(possible - prev_questions)
+            if questionlist:
+                questionid = random.choice(questionlist)
+            else:
+                # If there are no questions left we should still return a random question.
+                questionid = random.choice(list(possible))
+
+    rslogger.debug(f"toggle is {toggle}")
+    if toggle:
+        prev_selection = await fetch_selected_question(sid, selector_id)
+        if prev_selection:
+            questionid = prev_selection.selected_id
+        else:
+            questionid = request.vars["questions"].split(",")[0]
+
+    res = fetch_question(questionid)
+
+    if res and not prev_selection:
+        create_selected_question(sid, selector_id, questionid, points=points)
+    else:
+        rslogger.debug(
+            f"Did not insert a record for {selector_id}, {questionid} Conditions are {res} QL: {questionlist} PREV: {prev_selection}"
+        )
+
+    if res and res.htmlsrc:
+        htmlsrc = res.htmlsrc
+    else:
+        rslogger.error(
+            f"HTML Source not found for {questionid} in course {auth.user.course_name} for {auth.user.username}"
+        )
+        htmlsrc = "<p>No preview available</p>"
+    return make_json_response(detail=htmlsrc)

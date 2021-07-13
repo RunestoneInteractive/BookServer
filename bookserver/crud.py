@@ -12,51 +12,60 @@
 #
 # Standard library
 # ----------------
+import datetime
 from collections import namedtuple
 from typing import List, Optional
-import datetime
 
-
-# Third-party imports
-# -------------------
-from .db import async_session
-from pydal.validators import CRYPT
 from fastapi.exceptions import HTTPException
+from pydal.validators import CRYPT
 
 # import sqlalchemy
-from sqlalchemy import and_, update, func
+from sqlalchemy import and_, func, update
 from sqlalchemy.sql import select, text
+
+from . import schemas
 
 # Local application imports
 # -------------------------
 from .applogger import rslogger
-from . import schemas
+from .config import BookServerConfig, settings
+
+# Third-party imports
+# -------------------
+from .db import async_session
+from .internal.utils import http_422error_detail
 from .models import (
+    Assignment,
+    AssignmentQuestion,
+    AssignmentQuestionValidator,
+    AuthUser,
+    AuthUserValidator,
     Chapter,
+    Code,
+    CodeValidator,
+    Competency,
+    CourseInstructor,
+    CourseInstructorValidator,
+    Courses,
+    CoursesValidator,
+    Question,
+    QuestionValidator,
     SelectedQuestion,
     SelectedQuestionValidator,
     SubChapter,
-    Code,
-    CodeValidator,
-    CourseInstructor,
-    CourseInstructorValidator,
+    Useinfo,
+    UseinfoValidation,
     UserChapterProgress,
     UserChapterProgressValidator,
+    UserExperiment,
+    UserExperimentValidator,
+    UserState,
+    UserStateValidator,
     UserSubChapterProgress,
     UserSubChapterProgressValidator,
     answer_tables,
-    AuthUser,
-    AuthUserValidator,
-    Courses,
-    CoursesValidator,
-    Useinfo,
-    UseinfoValidation,
-    UserState,
-    UserStateValidator,
     validation_tables,
 )
-from .config import settings, BookServerConfig
-from .internal.utils import http_422error_detail
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -380,6 +389,10 @@ async def create_initial_courses_users():
         )
 
 
+# User Progress
+# -------------
+
+
 async def create_user_state_entry(user_id: int, course_name: str) -> UserStateValidator:
     new_us = UserState(user_id=user_id, course_name=course_name)
     async with async_session.begin() as session:
@@ -589,3 +602,121 @@ async def update_selected_question(sid: str, selector_id: str, selected_id: str)
     async with async_session.begin() as session:
         await session.execute(stmt)
     rslogger.debug("SUCCESS")
+
+
+# Questions and Assignments
+# -------------------------
+
+
+async def fetch_question(
+    name: str, basecourse: Optional[str] = None
+) -> QuestionValidator:
+
+    where_clause = Question.name == name
+    if basecourse:
+        where_clause = where_clause & (Question.base_course == basecourse)
+
+    query = select(Question).where(where_clause)
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return QuestionValidator.from_orm(res.scalars().first())
+
+
+auto_gradable_q = [
+    "clickablearea",
+    "mchoice",
+    "parsonsprob",
+    "dragndrop",
+    "fillintheblank",
+]
+
+
+async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List[str]:
+
+    if request_data.questions:
+        questionlist = request_data.questions.split(",")
+        questionlist = [q.strip() for q in questionlist]
+    elif request_data.proficiency:
+        prof = request_data.proficiency
+
+        where_clause = (Competency.competency == prof) & (
+            Competency.question == Question.id
+        )
+        if request_data.primary:
+            where_clause = where_clause & (Competency.is_primary == True)  # noqa E712
+        if request_data.min_difficulty:
+            where_clause = where_clause & (
+                Question.difficulty >= float(request_data.min_difficulty)
+            )
+        if request_data.max_difficulty:
+            where_clause = where_clause & (
+                Question.difficulty <= float(request_data.max_difficulty)
+            )
+        if request_data.autogradable:
+            where_clause = where_clause & (
+                (Question.autograde == "unittest")
+                | Question.question_type.in_(auto_gradable_q)
+            )
+        query = select(Question).where(where_clause)
+
+        async with async_session() as session:
+            res = await session.execute(query)
+            rslogger.debug(f"{res=}")
+            questionlist = [q.name for q in res]
+
+    return questionlist
+
+
+async def fetch_assignment_question(assignment_name: str, question_name: str):
+
+    query = select(AssignmentQuestion).where(
+        (Assignment.name == assignment_name)
+        & (Assignment.id == AssignmentQuestion.assignment_id)
+        & (AssignmentQuestion.question_id == Question.id)
+        & (Question.name == question_name)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return AssignmentQuestionValidator.from_orm(res.scalars().first())
+
+
+async def fetch_user_experiment(sid: str, ab_name: str) -> str:
+    query = (
+        select(UserExperiment.exp_group)
+        .where((UserExperiment.sid == sid) & (UserExperiment.experiment_id == ab_name))
+        .order_by(UserExperiment.id)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return res.scalars().first_or_none()
+
+
+async def create_user_experiment_entry(sid: str, ab: str, group: str):
+    new_ue = UserExperiment(sid=sid, exp_group=group, experiment_id=ab)
+    async with async_session.begin() as session:
+        session.add(new_ue)
+    return UserExperimentValidator.from_orm(new_ue)
+
+
+async def fetch_viewed_questions(sid, questionlist) -> List[str]:
+    query = select(Useinfo).where(
+        (Useinfo.sid == sid) & (Useinfo.div_id.in_(questionlist))
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        rlist = [row.div_id for row in res]
+    return rlist
+
+
+async def fetch_previous_selections(sid) -> List[str]:
+    query = select(SelectedQuestion).where(SelectedQuestion.sid == sid)
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return [row.selected_id for row in res]

@@ -431,6 +431,9 @@ class Question(Base, IdMixin):
     mean_clicks_to_correct = Column(Float(53))
 
 
+QuestionValidator = sqlalchemy_to_pydantic(Question)
+
+
 class Assignment(Base, IdMixin):
     __tablename__ = "assignments"
     __table_args__ = (
@@ -467,6 +470,9 @@ class AssignmentQuestion(Base, IdMixin):
     reading_assignment = Column(Web2PyBoolean)
     sorting_priority = Column(Integer, nullable=False)
     activities_required = Column(Integer, nullable=False)
+
+
+AssignmentQuestionValidator = sqlalchemy_to_pydantic(AssignmentQuestion)
 
 
 # Grading
@@ -591,6 +597,9 @@ class UserExperiment(Base, IdMixin):
     experiment_id = Column(String(512), nullable=False)
     sid = Column(String(512), nullable=False)
     exp_group = Column(Integer, nullable=False)
+
+
+UserExperimentValidator = sqlalchemy_to_pydantic(UserExperiment)
 
 
 class SelectedQuestion(Base, IdMixin):
