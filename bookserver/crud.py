@@ -18,6 +18,7 @@ from typing import List, Optional
 
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
+from setuptools.installer import fetch_build_egg
 
 # import sqlalchemy
 from sqlalchemy import and_, func, update
@@ -53,6 +54,8 @@ from .models import (
     SelectedQuestion,
     SelectedQuestionValidator,
     SubChapter,
+    TimedExam,
+    TimedExamValidator,
     Useinfo,
     UseinfoValidation,
     UserChapterProgress,
@@ -692,8 +695,9 @@ async def fetch_user_experiment(sid: str, ab_name: str) -> str:
     )
     async with async_session() as session:
         res = await session.execute(query)
-        rslogger.debug(f"{res=}")
-        return res.scalars().first_or_none()
+        r = res.scalars().first()
+        rslogger.debug(f"{r=}")
+        return r
 
 
 async def create_user_experiment_entry(sid: str, ab: str, group: str):
@@ -719,4 +723,22 @@ async def fetch_previous_selections(sid) -> List[str]:
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
-        return [row.selected_id for row in res]
+        return [row.selected_id for row in res.scalars().all()]
+
+
+async def fetch_timed_exam(
+    sid: str, exam_id: str, course_name: str
+) -> TimedExamValidator:
+    query = (
+        select(TimedExam)
+        .where(
+            (TimedExam.div_id == exam_id)
+            & (TimedExam.sid == sid)
+            & (TimedExam.course_name == course_name)
+        )
+        .order_by(TimedExam.id.desc())
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return TimedExamValidator.from_orm(res.scalars().first())

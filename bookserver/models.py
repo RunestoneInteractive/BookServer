@@ -176,6 +176,9 @@ class TimedExam(Base, AnswerMixin):
     reset = Column(Web2PyBoolean)
 
 
+TimedExamValidator = sqlalchemy_to_pydantic(TimedExam)
+
+
 # Like an AnswerMixin, but also has a boolean correct_ field.
 class CorrectAnswerMixin(AnswerMixin):
     # _`correct`: True if this answer is correct.
@@ -608,8 +611,8 @@ class SelectedQuestion(Base, IdMixin):
     selector_id = Column(String(512), nullable=False)
     sid = Column(String(512), nullable=False)
     selected_id = Column(String(512), nullable=False)
-    points = Column(Integer, nullable=False)
-    competency = Column(String(512), nullable=False)
+    points = Column(Integer, nullable=False, default=0)
+    competency = Column(String(512), nullable=True)
 
 
 SelectedQuestionValidator = sqlalchemy_to_pydantic(SelectedQuestion)

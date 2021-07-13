@@ -192,6 +192,6 @@ class SelectQRequest(BaseModel):
     not_seen_ever: Optional[bool]
     autogradable: Optional[bool]
     primary: Optional[bool]
-    AB: Optional[bool]
+    AB: Optional[str]
     toggleOptions: Optional[str]
     timedWrapper: Optional[str]

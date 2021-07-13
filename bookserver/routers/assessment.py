@@ -18,6 +18,7 @@
 import random
 import datetime
 from typing import Optional, Dict, Any
+import pdb
 
 # Third-party imports
 # -------------------
@@ -42,6 +43,7 @@ from ..crud import (
     fetch_previous_selections,
     fetch_question,
     fetch_selected_question,
+    fetch_timed_exam,
     fetch_top10_fitb,
     fetch_user_experiment,
     fetch_viewed_questions,
@@ -355,13 +357,13 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
     # or exam that is totally written in RST then  the points in the UI will match
     # the points from the assignment anyway.
     if assignment_name:
-        aq = fetch_assignment_question(assignment_name, selector_id)
+        aq = await fetch_assignment_question(assignment_name, selector_id)
         ui_points = aq.points
         rslogger.debug(
             f"Assignment Points for {assignment_name}, {selector_id} = {ui_points}"
         )
         if ui_points:
-            points = ui_points.points
+            points = ui_points
 
     questionlist = await fetch_matching_questions(request_data)
 
@@ -411,7 +413,7 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
             questionid = prev_selection.selected_id
         else:
             # Eliminate any previous exam questions for this student
-            prev_questions = fetch_previous_selections(sid)
+            prev_questions = await fetch_previous_selections(sid)
 
             prev_questions = set(prev_questions)
             possible = set(questionlist)
@@ -430,10 +432,9 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         else:
             questionid = request.vars["questions"].split(",")[0]
 
-    res = fetch_question(questionid)
-
+    res = await fetch_question(questionid)
     if res and not prev_selection:
-        create_selected_question(sid, selector_id, questionid, points=points)
+        await create_selected_question(sid, selector_id, questionid, points=points)
     else:
         rslogger.debug(
             f"Did not insert a record for {selector_id}, {questionid} Conditions are {res} QL: {questionlist} PREV: {prev_selection}"
@@ -443,7 +444,31 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         htmlsrc = res.htmlsrc
     else:
         rslogger.error(
-            f"HTML Source not found for {questionid} in course {auth.user.course_name} for {auth.user.username}"
+            f"HTML Source not found for {questionid} in course {request.state.user.course_name} for {request.state.user.username}"
         )
         htmlsrc = "<p>No preview available</p>"
     return make_json_response(detail=htmlsrc)
+
+
+class ExamRequest(BaseModel):
+    div_id: str
+    course_name: str
+
+
+@router.post("/tookTimedAssessment")
+async def tookTimedAssessment(request: Request, request_data: ExamRequest):
+    if request.state.user:
+        sid = request.state.user.username
+    else:
+        # todo: Is this what we really want? Seems like a 401??
+        return make_json_response(detail={"tookAssessment": False})
+
+    exam_id = request_data.div_id
+    course = request_data.course_name
+    rows = await fetch_timed_exam(sid, exam_id, course)
+
+    rslogger.debug(f"checking {exam_id} {sid} {course} {rows}")
+    if rows:
+        return make_json_response(detail={"tookAssessment": True})
+    else:
+        return make_json_response(detail={"tookAssessment": False})
