@@ -112,6 +112,9 @@ class LogItemIncoming(BaseModelNone):
     subchapter: Optional[str]
     # used by parsons
     source: Optional[str]
+    # used by unittest
+    passed: Optional[int]
+    failed: Optional[int]
 
 
 class AssessmentRequest(BaseModelNone):
@@ -150,7 +153,7 @@ class LogRunIncoming(BaseModelNone):
     course: str
     clientLoginStatus: bool
     timezoneoffset: int
-    lang: str
+    language: str
     prefix: Optional[str]
     suffix: Optional[str]
     partner: Optional[str]

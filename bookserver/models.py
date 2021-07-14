@@ -262,6 +262,9 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
     __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
 
 
+UnittestAnswersValidation = sqlalchemy_to_pydantic(UnittestAnswers)
+
+
 @register_answer_table
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
@@ -290,8 +293,8 @@ class Code(Base, IdMixin):
     course_id = Column(Integer, index=False, nullable=False)
     code = Column(Text, index=False, nullable=False)
     language = Column(Text, index=False, nullable=False)
-    emessage = Column(Text, index=False, nullable=False)
-    comment = Column(Text, index=False, nullable=False)
+    emessage = Column(Text, index=False)
+    comment = Column(Text, index=False)
 
 
 # Used for datafiles and storing questions and their suffix separately.

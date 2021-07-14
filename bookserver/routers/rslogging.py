@@ -10,15 +10,14 @@
 #
 # Standard library
 # ----------------
-from datetime import datetime
 import json
+from datetime import datetime
 from typing import Optional
 
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie, Response, status, HTTPException
-
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 
 # Local application imports
 # -------------------------
@@ -26,18 +25,19 @@ from ..applogger import rslogger
 from ..crud import (
     EVENT2TABLE,
     create_answer_table_entry,
-    create_user_chapter_progress_entry,
     create_code_entry,
     create_useinfo_entry,
+    create_user_chapter_progress_entry,
     create_user_state_entry,
     create_user_sub_chapter_progress_entry,
     fetch_last_page,
+    fetch_user,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
-    fetch_user,
     update_sub_chapter_progress,
     update_user_state,
 )
+from ..internal.utils import make_json_response
 from ..models import (
     AuthUserValidator,
     CodeValidator,
@@ -45,13 +45,12 @@ from ..models import (
     validation_tables,
 )
 from ..schemas import (
+    LastPageData,
+    LastPageDataIncoming,
     LogItemIncoming,
     LogRunIncoming,
     TimezoneRequest,
-    LastPageDataIncoming,
-    LastPageData,
 )
-from ..internal.utils import make_json_response
 
 # Routing
 # =======
@@ -101,6 +100,14 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     idx = await create_useinfo_entry(useinfo_entry)
     if entry.event in EVENT2TABLE:
         table_name = EVENT2TABLE[entry.event]
+        if entry.event == "unittest":
+            # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
+            ppf = entry.act.split(":")
+            entry.passed = int(ppf[3])
+            entry.failed = int(ppf[5])
+            entry.answer = ""
+            entry.correct = ppf[1] == "100.0"
+            entry.percent = float(ppf[1])
         valid_table = validation_tables[table_name].from_orm(entry)
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
         rslogger.debug(ans_idx)
@@ -174,7 +181,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
         if data.partner:
             if await same_class(request.state.username, data.partner):
-                comchar = COMMENT_MAP.get(data.lang, "#")
+                comchar = COMMENT_MAP.get(data.language, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
                 await create_code_entry(entry)

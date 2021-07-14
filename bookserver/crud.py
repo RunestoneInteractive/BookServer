@@ -18,7 +18,6 @@ from typing import List, Optional
 
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
-from setuptools.installer import fetch_build_egg
 
 # import sqlalchemy
 from sqlalchemy import and_, func, update
