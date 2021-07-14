@@ -18,7 +18,8 @@
 import random
 import datetime
 from typing import Optional, Dict, Any
-import pdb
+
+# import pdb
 
 # Third-party imports
 # -------------------
@@ -169,9 +170,8 @@ async def get_history(request: Request, request_data: HistoryRequest):
 
 # Used by :ref:`compareAnswers`
 @router.get("/getaggregateresults")
-async def getaggregateresults(request: Request, div_id: str, course: str):
+async def getaggregateresults(request: Request, div_id: str, course_name: str):
     question = div_id
-    course_name = course
 
     if not request.state.user:
         return make_json_response(
@@ -195,13 +195,13 @@ async def getaggregateresults(request: Request, div_id: str, course: str):
     result = await count_useinfo_for(question, course_name, start_date)
 
     tdata = {}
-    tot = 0
+    tot = 0.0
     for row in result:
         tdata[row[0]] = row[1]
         tot += row[1]
 
     tot = float(tot)
-    rdata = {}
+    rdata: Dict[str, float] = {}
     miscdata = {}
     correct = ""
     if tot > 0:
@@ -211,7 +211,7 @@ async def getaggregateresults(request: Request, div_id: str, course: str):
                 answer = all_a[1]
                 if "correct" in key:
                     correct = answer
-                count = int(tdata[key])
+                count = float(tdata[key])
                 if answer in rdata:
                     count += rdata[answer] / 100.0 * tot
                 pct = round(count / tot * 100.0)
@@ -398,7 +398,7 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         poss = set()
         if not_seen_ever:
             seenq = await fetch_viewed_questions(sid, questionlist)
-            seen = set([x.div_id for x in seenq])
+            seen = set(seenq)
             poss = set(questionlist)
             questionlist = list(poss - seen)
 
@@ -413,9 +413,9 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
             questionid = prev_selection.selected_id
         else:
             # Eliminate any previous exam questions for this student
-            prev_questions = await fetch_previous_selections(sid)
+            prev_questions_l = await fetch_previous_selections(sid)
 
-            prev_questions = set(prev_questions)
+            prev_questions = set(prev_questions_l)
             possible = set(questionlist)
             questionlist = list(possible - prev_questions)
             if questionlist:
@@ -430,18 +430,25 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         if prev_selection:
             questionid = prev_selection.selected_id
         else:
-            questionid = request.vars["questions"].split(",")[0]
+            if request_data.questions is not None:
+                questionid = request_data.questions.split(",")[0]
+            else:
+                rslogger.error("No questions given")
+                return make_json_response(
+                    status.HTTP_417_EXPECTATION_FAILED,
+                    detail="Toggle questions must use the fromid option",
+                )
 
-    res = await fetch_question(questionid)
-    if res and not prev_selection:
+    qres = await fetch_question(questionid)
+    if qres and not prev_selection:
         await create_selected_question(sid, selector_id, questionid, points=points)
     else:
         rslogger.debug(
             f"Did not insert a record for {selector_id}, {questionid} Conditions are {res} QL: {questionlist} PREV: {prev_selection}"
         )
 
-    if res and res.htmlsrc:
-        htmlsrc = res.htmlsrc
+    if qres and qres.htmlsrc:
+        htmlsrc = qres.htmlsrc
     else:
         rslogger.error(
             f"HTML Source not found for {questionid} in course {request.state.user.course_name} for {request.state.user.username}"

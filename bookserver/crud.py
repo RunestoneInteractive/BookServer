@@ -96,7 +96,9 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
     return UseinfoValidation.from_orm(new_entry)
 
 
-async def count_useinfo_for(div_id: str, course_name: str, start_date: str):
+async def count_useinfo_for(
+    div_id: str, course_name: str, start_date: datetime.datetime
+):
     query = (
         select(Useinfo.act, func.count(Useinfo.act).label("count"))
         .where(
@@ -686,7 +688,7 @@ async def fetch_assignment_question(assignment_name: str, question_name: str):
         return AssignmentQuestionValidator.from_orm(res.scalars().first())
 
 
-async def fetch_user_experiment(sid: str, ab_name: str) -> str:
+async def fetch_user_experiment(sid: str, ab_name: str) -> int:
     query = (
         select(UserExperiment.exp_group)
         .where((UserExperiment.sid == sid) & (UserExperiment.experiment_id == ab_name))
@@ -699,7 +701,7 @@ async def fetch_user_experiment(sid: str, ab_name: str) -> str:
         return r
 
 
-async def create_user_experiment_entry(sid: str, ab: str, group: str):
+async def create_user_experiment_entry(sid: str, ab: str, group: int):
     new_ue = UserExperiment(sid=sid, exp_group=group, experiment_id=ab)
     async with async_session.begin() as session:
         session.add(new_ue)
