@@ -25,12 +25,14 @@ from .applogger import rslogger
 from .config import settings
 from .crud import create_initial_courses_users
 from .db import init_models, term_models
+from .internal.feedback import init_graders
 from .routers import assessment
 from .routers import auth
 from .routers import books
 from .routers import rslogging
 from .routers import discuss
 from .session import auth_manager
+
 
 # FastAPI setup
 # =============
@@ -61,6 +63,7 @@ app.include_router(discuss.router)
 async def startup():
     await init_models()
     await create_initial_courses_users()
+    init_graders()
 
 
 @app.on_event("shutdown")
