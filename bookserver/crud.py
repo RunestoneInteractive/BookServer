@@ -35,7 +35,6 @@ from .config import settings, BookServerConfig
 from .internal.utils import http_422error_detail
 from . import schemas
 from .models import (
-    answer_tables,
     AuthUser,
     AuthUserValidator,
     Chapter,
@@ -56,7 +55,6 @@ from .models import (
     UseinfoValidation,
     UserState,
     UserStateValidator,
-    validation_tables,
 )
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
