@@ -2,6 +2,9 @@
 # Third-party imports
 # -------------------
 from typing import Dict, Optional
+import json
+
+
 from fastapi import (
     APIRouter,
     Cookie,
@@ -47,7 +50,10 @@ class ConnectionManager:
         to: str,
         message: str,
     ):
-        await self.active_connections[to].send_text(message)
+        if to in self.active_connections:
+            await self.active_connections[to].send_text(message)
+        else:
+            rslogger.error(f"{to} is not connected")
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():
@@ -85,22 +91,23 @@ async def get_cookie_or_token(
 # It seems that ``@router.websocket`` is much better than the documented
 # ``websocket_route``
 @router.websocket("/chat/{uname}/ws")
-async def websocket_endpoint(
-    websocket: WebSocket, uname: str, user: str = Depends(get_cookie_or_token)
-):
+async def websocket_endpoint(websocket: WebSocket, uname: str):
     rslogger.debug("f{uname=}")
-    rslogger.debug(f"IN WEBSOCKET {user=}")
-    res = await auth_manager.get_current_user(user)
-    username = res.username
-    rslogger.debug(f"{res=}")
+    rslogger.debug(f"IN WEBSOCKET {uname=}")
+    # res = await auth_manager.get_current_user(user)
+    # username = res.username
+    # rslogger.debug(f"{res=}")
+    username = uname
     await manager.connect(username, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            # await manager.broadcast(f"Message sent from {user} was {data}")
-            await manager.send_personal_message(
-                partnerdb[username], f"from {username} : {data}"
-            )
+            data = await websocket.receive_json()
+            if data["broadcast"]:
+                await manager.broadcast(json.dumps(data))
+            else:
+                await manager.send_personal_message(
+                    partnerdb[username], f"from {username} : {data}"
+                )
     except WebSocketDisconnect:
         manager.disconnect(username)
         await manager.broadcast(f"Client {username} left the chat")
