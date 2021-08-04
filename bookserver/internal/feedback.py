@@ -10,6 +10,7 @@
 # Standard library
 # ----------------
 import ast
+from bookserver.crud import fetch_course
 import json
 import os
 import re
@@ -33,15 +34,23 @@ from ..config import settings
 
 # Code
 # ====
-# Install all the graders.
+# _`init_graders`: Install all the graders. While I'd prefer to include this functionality in `register_answer_table <register_answer_table>`, doing so would create a cycle of imports: the feedback functions below require an import of the models, while the models would require an import of these functions. So,
 def init_graders():
-    for table_name, grader in (("fitb_answers", fitb_feedback),):
+    for table_name, grader in (
+        ("fitb_answers", fitb_feedback),
+        ("lp_answers", lp_feedback),
+    ):
         runestone_component_dict[table_name].grader = grader
 
 
 # Provide feedback for a fill-in-the-blank problem. This should produce
 # identical results to the code in ``evaluateAnswers`` in ``fitb.js``.
-def fitb_feedback(fitb_validator: Any, feedback: Dict[Any, Any]):
+async def fitb_feedback(
+    # The validator for the ``fitb_answers`` table containing data before it's stored in the db. This function updates the grade stored in the validator.
+    fitb_validator: Any,
+    # The feedback to use when grading this question, taken from the ``feedback`` field of the ``fitb_answers`` table.
+    feedback: Dict[Any, Any],
+) -> Dict[str, Any]:
     # Grade based on this feedback. The new format is JSON; the old is
     # comma-separated.
     answer_json = fitb_validator.answer
@@ -126,9 +135,18 @@ def fitb_feedback(fitb_validator: Any, feedback: Dict[Any, Any]):
 
 # lp feedback
 # ===========
-def lp_feedback(base_course, code_snippets, feedback_struct):
-    sphinx_base_path = os.path.join(settings.book_path, base_course)
-    source_path = feedback_struct["source_path"]
+async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any]):
+    # Begin by reformatting the answer for storage in the database. Do this now, so the code will be stored correctly even if the function returns early due to an error.
+    try:
+        code_snippets = json.loads(lp_validator.answer)
+    except Exception:
+        lp_validator.answer = json.dumps({})
+        return {"errors": [f"Unable to load answers from '{lp_validator.answer}'."]}
+    lp_validator.answer = json.dumps(dict(code_snippets=code_snippets))
+
+    course = await fetch_course(lp_validator.course_name)
+    sphinx_base_path = os.path.join(settings.book_path, course.base_course)
+    source_path = feedback["source_path"]
     # Read the Sphinx config file to find paths relative to this directory.
     sphinx_config = read_sphinx_config(sphinx_base_path)
     if not sphinx_config:
@@ -166,11 +184,11 @@ def lp_feedback(base_course, code_snippets, feedback_struct):
     if len(split_source) - 1 != len(code_snippets):
         return {"errors": ["Wrong number of snippets."]}
     # Interleave these with the student snippets.
-    interleaved_source = [None] * (2 * len(split_source) - 1)
+    interleaved_source = [""] * (2 * len(split_source) - 1)
     interleaved_source[::2] = split_source
     try:
         interleaved_source[1::2] = _platform_edit(
-            feedback_struct["builder"], code_snippets, source_path
+            feedback["builder"], code_snippets, source_path
         )
     except Exception as e:
         return {"errors": ["An exception occurred: {}".format(e)]}
@@ -185,27 +203,32 @@ def lp_feedback(base_course, code_snippets, feedback_struct):
 
         try:
             res = _scheduled_builder.delay(
-                feedback_struct["builder"],
+                feedback["builder"],
                 temp_source_path,
                 sphinx_base_path,
                 sphinx_source_path,
                 sphinx_out_path,
                 source_path,
             )
-            output, is_correct = res.get(timeout=60)
+            output, correct = res.get(timeout=60)
         except Exception as e:
             return {"errors": ["Error in build task: {}".format(e)]}
         else:
+            # Strip whitespace and return only the last 4K or data or so.
+            # There's no need for more -- it's probably just a crashed or
+            # confused program spewing output, so don't waste bandwidth or
+            # storage space on it.
+            resultString = output.strip()[-4096:]
+            # Update the data to be stored in the database.
+            lp_validator.answer = json.dumps(
+                dict(code_snippets=code_snippets, resultString=resultString)
+            )
+            lp_validator.correct = correct
+            # Return just new data (not the code snippets) to the client.
             return {
                 # The answer.
-                "answer": {
-                    # Strip whitespace and return only the last 4K or data or so.
-                    # There's no need for more -- it's probably just a crashed or
-                    # confused program spewing output, so don't waste bandwidth or
-                    # storage space on it.
-                    "resultString": output.strip()[-4096:]
-                },
-                "correct": is_correct,
+                "answer": {"resultString": resultString},
+                "correct": correct,
             }
 
 
