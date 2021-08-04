@@ -9,7 +9,7 @@ import redis
 from fastapi import (
     APIRouter,
     Cookie,
-    Depends,
+    #    Depends,
     Query,
     Request,
     WebSocket,
@@ -23,7 +23,8 @@ from fastapi.templating import Jinja2Templates
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
-from ..session import auth_manager
+
+# from ..session import auth_manager
 
 # Routing
 # =======
