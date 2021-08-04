@@ -13,6 +13,7 @@ from ..config import settings
 # Routing
 # =======
 # See `APIRouter config` for an explanation of this approach.
+# Remove the "discuss" prefix until PR #2640 of FastAPI is merged
 router = APIRouter(
     tags=["discuss"],
 )
