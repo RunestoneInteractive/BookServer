@@ -3,7 +3,8 @@
 # -------------------
 from typing import Dict, Optional
 import json
-
+import os
+import redis
 
 from fastapi import (
     APIRouter,
@@ -63,8 +64,6 @@ class ConnectionManager:
 # this is good for prototyping, but we will need to integrate with
 # Redis or a DB for production where we have multiple servers
 manager = ConnectionManager()
-# partner pairs can similarly be manged in the database
-partnerdb = {"testuser1": "testuser2", "testuser2": "testuser1"}
 
 
 # .. _login:
@@ -99,6 +98,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     # rslogger.debug(f"{res=}")
     username = uname
     await manager.connect(username, websocket)
+    r = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
     try:
         while True:
             data = await websocket.receive_json()
@@ -106,7 +106,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                 await manager.broadcast(json.dumps(data))
             else:
                 await manager.send_personal_message(
-                    partnerdb[username], f"from {username} : {data}"
+                    r.hget("partnerdb", username), f"from {username} : {data}"
                 )
     except WebSocketDisconnect:
         manager.disconnect(username)
