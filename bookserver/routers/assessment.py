@@ -444,7 +444,7 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         await create_selected_question(sid, selector_id, questionid, points=points)
     else:
         rslogger.debug(
-            f"Did not insert a record for {selector_id}, {questionid} Conditions are {res} QL: {questionlist} PREV: {prev_selection}"
+            f"Did not insert a record for {selector_id}, {questionid} Conditions are {qres} QL: {questionlist} PREV: {prev_selection}"
         )
 
     if qres and qres.htmlsrc:
@@ -479,3 +479,42 @@ async def tookTimedAssessment(request: Request, request_data: ExamRequest):
         return make_json_response(detail={"tookAssessment": True})
     else:
         return make_json_response(detail={"tookAssessment": False})
+
+
+@router.get("/htmlsrc")
+async def htmlsrc(
+    request: Request,
+    acid: str,
+    sid: Optional[str] = None,
+    assignmentId: Optional[int] = None,
+):
+    """
+    Used by Toggle Questions and the grading interface
+    Get the html source for a question.  If just the divid is included then assume that
+    the question must come from the current base course.  If an assignment_id is provided
+    then that question could come from any base course and so make sure it is part of the
+    current assignment_questions set.
+    """
+    assignment_id = assignmentId
+    studentId = sid
+    htmlsrc = ""
+    if assignment_id:
+        rslogger.debug(f"assignment_id = {assignment_id}")
+        # todo fix up for assignment
+        res = await fetch_question(acid)
+    else:
+        res = await fetch_question(acid)
+    if res and (res.htmlsrc or res.question_type == "selectquestion"):
+        if res.question_type == "selectquestion" and studentId:
+            # Check the selected_questions table to see which actual question was chosen
+            # then get that question.
+            realq = fetch_selected_question(studentId, acid)
+            if realq:
+                htmlsrc = realq.htmlsrc
+        else:
+            htmlsrc = res.htmlsrc
+    else:
+        rslogger.error(f"HTML Source not found for {acid} in course ??")
+        htmlsrc = "<p>No preview available</p>"
+
+    return make_json_response(detail=htmlsrc)

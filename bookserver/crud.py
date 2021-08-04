@@ -378,6 +378,7 @@ async def create_initial_courses_users():
             "thinkcpp",
             "thinkcspy",
             "webfundamentals",
+            "test_course_1",
         ]
 
         for c in BASE_COURSES:
