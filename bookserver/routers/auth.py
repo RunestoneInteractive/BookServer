@@ -88,11 +88,12 @@ async def login(
         # alg$salt$hash
         # We need to grab the salt and provide that to the CRYPT function
         # which we import from pydal for now.  Once we are completely off of
-        # web2py then this will change.  The ``web2py_private_key`` is an environment
+        # web2py then this will change. The ``web2py_private_key`` is an environment
         # variable that comes from the ``private/auth.key`` file.
         salt = user.password.split("$")[1]
         crypt = CRYPT(key=settings.web2py_private_key, salt=salt)
-        if str(crypt(password)[0]) != user.password:
+        crypted_password = str(crypt(password)[0])
+        if crypted_password != user.password:
             raise InvalidCredentialsException
 
     access_token = auth_manager.create_access_token(

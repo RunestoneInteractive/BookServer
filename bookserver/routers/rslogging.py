@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-#
+
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
@@ -23,17 +23,18 @@ from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 # -------------------------
 from ..applogger import rslogger
 from ..crud import (
-    EVENT2TABLE,
     create_answer_table_entry,
     create_code_entry,
     create_useinfo_entry,
     create_user_chapter_progress_entry,
     create_user_state_entry,
     create_user_sub_chapter_progress_entry,
+    EVENT2TABLE,
     fetch_last_page,
-    fetch_user,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
+    fetch_user,
+    is_server_feedback,
     update_sub_chapter_progress,
     update_user_state,
 )
@@ -41,8 +42,8 @@ from ..internal.utils import make_json_response
 from ..models import (
     AuthUserValidator,
     CodeValidator,
+    runestone_component_dict,
     UseinfoValidation,
-    validation_tables,
 )
 from ..schemas import (
     LastPageData,
@@ -83,7 +84,8 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     """
     # The middleware will set the user if they are logged in.
     if request.state.user:
-        entry.sid = request.state.user.username
+        user = request.state.user
+        entry.sid = user.username
     else:
         return make_json_response(status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
@@ -94,12 +96,13 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     useinfo_dict["course_id"] = useinfo_dict.pop("course_name")
     # This will validate the fields.  If a field does not validate
     # an error will be raised and a 422 response code will be returned
-    # to the caller of the API
+    # to the caller of the API.
     useinfo_entry = UseinfoValidation(**useinfo_dict)
     rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)
     if entry.event in EVENT2TABLE:
-        table_name = EVENT2TABLE[entry.event]
+        rcd = runestone_component_dict[EVENT2TABLE[entry.event]]
+        response_dict = dict(timestamp=entry.timestamp)
         if entry.event == "unittest":
             # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
             ppf = entry.act.split(":")
@@ -108,12 +111,18 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
             entry.answer = ""
             entry.correct = ppf[1] == "100.0"
             entry.percent = float(ppf[1])
-        valid_table = validation_tables[table_name].from_orm(entry)
+        valid_table = rcd.validator.from_orm(entry)  # type: ignore
+        # Do server-side grading if needed.
+        if feedback := await is_server_feedback(entry.div_id, user.course_name):
+            # The grader should also be defined if there's feedback.
+            assert rcd.grader
+            response_dict.update(rcd.grader(valid_table, feedback))
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
+
         rslogger.debug(ans_idx)
 
     if idx:
-        return make_json_response(status=status.HTTP_201_CREATED, detail=idx)
+        return make_json_response(status=status.HTTP_201_CREATED, detail=response_dict)
     else:
         return make_json_response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
