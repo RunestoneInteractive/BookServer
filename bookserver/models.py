@@ -28,6 +28,7 @@
 # Standard library
 # ----------------
 import re
+from typing import Dict, Type
 
 # Third-party imports
 # -------------------
@@ -52,7 +53,7 @@ from sqlalchemy.sql.schema import UniqueConstraint
 # Local application imports
 # -------------------------
 from .db import Base
-from .schemas import sqlalchemy_to_pydantic
+from .schemas import BaseModelNone, sqlalchemy_to_pydantic
 
 
 # Web2Py boolean type
@@ -92,17 +93,31 @@ class Web2PyBoolean(types.TypeDecorator):
 # the migration information.
 metadata = MetaData()
 
-answer_tables = {}
-validation_tables = {}
+
+# Provide a container to store information about each type of Runestone Component.
+class RunestoneComponentDict:
+    def __init__(self, model: Type[Base], validator: Type[BaseModelNone]):
+        self.grader = None
+        self.model = model
+        self.validator = validator
 
 
-def register_answer_table(cls):
-    global answer_tables, validation_tables
+# Store this information in a dict whose key is the component's name, as a string.
+runestone_component_dict: Dict[str, RunestoneComponentDict] = {}
 
-    table_name = cls.__tablename__
-    answer_tables[table_name] = cls
-    validation_tables[table_name] = sqlalchemy_to_pydantic(cls)
-    return cls
+
+# Provide a decorator for a class that populates this table.
+def register_answer_table(
+    sql_alchemy_cls: Type[Base],
+) -> Type[Base]:
+    global runestone_component_dict
+
+    table_name = sql_alchemy_cls.__tablename__
+    runestone_component_dict[table_name] = RunestoneComponentDict(
+        sql_alchemy_cls,
+        sqlalchemy_to_pydantic(sql_alchemy_cls),
+    )
+    return sql_alchemy_cls
 
 
 # IdMixin

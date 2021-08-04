@@ -19,6 +19,7 @@ documentation = "https://bookserver.readthedocs.io/en/latest/"
 # Dependencies
 # ============
 [tool.poetry.dependencies]
+celery = {extras = ["redis"], version = "^5.1.1"}
 python = "^3.7"
 fastapi = "^0.63.0"
 # Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.

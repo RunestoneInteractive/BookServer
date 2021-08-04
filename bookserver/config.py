@@ -46,27 +46,37 @@ class DatabaseType(Enum):
 class Settings(BaseSettings):
     # Pydantic provides a wonderful utility to handle settings.  The beauty of it
     # is that you can specify variables with or without default values, and Pydantic
-    # will check your environment variables, in a case insensitive way. So that
-    # if you have PROD_DBURL set in the environment it will be set as the value
-    # for prod_dburl in settings.
+    # will check your environment variables in a case-insensitive way. So that
+    # if you have ``PROD_DBURL``` set in the environment it will be set as the value
+    # for ``prod_dburl``` in settings.
     # This is a really nice way to keep from
     # committing any data you want to keep private.
 
     google_ga: str = ""
 
-    # This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
-    # .. admonition: warning
-    #
-    #    When using an Enum for a configuration setting you cannot compare against
-    #    a string.  The value will actually be BookServerConfig.development or whatever
-    #    Our style will be to compare against the Enum not the .name attribute
-    #
-    book_server_config: BookServerConfig = "development"  # type: ignore
-
-    # The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
+    # Provide a path to the book server files. The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
     _book_server_path: str = str(
         Path(pkg_resources.resource_filename("bookserver", "")).absolute()
     )
+
+    # _`book_path`: specify the directory to serve books from.
+    book_path: Path = Path.home() / "Runestone/books"
+
+    # The path to web2py.
+    web2py_path: str = str(
+        Path(_book_server_path).parents[1] / "web2py/applications/runestone"
+    )
+    # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
+
+    # Define the mode of operation for the webserver, taken from ``BookServerConfig```. This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
+    #
+    # .. admonition:: warning
+    #
+    #    When using an Enum for a configuration setting you cannot compare against
+    #    a string.  The value will actually be ``BookServerConfig.development``` or whatever.
+    #    Our style will be to compare against the Enum not the ``.name`` attribute.
+    #
+    book_server_config: BookServerConfig = "development"  # type: ignore
 
     # Database setup: this must be an async connection; for example:
     #
@@ -76,7 +86,7 @@ class Settings(BaseSettings):
     dev_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_dev.db"
     test_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_test.db"
 
-    # Determine the database URL based on the ``config`` and the dburls above.
+    # Determine the database URL based on the ``book_server_config`` and the dburls above.
     @property
     def database_url(self) -> str:
         return {
@@ -96,22 +106,16 @@ class Settings(BaseSettings):
         else:
             raise RuntimeError(f"Unknown database type; URL is {dburl}.")
 
+    # Select normal mode or a high-stakes assessment mode (for administering a examination). In this mode, answers to supported question types are not shown.
+    is_exam: bool = False
+
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
     num_banners: int = 0
     serve_ad: bool = False
 
-    # _`book_path`: specify the directory to serve books from.
-    book_path: Path = Path.home() / "Runestone/books"
-
     # This is the secret key used for generating the JWT token
     secret: str = "supersecret"
-
-    # The path to web2py.
-    web2py_path: str = str(
-        Path(_book_server_path).parents[1] / "web2py/applications/runestone"
-    )
-    # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # This is the private key web2py uses for hashing passwords.
     @property
@@ -129,9 +133,9 @@ class Settings(BaseSettings):
 
         return read_key()
 
-    # if you want to reinitialize your database set this to Yes
+    # if you want to reinitialize your database set this to ``Yes``.
     # All data in the database will be lost! This will only work for
-    # development and test ``book_server_config`` settings
+    # development and test ``book_server_config`` settings.
     drop_tables: str = "No"
 
 

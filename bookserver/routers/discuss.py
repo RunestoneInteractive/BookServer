@@ -2,7 +2,7 @@
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Request, Response, WebSocket  # noqa F401
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 # Local application imports
