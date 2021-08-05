@@ -118,17 +118,10 @@ def test_runestone_version():
     assert runestone_version.startswith("6.")
 
 
-@pytest.mark.skip(reason="Brad has no idea what he is doing.")
 @pytest.mark.asyncio
-async def test_runlog(selenium_utils_user, bookserver_session):
-    su = selenium_utils_user
-    href = "activecode.html"
-    su.get_book_url(href)
-    div_id = "test_activecode_2a"
-    ac2a = su.driver.find_element_by_id(div_id)
-    button = ac2a.find_element_by_class_name("run-button")
-    assert button
-    button.click()
+async def test_runlog(selenium_utils_user_ac, bookserver_session):
+    div_id = "test_activecode_2"
+    test_activecode.test_history(selenium_utils_user_ac)
 
     async def ac_check_runlog(div_id):
         row = await get_answer(
@@ -139,7 +132,7 @@ async def test_runlog(selenium_utils_user, bookserver_session):
     await ac_check_runlog(div_id)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
+# @pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
@@ -150,21 +143,32 @@ async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
                 session, select(Code).where(Code.acid == div_id), index + 1
             )
         )[index]
-        assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
+        assert row.timestamp - datetime.datetime.utcnow() < datetime.timedelta(
+            seconds=5
+        )
         assert row.acid == div_id
         assert row.sid == selenium_utils_user_ac.user.username
-        assert row.course_id == selenium_utils_user_ac.user.course.course_id
+        assert row.course_id == selenium_utils_user_ac.user.course.id
         return row
 
     test_activecode.test_history(selenium_utils_user_ac)
     row = await ac_check_fields(0, "test_activecode_2")
-    assert row.emessage == "success"
     assert row.code == "print('Goodbye')"
-    assert row.grade is None
     assert row.comment is None
     assert row.language == "python"
 
-    # TODO: There are a lot more activecode tests that could be easily ported!
+    # Make sure that the appropriate row is in the useinfo table
+    row = await get_answer(
+        session,
+        select(Useinfo).where(
+            (Useinfo.div_id == "test_activecode_2")
+            & (Useinfo.sid == selenium_utils_user_ac.user.username)
+        ),
+        1,
+    )
+    assert row
+    # assert row.event == "activecode"
+    # assert row.act == "run"
 
 
 # ClickableArea
@@ -437,7 +441,9 @@ def selenium_utils_user_2(selenium_utils_user):
 
 
 # Check rendering of selectquestion, which requires server-side support.
-@pytest.mark.skip(reason="Need to port more server code first.")
+
+
+@pytest.mark.skip(reason="figure out selectquestion testing strategy")
 @pytest.mark.asyncio
 async def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
     await test_poll_1(selenium_utils_user_2, bookserver_session)
