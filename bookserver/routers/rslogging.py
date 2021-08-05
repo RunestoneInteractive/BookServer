@@ -100,9 +100,9 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     useinfo_entry = UseinfoValidation(**useinfo_dict)
     rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)
+    response_dict = dict(timestamp=entry.timestamp)
     if entry.event in EVENT2TABLE:
         rcd = runestone_component_dict[EVENT2TABLE[entry.event]]
-        response_dict = dict(timestamp=entry.timestamp)
         if entry.event == "unittest":
             # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
             ppf = entry.act.split(":")
