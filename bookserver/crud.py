@@ -75,7 +75,7 @@ EVENT2TABLE = {
     "codelens1": "codelens_answers",
     "dragNdrop": "dragndrop_answers",
     "fillb": "fitb_answers",
-    "lp": "lp_answers",
+    "lp_build": "lp_answers",
     "mChoice": "mchoice_answers",
     "parsons": "parsons_answers",
     "shortanswer": "shortanswer_answers",

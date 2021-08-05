@@ -292,43 +292,44 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
 
 # Lp
 # --
-@pytest.mark.skip(reason="Need to port more server code first.")
 def test_lp_1(selenium_utils_user):
     su = selenium_utils_user
     href = "lp_demo.py.html"
     su.get_book_url(href)
-    id = "test_lp_1"
-    su.wait_until_ready(id)
+    id_ = "test_lp_1"
+    su.wait_until_ready(id_)
 
     snippets = su.driver.find_elements_by_class_name("code_snippet")
     assert len(snippets) == 1
-    check_button = su.driver.find_element_by_id(id)
-    result_id = "lp-result"
-    result_area = su.driver.find_element_by_id(result_id)
+    check_button = su.driver.find_element_by_id(id_)
+    result_selector = f"#{id_} ~ .lp-result"
+    result_area = su.driver.find_element_by_css_selector(result_selector)
 
     # Set snippets.
     code = "def one(): return 1"
-    su.driver.execute_script(f'LPList["{id}"].textAreas[0].setValue("{code}");')
+    su.driver.execute_script(f'LPList["{id_}"].textAreas[0].setValue("{code}");')
     assert not result_area.text
 
     # Click the test button.
     check_button.click()
     su.wait.until(
-        EC.text_to_be_present_in_element_value((By.ID, "lp-result"), "Building...")
+        EC.text_to_be_present_in_element_value(
+            (By.CSS_SELECTOR, result_selector), "Building..."
+        )
     )
 
-    # Wait until the build finishes. To find this, I used the Chrome inspector; right-click on the element, then select "Copy > Copy full XPath".
+    # Wait until the build finishes.
     su.wait.until(
         EC.text_to_be_present_in_element(
-            (By.XPATH, "/html/body/div[4]/div[1]/div[3]/div"), "Correct. Grade: 100%"
+            (By.CSS_SELECTOR, f"#{id_} ~ .lp-feedback"), "Correct. Grade: 100%"
         )
     )
 
     # Refresh the page. See if saved snippets are restored.
     su.get_book_url(href)
-    su.wait_until_ready(id)
+    su.wait_until_ready(id_)
     assert (
-        su.driver.execute_script(f'return LPList["{id}"].textAreas[0].getValue();')
+        su.driver.execute_script(f'return LPList["{id_}"].textAreas[0].getValue();')
         == code
     )
 
