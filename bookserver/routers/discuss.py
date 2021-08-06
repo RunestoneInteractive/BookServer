@@ -52,14 +52,15 @@ class ConnectionManager:
         to: str,
         message: str,
     ):
+        to = to.decode("utf8")
         if to in self.active_connections:
-            await self.active_connections[to].send_text(message)
+            await self.active_connections[to].send_json(message)
         else:
-            rslogger.error(f"{to} is not connected")
+            rslogger.error(f"{to} is not connected {self.active_connections}")
 
     async def broadcast(self, message: str):
         for connection in self.active_connections.values():
-            await connection.send_text(message)
+            await connection.send_json(message)
 
 
 # this is good for prototyping, but we will need to integrate with
@@ -104,11 +105,16 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
         while True:
             data = await websocket.receive_json()
             if data["broadcast"]:
-                await manager.broadcast(json.dumps(data))
+                await manager.broadcast(data)
             else:
-                await manager.send_personal_message(
-                    r.hget("partnerdb", username), f"from {username} : {data}"
-                )
+                await manager.send_personal_message(r.hget("partnerdb", username), data)
     except WebSocketDisconnect:
         manager.disconnect(username)
-        await manager.broadcast(f"Client {username} left the chat")
+        await manager.broadcast(
+            {
+                "type": "text",
+                "from": username,
+                "message": f"Client {username} left the chat",
+                "broadcast": True,
+            }
+        )
