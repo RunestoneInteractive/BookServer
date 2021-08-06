@@ -160,7 +160,7 @@ def run_bookserver(bookserver_address, pytestconfig):
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
-        # TODO: these come from `SO <https://stackoverflow.com/a/19308462/16038919>`_ but are not tested.
+        # TODO: these come from `SO <https://stackoverflow.com/a/19308462/16038919>`__ but are not tested.
         if is_linux:
             # This is a guess, and will depend on your distro. Fix as necessary. Another common choice: ``["xterm", "-e"]``.
             prefix_args = ["gnome-terminal", "-x"]
@@ -358,9 +358,11 @@ async def bookserver_session(run_bookserver):
 @pytest.fixture
 def create_test_course(bookserver_session):
     async def _create_test_course(**kwargs):
-        # If the base course doesn't exist, make that first.
+        # If the base course doesn't exist and isn't this course, make that first.
         base_course_name = kwargs["base_course"]
-        if not await fetch_base_course(base_course_name):
+        if base_course_name != kwargs["course_name"] and not await fetch_base_course(
+            base_course_name
+        ):
             base_course = CoursesValidator(**kwargs)
             base_course.course_name = base_course_name
             await create_course(base_course)
@@ -446,7 +448,10 @@ def selenium_driver_session():
     # When run as root, Chrome complains ``Running as root without --no-sandbox is not supported. See https://crbug.com/638180.`` Here's a `crude check for being root <https://stackoverflow.com/a/52621917>`_.
     if is_linux and os.geteuid() == 0:
         options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(options=options)
+    # _`selenium_logging`: Ask Chrome to save the logs from the JavaScript console. Copied from `SO <https://stackoverflow.com/a/63625977/16038919>`__.
+    caps = webdriver.DesiredCapabilities.CHROME.copy()
+    caps["goog:loggingPrefs"] = {"browser": "ALL"}
+    driver = webdriver.Chrome(options=options, desired_capabilities=caps)
 
     yield driver
 
