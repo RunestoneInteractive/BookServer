@@ -23,6 +23,8 @@
 import datetime
 import io
 import os
+from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -121,9 +123,42 @@ def bookserver_address():
 # Execute this `fixture <https://docs.pytest.org/en/latest/fixture.html>`_ once per `session <https://docs.pytest.org/en/latest/fixture.html#scope-sharing-a-fixture-instance-across-tests-in-a-class-module-or-session>`_.
 @pytest.fixture(scope="session")
 def run_bookserver(bookserver_address, pytestconfig):
+    assert os.environ["TEST_DBURL"]
+    dburl = os.environ["TEST_DBURL"]
+
     if pytestconfig.getoption("skipdbinit"):
         print("Skipping DB initialization.")
     else:
+        # Start with a clean database.
+        if settings.database_type == DatabaseType.SQLite:
+            match = re.match(r"sqlite.*?///(.*)", dburl)
+            path = match.group(1)
+            if Path(path).exists():
+                os.unlink(path)
+
+        elif settings.database_type == DatabaseType.PostgreSQL:
+            # Extract the components of the DBURL. The expected format is ``postgresql+asyncpg://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
+            (empty1, pguser, pgpassword, pgnetloc, dbname, empty2) = re.split(
+                r"^postgresql\+asyncpg:\/\/(.*):(.*)@(.*)\/(.*)$", settings.database_url
+            )
+            # Per the `docs <https://docs.python.org/3/library/re.html#re.split>`_, the first and last split are empty because the pattern matches at the beginning and the end of the string.
+            assert not empty1 and not empty2
+            # The postgres command-line utilities require these.
+            os.environ["PGPASSWORD"] = pgpassword
+            os.environ["PGUSER"] = pguser
+            os.environ["DBHOST"] = pgnetloc
+
+            try:
+                subprocess.run("dropdb --if-exists", check=True)
+                subprocess.run(f"createdb --echo {dbname}", check=True)
+            except Exception as e:
+                print(f"Failed to drop the database: {e}. Do you have permission?")
+                sys.exit(1)
+
+        else:
+            print("Unknown database type!")
+            sys.exit(1)
+
         # Copy the test book to the books directory.
         test_book_path = f"{settings.book_path}/test_course_1"
         rmtree(test_book_path, ignore_errors=True)
