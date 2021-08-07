@@ -508,7 +508,7 @@ async def htmlsrc(
         if res.question_type == "selectquestion" and studentId:
             # Check the selected_questions table to see which actual question was chosen
             # then get that question.
-            realq = fetch_selected_question(studentId, acid)
+            realq = await fetch_selected_question(studentId, acid)
             if realq:
                 htmlsrc = realq.htmlsrc
         else:

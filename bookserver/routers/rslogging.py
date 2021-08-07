@@ -117,7 +117,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
             # The grader should also be defined if there's feedback.
             assert rcd.grader
             response_dict.update(await rcd.grader(valid_table, feedback))
-            
+
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
         rslogger.debug(ans_idx)
 
