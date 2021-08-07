@@ -444,54 +444,47 @@ def selenium_utils_user_2(selenium_utils_user):
 # Check rendering of selectquestion, which requires server-side support.
 
 
-@pytest.mark.skip(reason="figure out selectquestion testing strategy")
+@pytest.mark.skip(reason="This passes but causes the next test to fail")
 @pytest.mark.asyncio
 async def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
     await test_poll_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="The spreadsheet component doesn't support selectquestion.")
+@pytest.mark.skip(reason="Spreadsheet has not been verified with selectquestion")
 def test_selectquestion_2(selenium_utils_user_2):
     test_spreadsheet_1(selenium_utils_user_2)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
     await test_clickable_area_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
     await test_fitb_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
     await test_mchoice_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
     await test_parsons_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
     await test_dnd_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
     await test_activecode_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
     await test_short_answer_1(selenium_utils_user_2, bookserver_session)
