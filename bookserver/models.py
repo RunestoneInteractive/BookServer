@@ -180,6 +180,7 @@ class AnswerMixin(IdMixin):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
+@register_answer_table
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
     # See the :ref:`timed exam endpoint parameters` for documentation on these columns..

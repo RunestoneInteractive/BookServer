@@ -513,7 +513,7 @@ def selenium_utils_user_timed(selenium_utils_user):
 # Provide the ability to invoke tests with a specific div_id, since the selectquestion test is a different problem with a different div_id than the plain test.
 async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
     async def tt_check_common_fields(index, div_id):
-        row = check_common_fields_raw(
+        row = await check_common_fields_raw(
             selenium_utils_user_timed,
             bookserver_session,
             select(TimedExam).where(TimedExam.div_id == div_id),
@@ -529,7 +529,6 @@ async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_div
     assert await tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_timed_1(selenium_utils_user_timed, bookserver_session):
     await _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")

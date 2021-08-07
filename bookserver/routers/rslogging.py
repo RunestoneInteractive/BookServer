@@ -111,6 +111,13 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
             entry.answer = ""
             entry.correct = ppf[1] == "100.0"
             entry.percent = float(ppf[1])
+        elif entry.event == "timedExam":
+            if entry.act == "start":
+                entry.correct = 0
+                entry.incorrect = 0
+                entry.skipped = 0
+                entry.time_taken = 0
+
         valid_table = rcd.validator.from_orm(entry)  # type: ignore
         # Do server-side grading if needed.
         if feedback := await is_server_feedback(entry.div_id, user.course_name):

@@ -103,7 +103,7 @@ class LogItemIncoming(BaseModelNone):
     course_name: str
     sid: Optional[str]
     answer: Optional[str]
-    correct: Optional[bool]
+    correct: Optional[Union[bool, int]]
     percent: Optional[float]
     clientLoginStatus: Optional[bool]
     timezoneoffset: Optional[int]
@@ -115,6 +115,10 @@ class LogItemIncoming(BaseModelNone):
     # used by unittest
     passed: Optional[int]
     failed: Optional[int]
+    # used by timed exam
+    incorrect: Optional[int]
+    skipped: Optional[int]
+    time_taken: Optional[int]
 
 
 class AssessmentRequest(BaseModelNone):

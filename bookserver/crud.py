@@ -80,6 +80,7 @@ EVENT2TABLE = {
     "parsons": "parsons_answers",
     "shortanswer": "shortanswer_answers",
     "unittest": "unittest_answers",
+    "timedExam": "timed_exam",
 }
 
 
