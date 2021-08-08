@@ -61,7 +61,11 @@ async def get_answer(session, stmt, minimum_len):
 
     async with session() as sess:
         # Wait up to 10 seconds for the desired answer length.
-        return await asyncio.wait_for(poll(), 10)
+        try:
+            res = await asyncio.wait_for(poll(), 10)
+            return res
+        except Exception:
+            return None
 
 
 # Check the fields common to the tables of most Runestone components.
