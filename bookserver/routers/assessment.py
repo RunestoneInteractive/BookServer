@@ -266,7 +266,7 @@ async def getpollresults(request: Request, course: str, div_id: str):
             request.state.user.username, course, div_id
         )
     if user_res:
-        my_vote = user_res.act
+        my_vote = int(user_res)
     else:
         my_vote = -1
 

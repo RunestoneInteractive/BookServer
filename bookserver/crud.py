@@ -13,20 +13,18 @@
 # Standard library
 # ----------------
 import datetime
+import json
 from collections import namedtuple
 from typing import List, Optional
-import json
-
 
 # Third-party imports
 # -------------------
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
-
-# import sqlalchemy
 from sqlalchemy import and_, func, update
 from sqlalchemy.sql import select, text
 
+from . import schemas
 
 # Local application imports
 # -------------------------
@@ -34,7 +32,6 @@ from .applogger import rslogger
 from .config import BookServerConfig, settings
 from .db import async_session
 from .internal.utils import http_422error_detail
-from . import schemas
 from .models import (
     Assignment,
     AssignmentQuestion,
@@ -51,7 +48,6 @@ from .models import (
     CoursesValidator,
     Question,
     QuestionValidator,
-    runestone_component_dict,
     SelectedQuestion,
     SelectedQuestionValidator,
     SubChapter,
@@ -67,6 +63,7 @@ from .models import (
     UserStateValidator,
     UserSubChapterProgress,
     UserSubChapterProgressValidator,
+    runestone_component_dict,
 )
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
@@ -99,7 +96,13 @@ async def create_useinfo_entry(log_entry: UseinfoValidation) -> UseinfoValidatio
 
 async def count_useinfo_for(
     div_id: str, course_name: str, start_date: datetime.datetime
-):
+) -> List[tuple]:
+    """
+    return a list of tuples that include the [(act, count), (act, count)]
+    act is a freeform field in the useinfo table that varies from event
+    type to event type.
+    """
+
     query = (
         select(Useinfo.act, func.count(Useinfo.act).label("count"))
         .where(
@@ -115,8 +118,13 @@ async def count_useinfo_for(
         return res.all()
 
 
-async def fetch_poll_summary(div_id, course_name):
-
+async def fetch_poll_summary(div_id, course_name) -> List[tuple]:
+    """
+    find the last answer for each student and then aggregate
+    those answers to provide a summary of poll responses for the
+    given question.  for a poll the value of act is a response
+    number 0--N where N is the number of different choices.
+    """
     query = text(
         """select act, count(*) from useinfo
         join (select sid,  max(id) mid
@@ -131,7 +139,8 @@ async def fetch_poll_summary(div_id, course_name):
         return rows.all()
 
 
-async def fetch_top10_fitb(dbcourse, div_id):
+async def fetch_top10_fitb(dbcourse: CoursesValidator, div_id: str) -> List[tuple]:
+    "Return the top 10 answers to a fill in the blank question"
     rcd = runestone_component_dict["fitb_answers"]
     tbl = rcd.model
     query = (
@@ -190,7 +199,10 @@ async def fetch_last_answer_table_entry(
         return rcd.validator.from_orm(res.scalars().first())  # type: ignore
 
 
-async def fetch_last_poll_response(sid: str, course_name: str, poll_id: str):
+async def fetch_last_poll_response(sid: str, course_name: str, poll_id: str) -> str:
+    """
+    Return a student's (sid) last response to a given poll (poll_id)
+    """
     query = (
         select(Useinfo.act)
         .where(
@@ -606,7 +618,15 @@ async def create_selected_question(
     return SelectedQuestionValidator.from_orm(new_sqv)
 
 
-async def fetch_selected_question(sid: str, selector_id) -> SelectedQuestionValidator:
+async def fetch_selected_question(
+    sid: str, selector_id: str
+) -> SelectedQuestionValidator:
+    """
+    Used with selectquestions.  This returns the information about
+    a question previously chosen for the given (selector_id) question
+    for a particular student (sid) - see `get_question_source` for
+    more info on select questions.
+    """
     query = select(SelectedQuestion).where(
         (SelectedQuestion.sid == sid) & (SelectedQuestion.selector_id == selector_id)
     )
@@ -618,6 +638,10 @@ async def fetch_selected_question(sid: str, selector_id) -> SelectedQuestionVali
 
 
 async def update_selected_question(sid: str, selector_id: str, selected_id: str):
+    """
+    Used in conjunction with the toggle feature of select question to update
+    which question the student has chosen to work on.
+    """
     stmt = (
         update(SelectedQuestion)
         .where(
@@ -638,7 +662,17 @@ async def update_selected_question(sid: str, selector_id: str, selected_id: str)
 async def fetch_question(
     name: str, basecourse: Optional[str] = None
 ) -> QuestionValidator:
+    """
+    Fetch a single matching question row from the database that matches
+    the name (div_id) of the question.  If the base course is provided
+    make sure the question comes from that basecourse. basecourse,name pairs
+    are guaranteed to be unique in the questions table
 
+    More and more questions have globally unique names in the runestone
+    database and that is definitely a direction to keep pushing.  But
+    it is possible that there are duplicates but we are not going to
+    worry about that we are just going to return the first one we find.
+    """
     where_clause = Question.name == name
     if basecourse:
         where_clause = where_clause & (Question.base_course == basecourse)
@@ -661,7 +695,11 @@ auto_gradable_q = [
 
 
 async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List[str]:
-
+    """
+    Return a list of question names (div_ids) that match the criteria
+    for a particular question. This is used by select questions and in
+    particular `get_question_source`
+    """
     if request_data.questions:
         questionlist = request_data.questions.split(",")
         questionlist = [q.strip() for q in questionlist]
@@ -696,8 +734,12 @@ async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List
     return questionlist
 
 
-async def fetch_assignment_question(assignment_name: str, question_name: str):
-
+async def fetch_assignment_question(
+    assignment_name: str, question_name: str
+) -> AssignmentQuestionValidator:
+    """
+    Get an assignment question row object
+    """
     query = select(AssignmentQuestion).where(
         (Assignment.name == assignment_name)
         & (Assignment.id == AssignmentQuestion.assignment_id)
@@ -712,6 +754,14 @@ async def fetch_assignment_question(assignment_name: str, question_name: str):
 
 
 async def fetch_user_experiment(sid: str, ab_name: str) -> int:
+    """
+    When a question is part of an AB experiement (ab_name) get the experiment
+    group for a particular student (sid).  The group number will have
+    been randomly assigned by the initial question selection.
+
+    This number indicates whether the student will see the 1st or 2nd
+    question in the question list.
+    """
     query = (
         select(UserExperiment.exp_group)
         .where((UserExperiment.sid == sid) & (UserExperiment.experiment_id == ab_name))
@@ -724,14 +774,29 @@ async def fetch_user_experiment(sid: str, ab_name: str) -> int:
         return r
 
 
-async def create_user_experiment_entry(sid: str, ab: str, group: int):
+async def create_user_experiment_entry(
+    sid: str, ab: str, group: int
+) -> UserExperimentValidator:
+    """
+    Store the number of the group number (group) this student (sid) hass been assigned to
+    for this particular experiment (ab)
+    """
     new_ue = UserExperiment(sid=sid, exp_group=group, experiment_id=ab)
     async with async_session.begin() as session:
         session.add(new_ue)
     return UserExperimentValidator.from_orm(new_ue)
 
 
-async def fetch_viewed_questions(sid, questionlist) -> List[str]:
+async def fetch_viewed_questions(sid: str, questionlist: List[str]) -> List[str]:
+    """
+    Used for the selectquestion `get_question_source` to filter out questions
+    that a student (sid) has seen before.  One criteria of a select question
+    is to make sure that a student has never seen a question before.
+
+    The best approximation we have for that is that they will have clicked on the
+    run button for that quesiton.  Of course they may have seen said question
+    but not run it but this is the best we can do.
+    """
     query = select(Useinfo).where(
         (Useinfo.sid == sid) & (Useinfo.div_id.in_(questionlist))
     )
