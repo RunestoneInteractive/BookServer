@@ -118,7 +118,7 @@ async def count_useinfo_for(
         return res.all()
 
 
-async def fetch_poll_summary(div_id, course_name) -> List[tuple]:
+async def fetch_poll_summary(div_id: str, course_name: str) -> List[tuple]:
     """
     find the last answer for each student and then aggregate
     those answers to provide a summary of poll responses for the
@@ -691,6 +691,7 @@ auto_gradable_q = [
     "parsonsprob",
     "dragndrop",
     "fillintheblank",
+    "lp",
 ]
 
 

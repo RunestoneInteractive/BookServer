@@ -171,6 +171,11 @@ async def get_history(request: Request, request_data: HistoryRequest):
 # Used by :ref:`compareAnswers`
 @router.get("/getaggregateresults")
 async def getaggregateresults(request: Request, div_id: str, course_name: str):
+    """
+    Provide the data for a summary of the answers for a multiple choice question.
+    What percent of students chose each answer.  This is used when the compare me
+    button is pressed by the student.
+    """
     question = div_id
 
     if not request.state.user:
@@ -179,20 +184,19 @@ async def getaggregateresults(request: Request, div_id: str, course_name: str):
             detail=dict(answerDict={}, misc={}, emess="You must be logged in"),
         )
 
-    if course_name in (
-        "thinkcspy",
-        "pythonds",
-        "fopp",
-        "csawesome",
-        "apcsareview",
-        "StudentCSP",
-    ):
+    # Since open base courses may have many years of data we limit the
+    # results there to the last 90 days.
+    course = await fetch_course(course_name)
+    if course.course_name == course.base_course:
         start_date = datetime.datetime.utcnow() - datetime.timedelta(days=90)
     else:
-        course = await fetch_course(course_name)
         start_date = course.term_start_date
 
     result = await count_useinfo_for(question, course_name, start_date)
+    # result rows will look like act, count
+    # the act field may look like
+    # ``answer:1:correct`` or
+    # ``answer:1,3,5:no``
 
     tdata = {}
     tot = 0.0
