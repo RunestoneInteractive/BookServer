@@ -180,6 +180,7 @@ class AnswerMixin(IdMixin):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
+@register_answer_table
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
     # See the :ref:`timed exam endpoint parameters` for documentation on these columns..
@@ -189,6 +190,9 @@ class TimedExam(Base, AnswerMixin):
     time_taken = Column(Integer, nullable=False)
     # True if the ``act`` endpoint parameter was ``'reset'``; otherwise, False.
     reset = Column(Web2PyBoolean)
+
+
+TimedExamValidator = sqlalchemy_to_pydantic(TimedExam)
 
 
 # Like an AnswerMixin, but also has a boolean correct_ field.
@@ -274,6 +278,9 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
     __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
 
 
+UnittestAnswersValidation = sqlalchemy_to_pydantic(UnittestAnswers)
+
+
 @register_answer_table
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
@@ -302,8 +309,8 @@ class Code(Base, IdMixin):
     course_id = Column(Integer, index=False, nullable=False)
     code = Column(Text, index=False, nullable=False)
     language = Column(Text, index=False, nullable=False)
-    emessage = Column(Text, index=False, nullable=False)
-    comment = Column(Text, index=False, nullable=False)
+    emessage = Column(Text, index=False)
+    comment = Column(Text, index=False)
 
 
 # Used for datafiles and storing questions and their suffix separately.
@@ -446,6 +453,9 @@ class Question(Base, IdMixin):
     mean_clicks_to_correct = Column(Float(53))
 
 
+QuestionValidator = sqlalchemy_to_pydantic(Question)
+
+
 class Assignment(Base, IdMixin):
     __tablename__ = "assignments"
     __table_args__ = (
@@ -454,7 +464,7 @@ class Assignment(Base, IdMixin):
 
     course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     name = Column(String(512), nullable=False)
-    points = Column(Integer)
+    points = Column(Integer, nullable=False, default=0)
     released = Column(Web2PyBoolean, nullable=False)
     description = Column(Text)
     duedate = Column(DateTime, nullable=False)
@@ -466,6 +476,9 @@ class Assignment(Base, IdMixin):
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
+    is_peer = Column(Web2PyBoolean, default=False)
+    current_index = Column(Integer, default=0)
+    enforce_due = Column(Web2PyBoolean)
 
 
 class AssignmentQuestion(Base, IdMixin):
@@ -482,6 +495,9 @@ class AssignmentQuestion(Base, IdMixin):
     reading_assignment = Column(Web2PyBoolean)
     sorting_priority = Column(Integer, nullable=False)
     activities_required = Column(Integer, nullable=False)
+
+
+AssignmentQuestionValidator = sqlalchemy_to_pydantic(AssignmentQuestion)
 
 
 # Grading
@@ -608,14 +624,20 @@ class UserExperiment(Base, IdMixin):
     exp_group = Column(Integer, nullable=False)
 
 
+UserExperimentValidator = sqlalchemy_to_pydantic(UserExperiment)
+
+
 class SelectedQuestion(Base, IdMixin):
     __tablename__ = "selected_questions"
 
     selector_id = Column(String(512), nullable=False)
     sid = Column(String(512), nullable=False)
     selected_id = Column(String(512), nullable=False)
-    points = Column(Integer, nullable=False)
-    competency = Column(String(512), nullable=False)
+    points = Column(Integer, nullable=False, default=0)
+    competency = Column(String(512), nullable=True)
+
+
+SelectedQuestionValidator = sqlalchemy_to_pydantic(SelectedQuestion)
 
 
 class Competency(Base, IdMixin):
