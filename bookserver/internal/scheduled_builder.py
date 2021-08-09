@@ -30,7 +30,6 @@ from .common_builder import (
     celery_config,
 )
 
-
 # Create and configure the Celery app.
 app = Celery("scheduled_builder")
 app.conf.update(celery_config)
@@ -58,7 +57,7 @@ def _scheduled_builder(
 ):
 
     cwd = os.path.dirname(file_path)
-    if builder == "unsafe-python" and os.environ.get("WEB2PY_CONFIG") == "test":
+    if builder == "unsafe-python" and os.environ.get("BOOK_SERVER_CONFIG") == "test":
         # Run the test in Python. This is for testing only, and should never be used in production; instead, this should be run in a limited Docker container. For simplicity, it lacks a timeout.
         #
         # First, copy the test to the temp directory. Otherwise, running the test file from its book location means it will import the solution, which is in the same directory.
@@ -82,7 +81,6 @@ def _scheduled_builder(
             )
             return str_out, 100
         except subprocess.CalledProcessError as e:
-            # from gluon.debug import dbg; dbg.set_trace()
             return e.output, 0
     elif builder != "pic24-xc16-bullylib":
         raise RuntimeError("Unknown builder {}".format(builder))

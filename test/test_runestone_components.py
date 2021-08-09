@@ -61,7 +61,11 @@ async def get_answer(session, stmt, minimum_len):
 
     async with session() as sess:
         # Wait up to 10 seconds for the desired answer length.
-        return await asyncio.wait_for(poll(), 10)
+        try:
+            res = await asyncio.wait_for(poll(), 10)
+            return res
+        except Exception:
+            return None
 
 
 # Check the fields common to the tables of most Runestone components.
@@ -118,17 +122,10 @@ def test_runestone_version():
     assert runestone_version.startswith("6.")
 
 
-@pytest.mark.skip(reason="Brad has no idea what he is doing.")
 @pytest.mark.asyncio
-async def test_runlog(selenium_utils_user, bookserver_session):
-    su = selenium_utils_user
-    href = "activecode.html"
-    su.get_book_url(href)
-    div_id = "test_activecode_2a"
-    ac2a = su.driver.find_element_by_id(div_id)
-    button = ac2a.find_element_by_class_name("run-button")
-    assert button
-    button.click()
+async def test_runlog(selenium_utils_user_ac, bookserver_session):
+    div_id = "test_activecode_2"
+    test_activecode.test_history(selenium_utils_user_ac)
 
     async def ac_check_runlog(div_id):
         row = await get_answer(
@@ -139,7 +136,7 @@ async def test_runlog(selenium_utils_user, bookserver_session):
     await ac_check_runlog(div_id)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
+# @pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
     session = bookserver_session
@@ -150,21 +147,32 @@ async def test_activecode_1(selenium_utils_user_ac, bookserver_session):
                 session, select(Code).where(Code.acid == div_id), index + 1
             )
         )[index]
-        assert row.timestamp - datetime.datetime.now() < datetime.timedelta(seconds=5)
+        assert row.timestamp - datetime.datetime.utcnow() < datetime.timedelta(
+            seconds=5
+        )
         assert row.acid == div_id
         assert row.sid == selenium_utils_user_ac.user.username
-        assert row.course_id == selenium_utils_user_ac.user.course.course_id
+        assert row.course_id == selenium_utils_user_ac.user.course.id
         return row
 
     test_activecode.test_history(selenium_utils_user_ac)
     row = await ac_check_fields(0, "test_activecode_2")
-    assert row.emessage == "success"
     assert row.code == "print('Goodbye')"
-    assert row.grade is None
     assert row.comment is None
     assert row.language == "python"
 
-    # TODO: There are a lot more activecode tests that could be easily ported!
+    # Make sure that the appropriate row is in the useinfo table
+    row = await get_answer(
+        session,
+        select(Useinfo).where(
+            (Useinfo.div_id == "test_activecode_2")
+            & (Useinfo.sid == selenium_utils_user_ac.user.username)
+        ),
+        1,
+    )
+    assert row
+    # assert row.event == "activecode"
+    # assert row.act == "run"
 
 
 # ClickableArea
@@ -288,43 +296,44 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
 
 # Lp
 # --
-@pytest.mark.skip(reason="Need to port more server code first.")
 def test_lp_1(selenium_utils_user):
     su = selenium_utils_user
     href = "lp_demo.py.html"
     su.get_book_url(href)
-    id = "test_lp_1"
-    su.wait_until_ready(id)
+    id_ = "test_lp_1"
+    su.wait_until_ready(id_)
 
     snippets = su.driver.find_elements_by_class_name("code_snippet")
     assert len(snippets) == 1
-    check_button = su.driver.find_element_by_id(id)
-    result_id = "lp-result"
-    result_area = su.driver.find_element_by_id(result_id)
+    check_button = su.driver.find_element_by_id(id_)
+    result_selector = f"#{id_} ~ .lp-result"
+    result_area = su.driver.find_element_by_css_selector(result_selector)
 
     # Set snippets.
     code = "def one(): return 1"
-    su.driver.execute_script(f'LPList["{id}"].textAreas[0].setValue("{code}");')
+    su.driver.execute_script(f'LPList["{id_}"].textAreas[0].setValue("{code}");')
     assert not result_area.text
 
     # Click the test button.
     check_button.click()
     su.wait.until(
-        EC.text_to_be_present_in_element_value((By.ID, "lp-result"), "Building...")
+        EC.text_to_be_present_in_element_value(
+            (By.CSS_SELECTOR, result_selector), "Building..."
+        )
     )
 
-    # Wait until the build finishes. To find this, I used the Chrome inspector; right-click on the element, then select "Copy > Copy full XPath".
+    # Wait until the build finishes.
     su.wait.until(
         EC.text_to_be_present_in_element(
-            (By.XPATH, "/html/body/div[4]/div[1]/div[3]/div"), "Correct. Grade: 100%"
+            (By.CSS_SELECTOR, f"#{id_} ~ .lp-feedback"), "Correct. Grade: 100%"
         )
     )
 
     # Refresh the page. See if saved snippets are restored.
     su.get_book_url(href)
-    su.wait_until_ready(id)
+    su.wait_until_ready(id_)
     assert (
-        su.driver.execute_script(f'return LPList["{id}"].textAreas[0].getValue();')
+        su.driver.execute_script(f'return LPList["{id_}"].textAreas[0].getValue();')
         == code
     )
 
@@ -437,54 +446,49 @@ def selenium_utils_user_2(selenium_utils_user):
 
 
 # Check rendering of selectquestion, which requires server-side support.
-@pytest.mark.skip(reason="Need to port more server code first.")
+
+
+@pytest.mark.skip(reason="This passes but causes the next test to fail")
 @pytest.mark.asyncio
 async def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
     await test_poll_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="The spreadsheet component doesn't support selectquestion.")
+@pytest.mark.skip(reason="Spreadsheet has not been verified with selectquestion")
 def test_selectquestion_2(selenium_utils_user_2):
     test_spreadsheet_1(selenium_utils_user_2)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_3(selenium_utils_user_2, bookserver_session):
     await test_clickable_area_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_4(selenium_utils_user_2, bookserver_session):
     await test_fitb_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_5(selenium_utils_user_2, bookserver_session):
     await test_mchoice_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_6(selenium_utils_user_2, bookserver_session):
     await test_parsons_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_7(selenium_utils_user_2, bookserver_session):
     await test_dnd_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_8(selenium_utils_user_2, bookserver_session):
     await test_activecode_1(selenium_utils_user_2, bookserver_session)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_selectquestion_10(selenium_utils_user_2, bookserver_session):
     await test_short_answer_1(selenium_utils_user_2, bookserver_session)
@@ -513,7 +517,7 @@ def selenium_utils_user_timed(selenium_utils_user):
 # Provide the ability to invoke tests with a specific div_id, since the selectquestion test is a different problem with a different div_id than the plain test.
 async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_divid):
     async def tt_check_common_fields(index, div_id):
-        row = check_common_fields_raw(
+        row = await check_common_fields_raw(
             selenium_utils_user_timed,
             bookserver_session,
             select(TimedExam).where(TimedExam.div_id == div_id),
@@ -529,7 +533,6 @@ async def _test_timed_1(selenium_utils_user_timed, bookserver_session, timed_div
     assert await tt_check_common_fields(1, timed_divid) == (6, 0, 1, None)
 
 
-@pytest.mark.skip(reason="Need to port more server code first.")
 @pytest.mark.asyncio
 async def test_timed_1(selenium_utils_user_timed, bookserver_session):
     await _test_timed_1(selenium_utils_user_timed, bookserver_session, "test_timed_1")

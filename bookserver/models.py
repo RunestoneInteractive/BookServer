@@ -91,7 +91,7 @@ class Web2PyBoolean(types.TypeDecorator):
 # Schema Definition
 # =================
 
-# Provide a container to store information about each type of Runestone Component.
+# Provide a container to store information about each type of Runestone Component. While a namedtuple would be better, this can't be used since the fields aren't modifiable after creation; see the comment on `init_graders <init_graders>`.
 class RunestoneComponentDict:
     def __init__(self, model: Type[Base], validator: Type[BaseModelNone]):
         self.grader = None
@@ -103,7 +103,7 @@ class RunestoneComponentDict:
 runestone_component_dict: Dict[str, RunestoneComponentDict] = {}
 
 
-# Provide a decorator for a class that populates this table.
+# _`register_answer_table`: Provide a decorator for a class that populates this table.
 def register_answer_table(
     sql_alchemy_cls: Type[Base],
 ) -> Type[Base]:
@@ -178,6 +178,7 @@ class AnswerMixin(IdMixin):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
+@register_answer_table
 class TimedExam(Base, AnswerMixin):
     __tablename__ = "timed_exam"
     # See the :ref:`timed exam endpoint parameters` for documentation on these columns..
@@ -187,6 +188,9 @@ class TimedExam(Base, AnswerMixin):
     time_taken = Column(Integer, nullable=False)
     # True if the ``act`` endpoint parameter was ``'reset'``; otherwise, False.
     reset = Column(Web2PyBoolean)
+
+
+TimedExamValidator = sqlalchemy_to_pydantic(TimedExam)
 
 
 # Like an AnswerMixin, but also has a boolean correct_ field.
@@ -280,13 +284,16 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
     __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
 
 
+UnittestAnswersValidation = sqlalchemy_to_pydantic(UnittestAnswers)
+
+
 @register_answer_table
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
-    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me.
+    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me. Migrate this to use a ``Text`` field type instead.
     answer = Column(String(512), nullable=False)
-    # A grade between 0 and 100.
-    correct = Column(Float(), nullable=False)
+    # A grade between 0 and 100. None means it the student hasn't submitted an answer yet. This was added before the ``percent`` field most other question types now have; it servers the same role, but stores the answer as a percentage. (The ``percent`` field in other questions stores values between 0 and 1.)
+    correct = Column(Float())
     __table_args__ = (Index("idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
 
 
@@ -455,6 +462,9 @@ class Question(Base, IdMixin):
     mean_clicks_to_correct = Column(Float(53))
 
 
+QuestionValidator = sqlalchemy_to_pydantic(Question)
+
+
 class Assignment(Base, IdMixin):
     __tablename__ = "assignments"
     __table_args__ = (
@@ -463,7 +473,7 @@ class Assignment(Base, IdMixin):
 
     course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     name = Column(String(512), nullable=False)
-    points = Column(Integer)
+    points = Column(Integer, nullable=False, default=0)
     released = Column(Web2PyBoolean, nullable=False)
     description = Column(Text)
     duedate = Column(DateTime, nullable=False)
@@ -475,6 +485,9 @@ class Assignment(Base, IdMixin):
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
+    is_peer = Column(Web2PyBoolean, default=False)
+    current_index = Column(Integer, default=0)
+    enforce_due = Column(Web2PyBoolean)
 
 
 class AssignmentQuestion(Base, IdMixin):
@@ -491,6 +504,9 @@ class AssignmentQuestion(Base, IdMixin):
     reading_assignment = Column(Web2PyBoolean)
     sorting_priority = Column(Integer, nullable=False)
     activities_required = Column(Integer, nullable=False)
+
+
+AssignmentQuestionValidator = sqlalchemy_to_pydantic(AssignmentQuestion)
 
 
 # Grading
@@ -625,6 +641,9 @@ class UserExperiment(Base, IdMixin):
     exp_group = Column(Integer, nullable=False)
 
 
+UserExperimentValidator = sqlalchemy_to_pydantic(UserExperiment)
+
+
 class SelectedQuestion(Base, IdMixin):
     __tablename__ = "selected_questions"
     __table_args__ = (Index("selector_sid_unique", "selector_id", "sid"),)
@@ -632,8 +651,11 @@ class SelectedQuestion(Base, IdMixin):
     selector_id = Column(String(512), nullable=False)
     sid = Column(String(512), nullable=False)
     selected_id = Column(String(512), nullable=False)
-    points = Column(Integer, nullable=False)
-    competency = Column(String(512), nullable=False)
+    points = Column(Integer, nullable=False, default=0)
+    competency = Column(String(512), nullable=True)
+
+
+SelectedQuestionValidator = sqlalchemy_to_pydantic(SelectedQuestion)
 
 
 class Competency(Base, IdMixin):

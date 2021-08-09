@@ -103,7 +103,7 @@ class LogItemIncoming(BaseModelNone):
     course_name: str
     sid: Optional[str]
     answer: Optional[str]
-    correct: Optional[bool]
+    correct: Optional[Union[bool, int]]
     percent: Optional[float]
     clientLoginStatus: Optional[bool]
     timezoneoffset: Optional[int]
@@ -114,6 +114,13 @@ class LogItemIncoming(BaseModelNone):
     source: Optional[str]
     # used by dnd
     min_height: Optional[int]
+    # used by unittest
+    passed: Optional[int]
+    failed: Optional[int]
+    # used by timed exam
+    incorrect: Optional[int]
+    skipped: Optional[int]
+    time_taken: Optional[int]
 
 
 class AssessmentRequest(BaseModelNone):
@@ -152,7 +159,7 @@ class LogRunIncoming(BaseModelNone):
     course: str
     clientLoginStatus: bool
     timezoneoffset: int
-    lang: str
+    language: str
     prefix: Optional[str]
     suffix: Optional[str]
     partner: Optional[str]
@@ -182,3 +189,18 @@ class LastPageData(BaseModelNone):
     last_page_subchapter: str
     last_page_accessed_on: datetime
     user_id: int
+
+
+class SelectQRequest(BaseModel):
+    selector_id: str
+    questions: Optional[str]
+    proficiency: Optional[str]
+    points: Optional[int]
+    min_difficulty: Optional[float]
+    max_difficulty: Optional[float]
+    not_seen_ever: Optional[bool]
+    autogradable: Optional[bool]
+    primary: Optional[bool]
+    AB: Optional[str]
+    toggleOptions: Optional[str]
+    timedWrapper: Optional[str]

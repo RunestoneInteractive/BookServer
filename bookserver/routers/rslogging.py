@@ -10,24 +10,24 @@
 #
 # Standard library
 # ----------------
-from datetime import datetime
 import json
+from datetime import datetime
+import re
 from typing import Optional
 
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, Cookie, Response, status, HTTPException
-
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import (
     create_answer_table_entry,
-    create_user_chapter_progress_entry,
     create_code_entry,
     create_useinfo_entry,
+    create_user_chapter_progress_entry,
     create_user_state_entry,
     create_user_sub_chapter_progress_entry,
     EVENT2TABLE,
@@ -47,11 +47,11 @@ from ..models import (
     UseinfoValidation,
 )
 from ..schemas import (
+    LastPageData,
+    LastPageDataIncoming,
     LogItemIncoming,
     LogRunIncoming,
     TimezoneRequest,
-    LastPageDataIncoming,
-    LastPageData,
 )
 
 # Routing
@@ -101,20 +101,37 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     useinfo_entry = UseinfoValidation(**useinfo_dict)
     rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)
-
-    # Always provide a server-supplied timestamp to the client.
     response_dict = dict(timestamp=entry.timestamp)
-    event = entry.event
-    if event in EVENT2TABLE:
-        rcd = runestone_component_dict[EVENT2TABLE[event]]
-        # Validate the fields for this component.
+    if entry.event in EVENT2TABLE:
+        rcd = runestone_component_dict[EVENT2TABLE[entry.event]]
+        if entry.event == "unittest":
+            # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
+            if not re.match(r"^percent:\d+\.\d+:passed:\d+:failed:\d+$", entry.act):
+                return make_json_response(
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="act is not in the correct format",
+                )
+            ppf = entry.act.split(":")
+            entry.passed = int(ppf[3])
+            entry.failed = int(ppf[5])
+            entry.answer = ""
+            entry.correct = ppf[1] == "100.0"
+            entry.percent = float(ppf[1])
+        elif entry.event == "timedExam":
+            if entry.act == "start":
+                entry.correct = 0
+                entry.incorrect = 0
+                entry.skipped = 0
+                entry.time_taken = 0
+
         valid_table = rcd.validator.from_orm(entry)  # type: ignore
         # Do server-side grading if needed.
         if feedback := await is_server_feedback(entry.div_id, user.course_name):
             # The grader should also be defined if there's feedback.
             assert rcd.grader
-            response_dict.update(rcd.grader(valid_table, feedback))
-        ans_idx = await create_answer_table_entry(valid_table, event)
+            response_dict.update(await rcd.grader(valid_table, feedback))
+
+        ans_idx = await create_answer_table_entry(valid_table, entry.event)
         rslogger.debug(ans_idx)
 
     if idx:
@@ -186,7 +203,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
         if data.partner:
             if await same_class(request.state.username, data.partner):
-                comchar = COMMENT_MAP.get(data.lang, "#")
+                comchar = COMMENT_MAP.get(data.language, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
                 await create_code_entry(entry)
