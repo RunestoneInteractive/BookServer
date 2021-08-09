@@ -413,6 +413,7 @@ async def test_course_1(create_test_course):
     return await create_test_course(
         course_name="test_child_course_1",
         term_start_date=datetime.datetime(2000, 1, 1),
+        institution="Test U",
         login_required=True,
         base_course="test_course_1",
         allow_pairs=True,

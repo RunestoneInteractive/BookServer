@@ -5,6 +5,8 @@ Database migration using Alembic
 
 .. toctree::
     :maxdepth: 1
+    :glob:
 
     ../alembic.ini
     env.py
+    versions/*.py

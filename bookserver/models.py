@@ -41,7 +41,6 @@ from sqlalchemy import (
     String,
     Date,
     DateTime,
-    MetaData,
     Text,
     types,
     Float,
@@ -62,6 +61,8 @@ from .schemas import BaseModelNone, sqlalchemy_to_pydantic
 class Web2PyBoolean(types.TypeDecorator):
     impl = types.CHAR(1)
     python_type = bool
+    # From the `docs <https://docs.sqlalchemy.org/en/14/core/custom_types.html#sqlalchemy.types.TypeDecorator.cache_ok>`_: "The requirements for cacheable elements is that they are hashable and also that they indicate the same SQL rendered for expressions using this type every time for a given cache value."
+    cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value:
@@ -89,10 +90,6 @@ class Web2PyBoolean(types.TypeDecorator):
 
 # Schema Definition
 # =================
-# this object is a container for the table objects and can be used by alembic to autogenerate
-# the migration information.
-metadata = MetaData()
-
 
 # Provide a container to store information about each type of Runestone Component. While a namedtuple would be better, this can't be used since the fields aren't modifiable after creation; see the comment on `init_graders <init_graders>`.
 class RunestoneComponentDict:
@@ -136,6 +133,8 @@ class IdMixin:
 # User info logged by the `log_book_event endpoint`. See there for more info.
 class Useinfo(Base, IdMixin):
     __tablename__ = "useinfo"
+    __table_args__ = (Index("sid_divid_idx", "sid", "div_id"),)
+
     # _`timestamp`: when this entry was recorded by this webapp.
     timestamp = Column(DateTime, index=True, nullable=False)
     # _`sid`: TODO: The student id? (user) which produced this row.
@@ -160,10 +159,7 @@ UseinfoValidation = sqlalchemy_to_pydantic(Useinfo)
 
 # Answers to specific question types
 # ----------------------------------
-# Many of the tables containing answers are always accessed by sid, div_id and course_name. Provide this as a default query.
 class AnswerMixin(IdMixin):
-    # TODO: these entries duplicate Useinfo.timestamp. Why not just have a timestamp_id field?
-    #
     # See timestamp_.
     timestamp = Column(DateTime, nullable=False)
     # See div_id_.
@@ -174,7 +170,9 @@ class AnswerMixin(IdMixin):
     # See course_name_. Mixins with foreign keys need `special treatment <http://docs.sqlalchemy.org/en/latest/orm/extensions/declarative/mixins.html#mixing-in-columns>`_.
     @declared_attr
     def course_name(cls):
-        return Column(String(512), ForeignKey("courses.course_name"), nullable=False)
+        return Column(
+            String(512), ForeignKey("courses.course_name"), index=True, nullable=False
+        )
 
     def to_dict(self):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
@@ -209,7 +207,14 @@ class MchoiceAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "mchoice_answers"
     # _`answer`: The answer to this question. TODO: what is the format?
     answer = Column(String(50), nullable=False)
-    __table_args__ = (Index("idx_div_sid_course_mc", "sid", "div_id", "course_name"),)
+    __table_args__ = (
+        Index(
+            "mult_scd_idx",
+            "div_id",
+            "course_name",
+            "sid",
+        ),
+    )
 
 
 # An answer to a fill-in-the-blank question.
@@ -227,6 +232,7 @@ class DragndropAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "dragndrop_answers"
     # See answer_. TODO: what is the format?
     answer = Column(String(512), nullable=False)
+    min_height = Column(String(512), nullable=False)
     __table_args__ = (Index("idx_div_sid_course_dd", "sid", "div_id", "course_name"),)
 
 
@@ -247,7 +253,7 @@ class ParsonsAnswers(Base, CorrectAnswerMixin):
     answer = Column(String(512), nullable=False)
     # _`source`: The source code provided by a student? TODO.
     source = Column(String(512), nullable=False)
-    __table_args__ = (Index("idx_div_sid_course_pp", "sid", "div_id", "course_name"),)
+    __table_args__ = (Index("parsons_scd_idx", "div_id", "course_name", "sid"),)
 
 
 # An answer to a Code Lens problem.
@@ -306,11 +312,11 @@ class Code(Base, IdMixin):
         index=True,
         nullable=False,
     )  # unique identifier for a component
-    course_id = Column(Integer, index=False, nullable=False)
+    course_id = Column(Integer, index=True, nullable=False)
     code = Column(Text, index=False, nullable=False)
-    language = Column(Text, index=False, nullable=False)
-    emessage = Column(Text, index=False)
-    comment = Column(Text, index=False)
+    language = Column(Text, nullable=False)
+    emessage = Column(Text, nullable=False)
+    comment = Column(Text)
 
 
 # Used for datafiles and storing questions and their suffix separately.
@@ -341,13 +347,14 @@ class Courses(Base, IdMixin):
     # _`course_name`: The name of this course.
     course_name = Column(String(512), unique=True, nullable=False)
     term_start_date = Column(Date, nullable=False)
+    institution = Column(String(512), nullable=False)
     # TODO: Why not use base_course_id instead? _`base_course`: the course from which this course was derived. TODO: If this is a base course, this field should be identical to the course_name_?
     base_course = Column(String(512), ForeignKey("courses.course_name"), nullable=False)
-    # TODO: This should go in a different table. Not all courses have a Python/Skuplt component.
     login_required = Column(Web2PyBoolean, nullable=False)
     allow_pairs = Column(Web2PyBoolean, nullable=False)
     student_price = Column(Integer)
     downloads_enabled = Column(Web2PyBoolean, nullable=False)
+    # Earlier courses didn't have this specified, so allow these old records to remain that way. New records should always specify this value.
     courselevel = Column(String, nullable=False)
     institution = Column(String)
 
@@ -359,7 +366,7 @@ CoursesValidator = sqlalchemy_to_pydantic(Courses)
 # ------------------------------
 class AuthUser(Base, IdMixin):
     __tablename__ = "auth_user"
-    username = Column(String(512), nullable=False, unique=True)
+    username = Column(String(512), index=True, nullable=False, unique=True)
     first_name = Column(String(512), nullable=False)
     last_name = Column(String(512), nullable=False)
     email = Column(String(512), unique=True, nullable=False)
@@ -397,6 +404,8 @@ class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
 
 class CourseInstructor(Base, IdMixin):
     __tablename__ = "course_instructor"
+    __table_args__ = (Index("c_i_idx", "course", "instructor"),)
+
     course = Column(Integer, ForeignKey("courses.id"), nullable=False)
     instructor = Column(Integer, ForeignKey("auth_user.id"), nullable=False)
     verified = Column(Web2PyBoolean, nullable=False)
@@ -472,7 +481,7 @@ class Assignment(Base, IdMixin):
     threshold_pct = Column(Float(53))
     allow_self_autograde = Column(Web2PyBoolean)
     is_timed = Column(Web2PyBoolean)
-    time_limit = Column(Integer, nullable=False)
+    time_limit = Column(Integer)
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
@@ -511,37 +520,42 @@ class QuestionGrade(Base, IdMixin):
     __tablename__ = "question_grades"
     __table_args__ = (
         Index(
-            "question_grades_sid_course_name_div_id_idx",
-            "sid",
-            "course_name",
+            "question_grades_key",
             "div_id",
-            unique=True,
+            "course_name",
+            "sid",
         ),
     )
 
     sid = Column(String(512), nullable=False)
     course_name = Column(String(512), nullable=False)
     div_id = Column(String(512), nullable=False)
-    score = Column(Float(53), nullable=False)
+    # Manually-graded questions may be unscored (a NULL score).
+    score = Column(Float(53))
     comment = Column(Text, nullable=False)
-    deadline = Column(DateTime, nullable=False)
-    answer_id = Column(Integer, nullable=False)
+    deadline = Column(DateTime)
+    # Grades before the improved autograded and manually-scored grades lack this. Since it can refer to an ID from many different tables, don't make it a constraint.
+    answer_id = Column(Integer)
 
 
 # The Grade table holds the grade for an entire assignment
 class Grade(Base, IdMixin):
     __tablename__ = "grades"
-    __table_args__ = (UniqueConstraint("auth_user", "assignment"),)
+    __table_args__ = (
+        UniqueConstraint("auth_user", "assignment"),
+        Index("user_assign_unique_idx", "auth_user", "assignment"),
+    )
 
     auth_user = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False)
     assignment = Column(
         ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
     )
-    score = Column(Float(53), nullable=False)
+    # If all questions in the assignment don't have a score, this won't either.
+    score = Column(Float(53))
     manual_total = Column(Web2PyBoolean, nullable=False)
-    projected = Column(Float(53), nullable=False)
-    lis_result_sourcedid = Column(String(1024), nullable=False)
-    lis_outcome_url = Column(String(1024), nullable=False)
+    # Not all grades will be reportable via LTI.
+    lis_result_sourcedid = Column(String(1024))
+    lis_outcome_url = Column(String(1024))
 
 
 # Book Structure Tables
@@ -562,7 +576,7 @@ class SubChapter(Base, IdMixin):
     chapter_id = Column(
         ForeignKey("chapters.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    sub_chapter_label = Column(String(512), nullable=False)
+    sub_chapter_label = Column(String(512), index=True, nullable=False)
     skipreading = Column(Web2PyBoolean, nullable=False)
     sub_chapter_num = Column(Integer, nullable=False)
 
@@ -575,10 +589,12 @@ class UserSubChapterProgress(Base, IdMixin):
     user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True)
     chapter_id = Column(String(512), index=True, nullable=False)
     sub_chapter_id = Column(String(512), index=True, nullable=False)
+    # Initial values for this don't have dates.
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
-    course_name = Column(String(512), nullable=False)
+    # Older courses lack this; all newer courses should have one.
+    course_name = Column(String(512), index=True)
 
 
 UserSubChapterProgressValidator = sqlalchemy_to_pydantic(UserSubChapterProgress)
@@ -589,6 +605,7 @@ class UserChapterProgress(Base, IdMixin):
 
     user_id = Column(String(512), nullable=False)
     chapter_id = Column(String(512), nullable=False)
+    # Initial values for this don't have dates.
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
@@ -629,6 +646,7 @@ UserExperimentValidator = sqlalchemy_to_pydantic(UserExperiment)
 
 class SelectedQuestion(Base, IdMixin):
     __tablename__ = "selected_questions"
+    __table_args__ = (Index("selector_sid_unique", "selector_id", "sid"),)
 
     selector_id = Column(String(512), nullable=False)
     sid = Column(String(512), nullable=False)
@@ -642,6 +660,7 @@ SelectedQuestionValidator = sqlalchemy_to_pydantic(SelectedQuestion)
 
 class Competency(Base, IdMixin):
     __tablename__ = "competency"
+    __table_args__ = (Index("q_comp_unique", "question", "competency"),)
 
     question = Column(ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
     competency = Column(String(512), nullable=False)
