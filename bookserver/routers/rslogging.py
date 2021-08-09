@@ -183,6 +183,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
     useinfo_dict = data.dict()
     useinfo_dict["course_id"] = useinfo_dict.pop("course")
     useinfo_dict["timestamp"] = datetime.utcnow()
+    useinfo_dict["emessage"] = data.errinfo
     if data.errinfo != "success":
         useinfo_dict["event"] = "ac_error"
         useinfo_dict["act"] = str(data.errinfo)[:512]
