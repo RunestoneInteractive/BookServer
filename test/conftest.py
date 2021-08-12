@@ -154,8 +154,8 @@ def run_bookserver(pytestconfig):
             os.environ["DBHOST"] = pgnetloc
 
             try:
-                subprocess.run("dropdb --if-exists", check=True)
-                subprocess.run(f"createdb --echo {dbname}", check=True)
+                subprocess.run("dropdb --if-exists", check=True, shell=True)
+                subprocess.run(f"createdb --echo {dbname}", check=True, shell=True)
             except Exception as e:
                 assert (
                     False
@@ -192,7 +192,7 @@ def run_bookserver(pytestconfig):
             m.setenv("TEST_DBURL", sync_dburl)
 
             def run_subprocess(args: str, description: str):
-                cp = subprocess.run(args, capture_output=True, text=True)
+                cp = subprocess.run(args, capture_output=True, text=True, shell=True)
                 log_subprocess(cp.stdout, cp.stderr, description)
 
             run_subprocess(
