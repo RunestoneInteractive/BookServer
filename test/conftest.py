@@ -22,6 +22,7 @@
 # ----------------
 import datetime
 import io
+import logging
 import os
 from pathlib import Path
 import re
@@ -29,6 +30,7 @@ import subprocess
 import sys
 import time
 from threading import Lock, Thread
+from typing import Optional
 from shutil import rmtree, copytree
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -41,6 +43,7 @@ from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
 from pyvirtualdisplay import Display
+import sqlalchemy.exc
 
 # Since ``selenium_driver`` is a parameter to a function (which is a fixture), flake8 sees it as unused. However, pytest understands this as a request for the ``selenium_driver`` fixture and needs it.
 from runestone.shared_conftest import _SeleniumUtils, selenium_driver  # noqa: F401
@@ -66,7 +69,14 @@ from bookserver.db import async_session, engine  # noqa; E402
 from bookserver.crud import create_user, create_course, fetch_base_course  # noqa; E402
 from bookserver.main import app  # noqa; E402
 from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
-from .ci_utils import is_linux, is_darwin, is_win, xqt, pushd  # noqa; E402
+from .ci_utils import is_linux, is_darwin, is_win, pushd  # noqa; E402
+
+# Globals
+# =======
+bookserver_port = 8080
+bookserver_address = f"http://localhost:{bookserver_port}"
+# Set up logging.
+logger = logging.getLogger(__name__)
 
 
 # Pytest setup
@@ -113,21 +123,16 @@ def pytest_terminal_summary(terminalreporter):
 
 # Server prep and run
 # ===================
-@pytest.fixture(scope="session")
-def bookserver_address():
-    return "http://localhost:8080"
-
-
 # This fixture starts and shuts down the web2py server.
 #
 # Execute this `fixture <https://docs.pytest.org/en/latest/fixture.html>`_ once per `session <https://docs.pytest.org/en/latest/fixture.html#scope-sharing-a-fixture-instance-across-tests-in-a-class-module-or-session>`_.
 @pytest.fixture(scope="session")
-def run_bookserver(bookserver_address, pytestconfig):
+def run_bookserver(pytestconfig):
     assert os.environ["TEST_DBURL"]
     dburl = os.environ["TEST_DBURL"]
 
     if pytestconfig.getoption("skipdbinit"):
-        print("Skipping DB initialization.")
+        logger.info("Skipping DB initialization.")
     else:
         # Start with a clean database.
         if settings.database_type == DatabaseType.SQLite:
@@ -152,12 +157,12 @@ def run_bookserver(bookserver_address, pytestconfig):
                 subprocess.run("dropdb --if-exists", check=True)
                 subprocess.run(f"createdb --echo {dbname}", check=True)
             except Exception as e:
-                print(f"Failed to drop the database: {e}. Do you have permission?")
-                sys.exit(1)
+                assert (
+                    False
+                ), f"Failed to drop the database: {e}. Do you have permission?"
 
         else:
-            print("Unknown database type!")
-            sys.exit(1)
+            assert False, "Unknown database type."
 
         # Copy the test book to the books directory.
         test_book_path = f"{settings.book_path}/test_course_1"
@@ -185,13 +190,22 @@ def run_bookserver(bookserver_address, pytestconfig):
             )
             m.setenv("WEB2PY_CONFIG", "test")
             m.setenv("TEST_DBURL", sync_dburl)
-            xqt(
-                "{} -m runestone build --all".format(sys.executable),
-                "{} -m runestone deploy".format(sys.executable),
+
+            def run_subprocess(args: str, description: str):
+                cp = subprocess.run(args, capture_output=True, text=True)
+                log_subprocess(cp.stdout, cp.stderr, description)
+
+            run_subprocess(
+                "{} -m runestone build --all".format(sys.executable), "runestone.build"
+            )
+            run_subprocess(
+                "{} -m runestone deploy".format(sys.executable), "runestone.deploy"
             )
 
     # Start the bookserver and the scheduler.
     prefix_args = []
+    # Pass pytest's log level to Celery; if not specified, it defaults to INFO.
+    log_level = pytestconfig.getoption('log_cli_level') or 'INFO'
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
@@ -214,7 +228,10 @@ def run_bookserver(bookserver_address, pytestconfig):
             "coverage",
             "run",
             "-m",
-            "bookserver",
+            "uvicorn",
+            f"--port={bookserver_port}",
+            f"--log-level={log_level.lower()}",
+            "bookserver.main:app",
         ],
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
@@ -235,7 +252,8 @@ def run_bookserver(bookserver_address, pytestconfig):
             "worker",
             "--pool=threads",
             "--concurrency=4",
-            "--loglevel=info",
+            # See the `Celery worker CLI docs <https://docs.celeryproject.org/en/stable/reference/cli.html#celery-worker>`_.
+            f"--loglevel={log_level}",
         ],
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
@@ -249,10 +267,7 @@ def run_bookserver(bookserver_address, pytestconfig):
         stdout, stderr = popen_obj.communicate()
         # Use a lock to keep output together.
         with print_lock:
-            print("\n" "{} stdout\n" "--------------------\n".format(description_str))
-            print(stdout)
-            print("\n" "{} stderr\n" "--------------------\n".format(description_str))
-            print(stderr)
+            log_subprocess(stdout, stderr, description_str)
 
     echo_threads = [
         Thread(target=echo, args=(book_server_process, "book server")),
@@ -269,7 +284,7 @@ def run_bookserver(bookserver_address, pytestconfig):
                 process.wait(5)
             except subprocess.TimeoutExpired:
                 # If that didn't work, just kill it.
-                print("Warning: unable to cleanly end process. Terminating.")
+                logger.warning("Unable to cleanly end process. Terminating.")
                 process.terminate()
         else:
             # On Unix, this shuts the webserver down cleanly.
@@ -282,23 +297,44 @@ def run_bookserver(bookserver_address, pytestconfig):
         for echo_thread in echo_threads:
             echo_thread.join()
 
-    print("Waiting for the webserver to come up...")
+    logger.info("Waiting for the webserver to come up...")
     for tries in range(10):
         try:
             urlopen(bookserver_address, timeout=1)
             break
         except URLError as e:
-            print(e)
+            logger.info(f"Try {tries}: {e}")
         time.sleep(1)
     else:
         shut_down()
         assert False, "Server not up."
-    print("done.\n")
+    logger.info("done.")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
     yield
 
     shut_down()
+
+
+def log_subprocess(stdout: Optional[str], stderr: Optional[str], description_str: str):
+    log_output(description_str + ".stdout", stdout or "")
+    # A lot of output from stderr isn't actually an error. Treat it more like another stdout.
+    log_output(description_str + ".stderr", stderr or "")
+
+
+def log_output(log_name: str, log_text: str):
+    local_logger = logging.getLogger(log_name)
+    for line in log_text.splitlines():
+        if "critical" in line.lower():
+            local_logger.critical(line)
+        elif "error" in line.lower():
+            local_logger.error(line)
+        elif "warning" in line.lower():
+            local_logger.warning(line)
+        elif "debug" in line.lower():
+            local_logger.debug(line)
+        else:
+            local_logger.info(line)
 
 
 # Database
@@ -378,11 +414,11 @@ async def bookserver_session(run_bookserver):
             await conn.execute(text(f"TRUNCATE {tables} CASCADE;"))
         else:
             for table in tables_to_delete:
-                print(table)
                 try:
                     await conn.execute(text(f"DELETE FROM {table};"))
-                except Exception as e:
-                    print(e)
+                # SQLite complains if the table doesn't exist. Suppress the noise.
+                except sqlalchemy.exc.OperationalError:
+                    pass
 
     # The database is clean. Proceed with the test.
     yield async_session
@@ -538,7 +574,7 @@ class _SeleniumServerUtils(_SeleniumUtils):
 
 # Present ``_SeleniumServerUtils`` as a fixture.
 @pytest.fixture
-def selenium_utils(selenium_driver, bookserver_address):  # noqa: F811
+def selenium_utils(selenium_driver):  # noqa: F811
     return _SeleniumServerUtils(selenium_driver, bookserver_address)
 
 
