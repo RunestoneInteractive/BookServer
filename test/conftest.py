@@ -111,7 +111,7 @@ def pytest_addoption(parser):
 def pytest_terminal_summary(terminalreporter):
     cov.stop()
     cov.save()
-    # Combine this (pytest) coverage with the webserver coverage. Use a new object, since the ``cov`` object is tried to the data file produced by the pytest run. Otherwise, the report is correct, but the resulting ``.coverage`` data file is empty.
+    # Combine this (pytest) coverage with the webserver coverage. Use a new object, since the ``cov`` object is tied to the data file produced by the pytest run. Otherwise, the report is correct, but the resulting ``.coverage`` data file is empty.
     cov_all = coverage.Coverage()
     cov_all.combine()
 

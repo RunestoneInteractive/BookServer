@@ -9,6 +9,7 @@
 #
 # Standard library
 # ----------------
+import logging
 from logging.config import fileConfig
 from textwrap import dedent
 
@@ -25,6 +26,8 @@ from bookserver.config import settings
 
 # Configuration
 # =============
+logger = logging.getLogger(__name__)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -44,7 +47,7 @@ target_metadata = models.Base.metadata
 
 # Use the non-async flavor of the provided database URL.
 dburl = settings.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
-print(f"Using DBURL of {dburl}.\n")
+logger.info(f"Using DBURL of {dburl}.")
 
 # Compute tables not to migrate
 # -----------------------------
