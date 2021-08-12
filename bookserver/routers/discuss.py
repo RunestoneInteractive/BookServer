@@ -1,8 +1,8 @@
 #
 # Third-party imports
 # -------------------
+from datetime import datetime
 from typing import Dict, Optional
-import json
 import os
 import redis
 
@@ -23,6 +23,8 @@ from fastapi.templating import Jinja2Templates
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
+from ..crud import create_useinfo_entry
+from ..models import UseinfoValidation
 
 # from ..session import auth_manager
 
@@ -107,7 +109,19 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
             if data["broadcast"]:
                 await manager.broadcast(data)
             else:
-                await manager.send_personal_message(r.hget("partnerdb", username), data)
+                partner = r.hget("partnerdb", username)
+                await manager.send_personal_message(partner, data)
+                await create_useinfo_entry(
+                    UseinfoValidation(
+                        event="sendmessage",
+                        act=f"to:{partner}:{data.message}",
+                        div_id=data.div_id,
+                        course_id=data.course_name,
+                        sid=username,
+                        timestamp=datetime.utcnow(),
+                    )
+                )
+
     except WebSocketDisconnect:
         manager.disconnect(username)
         await manager.broadcast(
