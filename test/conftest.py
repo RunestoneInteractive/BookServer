@@ -205,7 +205,7 @@ def run_bookserver(pytestconfig):
     # Start the bookserver and the scheduler.
     prefix_args = []
     # Pass pytest's log level to Celery; if not specified, it defaults to INFO.
-    log_level = pytestconfig.getoption('log_cli_level') or 'INFO'
+    log_level = pytestconfig.getoption("log_cli_level") or "INFO"
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
