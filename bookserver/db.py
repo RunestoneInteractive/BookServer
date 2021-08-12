@@ -9,8 +9,8 @@
 #
 # Standard library
 # ----------------
-import logging
-
+# None.
+#
 # Third-party imports
 # -------------------
 # Use asyncio for SQLAlchemy -- see `SQLAlchemy Asynchronous I/O (asyncio) <https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html>`_.
@@ -22,9 +22,8 @@ from sqlalchemy.sql import select
 # Local application imports
 # -------------------------
 from .config import settings, BookServerConfig, DatabaseType
+from .applogger import rslogger
 
-
-logger = logging.getLogger(__name__)
 
 if settings.database_type == DatabaseType.SQLite:
     connect_args = {"check_same_thread": False}
@@ -60,7 +59,7 @@ async def init_models():
 
 # Look for any records that violate non-null constraints.
 async def check_not_null():
-    logger.info("Searching for NOT NULL constraint violations..."),
+    rslogger.info("Searching for NOT NULL constraint violations..."),
     not_null_count = 0
     async with async_session() as session:
         for table_name, table in Base.metadata.tables.items():
@@ -71,7 +70,7 @@ async def check_not_null():
                     res = (await session.execute(query)).fetchall()
                     if res:
                         not_null_count += 1
-                        logger.error(
+                        rslogger.error(
                             f"Column {table_name}.{column.key} has {len(res)} NULL records, such as:"
                         )
                         for row in res[0:9]:
@@ -82,8 +81,8 @@ async def check_not_null():
 
                             # The result isn't an ORM object, so use this to display it.
                             s = ", ".join(f"{k}={shorten(row[k])}" for k in row.keys())
-                            logging.error(f"  {s}")
-    logger.info(f"Done; found {not_null_count} columns with constraint violations.")
+                            rslogger.error(f"  {s}")
+    rslogger.info(f"Done; found {not_null_count} columns with constraint violations.")
 
 
 # If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop of truncate tables (see `bookserver_session`).
