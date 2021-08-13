@@ -288,7 +288,7 @@ def init_db(pytestconfig):
         )
         # Per the `docs <https://docs.python.org/3/library/re.html#re.split>`_, the first and last split are empty because the pattern matches at the beginning and the end of the string.
         assert not empty1 and not empty2
-        # The postgres command-line utilities require these.
+        # The `postgres command-line utilities <https://www.postgresql.org/docs/current/libpq-envars.html>`_ require these.
         os.environ["PGPASSWORD"] = pgpassword
         os.environ["PGUSER"] = pguser
         os.environ["PGHOST"] = pgnetloc
