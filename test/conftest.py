@@ -150,10 +150,10 @@ def run_bookserver(pytestconfig):
             # The postgres command-line utilities require these.
             os.environ["PGPASSWORD"] = pgpassword
             os.environ["PGUSER"] = pguser
-            os.environ["DBHOST"] = pgnetloc
+            os.environ["PGHOST"] = pgnetloc
 
             try:
-                subprocess.run("dropdb --if-exists", check=True, shell=True)
+                subprocess.run(f"dropdb --if-exists {dbname}", check=True, shell=True)
                 subprocess.run(f"createdb --echo {dbname}", check=True, shell=True)
             except Exception as e:
                 assert (

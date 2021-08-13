@@ -17,15 +17,38 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BOOK_SERVER_CONFIG: test
-      TEST_DBURL: sqlite+aiosqlite:///${{ github.workspace }}/runestone_test.db
+      TEST_DBURL: postgresql+asyncpg://postgres:bully@localhost/runestone
       BOOK_PATH: ${{ github.workspace }}/../RunestoneServer/books
       WEB2PY_PATH: ${{ github.workspace }}/../RunestoneServer
     strategy:
       matrix:
         python-version: ['3.8', '3.9']
 
+    # Copied from `github docs <https://docs.github.com/en/actions/guides/creating-postgresql-service-containers#running-jobs-directly-on-the-runner-machine>`_. The obvious github action `doesn't wait for the DB to start <https://github.com/Harmon758/postgresql-action/issues/7>`_, causing spurious test failures.
+    #
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image. **Very important**: this must match the version of ``createdb`` and ``dropdb`` installed below, or they will produce strange errors.
+        image: postgres:13
+        # Provide the password for postgres
+        env:
+          # This must match the password in ``TEST_DBURL`` above.
+          POSTGRES_PASSWORD: bully
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Check out bookserver from GitHub.
+      uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -45,6 +68,8 @@ jobs:
         git clone https://github.com/RunestoneInteractive/RunestoneServer.git ../RunestoneServer
         pip install -U pip
         pip install poetry
+        # Needed to run ``createdb`` and ``dropdb``.
+        sudo apt-get install --yes --no-install-recommends postgresql-client
     - name: Install bookserver
       run: |
         # Why are we doing an update here? Updates should be performed by committers, not automatically.

@@ -40,7 +40,7 @@ def checks():
         # -a    If given, always write all output files.
         "sphinx-build -E -a . _build",
         # Finally, unit tests -- the hardest to get right.
-        "pytest -s -v",
+        "pytest -v",
     )
 
 
