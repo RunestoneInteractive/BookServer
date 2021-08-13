@@ -12,26 +12,24 @@ import datetime
 
 # Third-party imports
 # -------------------
-from fastapi.testclient import TestClient
 from pydantic import ValidationError
 import pytest
 
 # Local application imports
 # -------------------------
 from bookserver.models import UseinfoValidation
-from bookserver.main import app
 from bookserver.applogger import rslogger
 
 
 # Tests
 # =====
-def test_main():
-    with TestClient(app) as client:
+def test_main(test_client_app):
+    with test_client_app as client:
         response = client.get("/")
         assert response.status_code == 200
 
 
-def test_add_log():
+def test_add_log(test_client_app):
     item = dict(
         event="page",
         act="view",
@@ -40,7 +38,7 @@ def test_add_log():
         course_name="fopp",
         timestamp=datetime.datetime.utcnow().isoformat(),
     )
-    with TestClient(app) as client:
+    with test_client_app as client:
         response = client.post(
             "/logger/bookevent",
             headers={"Content-type": "application/json; charset=utf-8"},
@@ -51,7 +49,7 @@ def test_add_log():
         rslogger.debug(response.json())
 
 
-def test_add_mchoice():
+def test_add_mchoice(test_client_app):
     item = dict(
         event="mChoice",
         act="answer:2:correct",
@@ -64,7 +62,7 @@ def test_add_mchoice():
     )
     # Create JWT security token
     # add to headers
-    with TestClient(app) as client:
+    with test_client_app as client:
         response = client.post(
             "/logger/bookevent",
             headers={"Content-type": "application/json; charset=utf-8"},
@@ -80,7 +78,7 @@ def test_add_mchoice():
         sid="testuser",
     )
 
-    with TestClient(app) as client:
+    with test_client_app as client:
         response = client.post(
             "/assessment/results",
             headers={"Content-type": "application/json; charset=utf-8"},
@@ -99,7 +97,7 @@ def test_schema_generator():
         UseinfoValidation(sid="x" * 600, id="5")
 
 
-def test_secondary_validation_error():
+def test_secondary_validation_error(test_client_app):
     item = dict(
         event="mChoice",
         act="answer:2:correct",
@@ -112,7 +110,7 @@ def test_secondary_validation_error():
     )
     # Create JWT security token
     # add to headers
-    with TestClient(app) as client:
+    with test_client_app as client:
         response = client.post(
             "/logger/bookevent",
             headers={"Content-type": "application/json; charset=utf-8"},
