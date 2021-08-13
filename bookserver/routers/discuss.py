@@ -68,7 +68,7 @@ class ConnectionManager:
 # this is good for prototyping, but we will need to integrate with
 # Redis or a DB for production where we have multiple servers
 manager = ConnectionManager()
-
+local_users = set()
 
 # .. _login:
 #
@@ -101,7 +101,9 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     # username = res.username
     # rslogger.debug(f"{res=}")
     username = uname
+    local_users.add(username)
     await manager.connect(username, websocket)
+    subscriber = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
     r = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
     try:
         while True:
@@ -110,17 +112,21 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                 await manager.broadcast(data)
             else:
                 partner = r.hget("partnerdb", username)
-                await manager.send_personal_message(partner, data)
-                await create_useinfo_entry(
-                    UseinfoValidation(
-                        event="sendmessage",
-                        act=f"to:{partner}:{data.message}",
-                        div_id=data.div_id,
-                        course_id=data.course_name,
-                        sid=username,
-                        timestamp=datetime.utcnow(),
+                if partner in local_users:
+                    await manager.send_personal_message(partner, data)
+                    await create_useinfo_entry(
+                        UseinfoValidation(
+                            event="sendmessage",
+                            act=f"to:{partner}:{data.message}",
+                            div_id=data.div_id,
+                            course_id=data.course_name,
+                            sid=username,
+                            timestamp=datetime.utcnow(),
+                        )
                     )
-                )
+                else:
+                    pass
+                    # publish this message to redis
 
     except WebSocketDisconnect:
         manager.disconnect(username)
