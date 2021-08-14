@@ -214,7 +214,11 @@ def run_bookserver(bookserver_address, pytestconfig):
             "coverage",
             "run",
             "-m",
-            "bookserver",
+            # Run from uvicorn, so coverage still works. Running from `../bookserver/__main__.py` wouldn't include coverage.
+            "uvicorn",
+            "--port",
+            "8080",
+            "bookserver.main:app",
         ],
         # Produce text (not binary) output for nice output in ``echo()`` below.
         universal_newlines=True,
