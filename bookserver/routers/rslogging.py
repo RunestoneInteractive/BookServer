@@ -106,7 +106,7 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         rcd = runestone_component_dict[EVENT2TABLE[entry.event]]
         if entry.event == "unittest":
             # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
-            if not re.match(r"^percent:\d+\.\d+:passed:\d+:failed:\d+$", entry.act):
+            if not re.match(r"^percent:\d+(\.\d+)?:passed:\d+:failed:\d+$", entry.act):
                 return make_json_response(
                     status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="act is not in the correct format",

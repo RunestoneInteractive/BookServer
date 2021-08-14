@@ -45,7 +45,7 @@ alter index parsons_answers_course_name_idx rename to ix_parsons_answers_course_
 alter index unittest_answers_course_name_idx rename to ix_unittest_answers_course_name;
 alter index user_sub_chapter_progress_course_name_idx rename to ix_user_sub_chapter_progress_course_name;
 alter index unique_user rename to ix_auth_user_username;
-alter index courses_course_name_idx rename to courses_course_name_key;
+drop index courses_course_name_idx ;
 
 
 -- Provide reasonable default values where those were lacking.
@@ -78,4 +78,4 @@ update fitb_answers set answer='' where answer is null;
 delete from useinfo where div_id is null and course_id is null;
 delete from courses where base_course is null;
 
-rollback;
+commit;
