@@ -36,6 +36,7 @@ python-multipart = "^0.0.5"
 asyncpg = "^0.22.0"
 SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
+redis = "^3.5.3"
 # runestone = "^5.6.1" # comment out for now as unit testing fails the install due to version mismatch
 pyhumps = "^3.0.2"
 bleach = "^3.3.0"
