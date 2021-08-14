@@ -10,6 +10,8 @@
 # Standard library
 # ----------------
 import json
+import traceback
+import datetime
 
 # Third-party imports
 # -------------------
@@ -135,9 +137,29 @@ def level2_validation_handler(request: Request, exc: ValidationError):
     secondary validation when populating our xxx_answers tables
     this catches those and returns a 422
     """
-    # rslogger.debug(exc.json)
+    rslogger.error(exc)
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"detail": exc.errors()}),
+    )
+
+
+@app.exception_handler(Exception)
+def generic_error_handler(request: Request, exc: Exception):
+    """
+    Most validation errors are caught immediately, but we do some
+    secondary validation when populating our xxx_answers tables
+    this catches those and returns a 422
+    """
+    rslogger.error("UNHANDLED ERROR")
+    rslogger.error(exc)
+    date = datetime.datetime.utcnow().strftime("%Y_%m_%d-%I:%M:%S_%p")
+    with open(f"../errors/{date}_traceback.txt", "w") as f:
+        traceback.print_tb(exc.__traceback__, file=f)
+        f.write(f"Error Message: \n{str(exc)}")
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder({"detail": exc}),
     )
