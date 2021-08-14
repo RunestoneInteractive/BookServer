@@ -345,7 +345,7 @@ CodeValidator = sqlalchemy_to_pydantic(Code)
 class Courses(Base, IdMixin):
     __tablename__ = "courses"
     # _`course_name`: The name of this course.
-    course_name = Column(String(512), unique=True, nullable=False)
+    course_name = Column(String(512), unique=True, nullable=False, index=True)
     term_start_date = Column(Date, nullable=False)
     institution = Column(String(512), nullable=False)
     # TODO: Why not use base_course_id instead? _`base_course`: the course from which this course was derived. TODO: If this is a base course, this field should be identical to the course_name_?
@@ -356,7 +356,7 @@ class Courses(Base, IdMixin):
     downloads_enabled = Column(Web2PyBoolean, nullable=False)
     # Earlier courses didn't have this specified, so allow these old records to remain that way. New records should always specify this value.
     courselevel = Column(String, nullable=False)
-    institution = Column(String)
+    institution = Column(String, nullable=False)
 
 
 CoursesValidator = sqlalchemy_to_pydantic(Courses)
@@ -408,8 +408,8 @@ class CourseInstructor(Base, IdMixin):
 
     course = Column(Integer, ForeignKey("courses.id"), nullable=False)
     instructor = Column(Integer, ForeignKey("auth_user.id"), nullable=False)
-    verified = Column(Web2PyBoolean, nullable=False)
-    paid = Column(Web2PyBoolean, nullable=False)
+    verified = Column(Web2PyBoolean)
+    paid = Column(Web2PyBoolean)
 
 
 CourseInstructorValidator = sqlalchemy_to_pydantic(CourseInstructor)
@@ -485,9 +485,9 @@ class Assignment(Base, IdMixin):
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
-    is_peer = Column(Web2PyBoolean, default=False)
-    current_index = Column(Integer, default=0)
-    enforce_due = Column(Web2PyBoolean)
+    # is_peer = Column(Web2PyBoolean, default=False)
+    # current_index = Column(Integer, default=0)
+    # enforce_due = Column(Web2PyBoolean)
 
 
 class AssignmentQuestion(Base, IdMixin):

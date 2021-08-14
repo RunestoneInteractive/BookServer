@@ -570,7 +570,9 @@ async def fetch_user_chapter_progress(
     user, last_page_chapter
 ) -> UserChapterProgressValidator:
     query = select(UserChapterProgress).where(
-        (UserChapterProgress.user_id == user.id)
+        (
+            UserChapterProgress.user_id == str(user.id)
+        )  # TODO: this is bad! the DB has user.id as a string!
         & (UserChapterProgress.chapter_id == last_page_chapter)
     )
 
@@ -584,7 +586,7 @@ async def create_user_chapter_progress_entry(
     user, last_page_chapter, status
 ) -> UserChapterProgressValidator:
     new_ucp = UserChapterProgress(
-        user_id=user.id,
+        user_id=str(user.id),
         chapter_id=last_page_chapter,
         status=status,
         start_date=datetime.datetime.utcnow(),
