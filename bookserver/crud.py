@@ -570,7 +570,9 @@ async def fetch_user_chapter_progress(
     user, last_page_chapter: str
 ) -> UserChapterProgressValidator:
     query = select(UserChapterProgress).where(
-        (UserChapterProgress.user_id == str(user.id))
+        (
+            UserChapterProgress.user_id == str(user.id)
+        )  # TODO: this is bad! the DB has user.id as a string!
         & (UserChapterProgress.chapter_id == last_page_chapter)
     )
 
