@@ -228,6 +228,7 @@ def run_bookserver(pytestconfig):
             "coverage",
             "run",
             "-m",
+            # Run from uvicorn, so coverage still works. Running from `../bookserver/__main__.py` wouldn't include coverage.
             "uvicorn",
             f"--port={bookserver_port}",
             f"--log-level={log_level.lower()}",
