@@ -1,25 +1,48 @@
 # ******************************************************
 # |docname| - Provide a scalable synchronous chat system
 # ******************************************************
-# For effective peer instructio in a mixed or online class we must support some 
+# For effective peer instructio in a mixed or online class we must support some
 # kind of chat system.  This may spill over into other use cases but for now the
 # peer instruction pages are the main use case.  To provide a near real time chat
 # environment we need to use websockets.  This is a new area for us in summer 2021
-# creating a websocket chat system is super simple for a toy environment. One server 
+# creating a websocket chat system is super simple for a toy environment. One server
 # process can track all users and their connections, but in a production environment
 # with multiple workers it gets much more complicated.  `this article <https://tsh.io/blog/how-to-scale-websocket/>`_
 # does a nice job of explaining the issues and solutions.
 #
 # Our architecture is as follows:
-# We have one end point
+# We will use redis pubsub model to support a fast production environment.
+#
+# We have one end point called ``websocket_endpoint`` that browsers open a websocket with
+# this connection is only for the page to RECEIVE messages.  The endpoint is also a redis
+# subscriber to the "peermessages" channel.
+#
+# We have a second endpoint called ``send_message`` that accepts a json formatted message
+# package.  This could be a broadcast text message, or could be a special control mesage
+# that allows the instructor to move the students through the peer process.  The ``send_message``
+# endpoint is the redis producer.
+#
+# The producer sends the message into the redis queue and then all copies of the consumer
+# look at the message.  If the recipient of that message is connected to that instance
+# then the message is sent to the recipient and all other instance ignore that message.
+# If the message is a broadcast message then all instances of the consumer forward that
+# message to all connected parties.
+
+from datetime import datetime
+import json
+from typing import Dict, Optional
+
+
 #
 # Third-party imports
 # -------------------
-from datetime import datetime
-from typing import Dict, Optional
 import os
-import redis
+import asyncio
+import async_timeout
+import aioredis
 
+# Local application imports
+# -------------------------
 from fastapi import (
     APIRouter,
     Cookie,
@@ -33,12 +56,11 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-# Local application imports
-# -------------------------
 from ..applogger import rslogger
 from ..config import settings
 from ..crud import create_useinfo_entry
 from ..models import UseinfoValidation
+from ..schemas import PeerMessage
 
 # from ..session import auth_manager
 
@@ -76,8 +98,12 @@ class ConnectionManager:
             rslogger.error(f"{to} is not connected {self.active_connections}")
 
     async def broadcast(self, message: str):
+        rslogger.debug(f"{self.active_connections=} {message=}")
         for connection in self.active_connections.values():
-            await connection.send_json(message)
+            rslogger.debug(f"sending to {connection}")
+            res = await connection.send_json(message)
+            # res = await connection.send_text("hello world")
+            rslogger.debug(f"result of send = {res}")
 
 
 # this is good for prototyping, but we will need to integrate with
@@ -118,38 +144,68 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     username = uname
     local_users.add(username)
     await manager.connect(username, websocket)
-    subscriber = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
-    r = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    r = aioredis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    subscriber = r.pubsub()
+    await subscriber.subscribe("peermessages")
+    # subscriber.subscribe(peermessages=callable) # in this case callable is automatically called
     try:
         while True:
-            data = await websocket.receive_json()
-            if data["broadcast"]:
-                await manager.broadcast(data)
-            else:
-                partner = r.hget("partnerdb", username)
-                if partner in local_users:
-                    await manager.send_personal_message(partner, data)
-                    await create_useinfo_entry(
-                        UseinfoValidation(
-                            event="sendmessage",
-                            act=f"to:{partner}:{data.message}",
-                            div_id=data.div_id,
-                            course_id=data.course_name,
-                            sid=username,
-                            timestamp=datetime.utcnow(),
-                        )
-                    )
-                else:
-                    pass
-                    # publish this message to redis
+            try:
+                async with async_timeout.timeout(1):
+                    pmess = await subscriber.get_message(ignore_subscribe_messages=True)
+                    if pmess:
+                        rslogger.debug(f"{pmess=}")
+                        if pmess["type"] == "subscribe":
+                            continue
+                        elif pmess["type"] == "message":
+                            # This is a message sent into the channel, our stuff is in data
+                            data = json.loads(pmess["data"])
+                        else:
+                            rslogger.error("unknown message type {pmess['type']}")
+                            continue
+                        if data["broadcast"]:
+                            await manager.broadcast(data)
+                        else:
+                            partner = r.hget("partnerdb", username)
+                            if partner in local_users:
+                                await manager.send_personal_message(partner, data)
+            except asyncio.TimeoutError:
+                pass
+            # data = await websocket.receive_json()
+            # if data["broadcast"]:
+            #     await manager.broadcast(data)
+            # else:
+            #     partner = r.hget("partnerdb", username)
+            #     if partner in local_users:
+            #         await manager.send_personal_message(partner, data)
+            #         await create_useinfo_entry(
+            #             UseinfoValidation(
+            #                 event="sendmessage",
+            #                 act=f"to:{partner}:{data.message}",
+            #                 div_id=data.div_id,
+            #                 course_id=data.course_name,
+            #                 sid=username,
+            #                 timestamp=datetime.utcnow(),
+            #             )
+            #         )
+            #     else:
+            #         pass
+            #         # publish this message to redis
 
     except WebSocketDisconnect:
         manager.disconnect(username)
-        await manager.broadcast(
-            {
-                "type": "text",
-                "from": username,
-                "message": f"Client {username} left the chat",
-                "broadcast": True,
-            }
-        )
+        rslogger.info(f"{username} has disconnected")
+        # await manager.broadcast(
+        #     {
+        #         "type": "text",
+        #         "sender": username,
+        #         "message": f"Client {username} left the chat",
+        #         "broadcast": True,
+        #     }
+        # )
+
+
+@router.post("/send_message")
+def send_message(packet: PeerMessage):
+    r = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    r.publish("peermessages", packet.to_json())
