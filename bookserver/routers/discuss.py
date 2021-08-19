@@ -28,32 +28,29 @@
 # If the message is a broadcast message then all instances of the consumer forward that
 # message to all connected parties.
 
-from datetime import datetime
+import asyncio
 import json
-from typing import Dict, Optional
-
 
 #
 # Third-party imports
 # -------------------
 import os
-import asyncio
-import async_timeout
+from datetime import datetime
+from typing import Dict, Optional
+
 import aioredis
+import async_timeout
 
 # Local application imports
 # -------------------------
 from fastapi import (
     APIRouter,
     Cookie,
-    #    Depends,
     Query,
-    Request,
-    WebSocket,
+    WebSocket,  # Depends,; noqa F401
     WebSocketDisconnect,
     status,
-)  # noqa F401
-from fastapi.responses import HTMLResponse
+)
 from fastapi.templating import Jinja2Templates
 
 from ..applogger import rslogger
@@ -88,10 +85,10 @@ class ConnectionManager:
 
     async def send_personal_message(
         self,
-        to: str,
-        message: str,
+        receiver: bytes,
+        message: PeerMessage,
     ):
-        to = to.decode("utf8")
+        to = receiver.decode("utf8")
         if to in self.active_connections:
             await self.active_connections[to].send_json(message)
         else:
@@ -111,15 +108,6 @@ class ConnectionManager:
 manager = ConnectionManager()
 local_users = set()
 
-# .. _login:
-#
-# login
-# -----
-@router.get("/home.html", response_class=HTMLResponse)
-def chat_page(request: Request, foo: Optional[str] = Query(None)):
-    rslogger.debug(f"{foo=}")
-    return templates.TemplateResponse("home.html", {"request": request})
-
 
 async def get_cookie_or_token(
     websocket: WebSocket,
@@ -136,6 +124,15 @@ async def get_cookie_or_token(
 # ``websocket_route``
 @router.websocket("/chat/{uname}/ws")
 async def websocket_endpoint(websocket: WebSocket, uname: str):
+    """
+    This endpoint is called to establish a websocket connection between
+    The browser and the server.  The websocket is persistent as long
+    as the process that runs this endpoint is alive.
+
+    Note: This function must return which means it must be throroughly async
+    Using a non async library like plain redis-py will not work as the subscriber
+    will block
+    """
     rslogger.debug("f{uname=}")
     rslogger.debug(f"IN WEBSOCKET {uname=}")
     # res = await auth_manager.get_current_user(user)
@@ -155,10 +152,9 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     pmess = await subscriber.get_message(ignore_subscribe_messages=True)
                     if pmess:
                         rslogger.debug(f"{pmess=}")
-                        if pmess["type"] == "subscribe":
-                            continue
-                        elif pmess["type"] == "message":
-                            # This is a message sent into the channel, our stuff is in data
+                        if pmess["type"] == "message":
+                            # This is a message sent into the channel, our stuff is in
+                            # the ``data`` field of the redis message
                             data = json.loads(pmess["data"])
                         else:
                             rslogger.error("unknown message type {pmess['type']}")
@@ -169,43 +165,25 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                             partner = r.hget("partnerdb", username)
                             if partner in local_users:
                                 await manager.send_personal_message(partner, data)
+                                await create_useinfo_entry(
+                                    UseinfoValidation(
+                                        event="sendmessage",
+                                        act=f"to:{partner}:{data.message}",
+                                        div_id=data.div_id,
+                                        course_id=data.course_name,
+                                        sid=username,
+                                        timestamp=datetime.utcnow(),
+                                    )
+                                )
             except asyncio.TimeoutError:
                 pass
-            # data = await websocket.receive_json()
-            # if data["broadcast"]:
-            #     await manager.broadcast(data)
-            # else:
-            #     partner = r.hget("partnerdb", username)
-            #     if partner in local_users:
-            #         await manager.send_personal_message(partner, data)
-            #         await create_useinfo_entry(
-            #             UseinfoValidation(
-            #                 event="sendmessage",
-            #                 act=f"to:{partner}:{data.message}",
-            #                 div_id=data.div_id,
-            #                 course_id=data.course_name,
-            #                 sid=username,
-            #                 timestamp=datetime.utcnow(),
-            #             )
-            #         )
-            #     else:
-            #         pass
-            #         # publish this message to redis
 
     except WebSocketDisconnect:
         manager.disconnect(username)
         rslogger.info(f"{username} has disconnected")
-        # await manager.broadcast(
-        #     {
-        #         "type": "text",
-        #         "sender": username,
-        #         "message": f"Client {username} left the chat",
-        #         "broadcast": True,
-        #     }
-        # )
 
 
 @router.post("/send_message")
-def send_message(packet: PeerMessage):
-    r = redis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
-    r.publish("peermessages", packet.to_json())
+async def send_message(packet: PeerMessage):
+    r = await aioredis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    r.publish("peermessages", packet.json())
