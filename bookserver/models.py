@@ -345,7 +345,7 @@ CodeValidator = sqlalchemy_to_pydantic(Code)
 class Courses(Base, IdMixin):
     __tablename__ = "courses"
     # _`course_name`: The name of this course.
-    course_name = Column(String(512), unique=True, nullable=False, index=True)
+    course_name = Column(String(512), unique=True, nullable=False)
     term_start_date = Column(Date, nullable=False)
     institution = Column(String(512), nullable=False)
     # TODO: Why not use base_course_id instead? _`base_course`: the course from which this course was derived. TODO: If this is a base course, this field should be identical to the course_name_?

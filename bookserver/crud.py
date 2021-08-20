@@ -567,7 +567,7 @@ async def create_user_sub_chapter_progress_entry(
 
 
 async def fetch_user_chapter_progress(
-    user, last_page_chapter
+    user, last_page_chapter: str
 ) -> UserChapterProgressValidator:
     query = select(UserChapterProgress).where(
         (

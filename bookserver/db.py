@@ -52,9 +52,9 @@ async def init_models():
             and settings.drop_tables == "Yes"
         ):
             await conn.run_sync(Base.metadata.drop_all)
-
         await conn.run_sync(Base.metadata.create_all)
-        await check_not_null()
+
+    await check_not_null()
 
 
 # Look for any records that violate non-null constraints.
@@ -85,7 +85,7 @@ async def check_not_null():
     rslogger.info(f"Done; found {not_null_count} columns with constraint violations.")
 
 
-# If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop of truncate tables (see `bookserver_session`).
+# If the engine isn't disposed of, then a PostgreSQL database will remain in a pseudo-locked state, refusing to drop or truncate tables (see `bookserver_session`).
 async def term_models():
     await engine.dispose()
 
