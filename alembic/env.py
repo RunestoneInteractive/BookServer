@@ -20,8 +20,8 @@ from sqlalchemy import create_engine
 # Local application imports
 # -------------------------
 from bookserver import models
+from bookserver.applogger import rslogger
 from bookserver.config import settings
-
 
 # Configuration
 # =============
@@ -44,7 +44,7 @@ target_metadata = models.Base.metadata
 
 # Use the non-async flavor of the provided database URL.
 dburl = settings.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
-print(f"Using DBURL of {dburl}.\n")
+rslogger.info(f"Using DBURL of {dburl}.")
 
 # Compute tables not to migrate
 # -----------------------------
