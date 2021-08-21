@@ -47,7 +47,6 @@ from pyvirtualdisplay import Display
 # Since ``selenium_driver`` is a parameter to a function (which is a fixture), flake8 sees it as unused. However, pytest understands this as a request for the ``selenium_driver`` fixture and needs it.
 from runestone.shared_conftest import _SeleniumUtils, selenium_driver  # noqa: F401
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -539,19 +538,10 @@ class _SeleniumServerUtils(_SeleniumUtils):
         self.user = test_user
 
     def logout(self):
-        # TODO: No such endpoint.
-        return
         self.get("auth/logout")
-        # For some strange reason, the server occasionally doesn't put the "Logged out" message on a logout. ???
-        try:
-            self.wait.until(
-                EC.text_to_be_present_in_element(
-                    (By.CSS_SELECTOR, "div.flash"), "Logged out"
-                )
-            )
-        except TimeoutException:
-            # Assume that visiting the logout URL then waiting for a timeout will ensure the logout worked, even if the message can't be found.
-            pass
+        self.wait.until(
+            EC.text_to_be_present_in_element((By.CSS_SELECTOR, "h1"), "Login")
+        )
         self.user = None
 
     def get_book_url(self, url):
