@@ -111,7 +111,7 @@ async def login(
 
 # To log out, simply delete the cookie containing auth information.
 @router.get("/logout")
-async def logout():
+async def logout(response_class: RedirectResponse):
     # Send the user to the login page after the logout.
     response = RedirectResponse("/auth/login")
     response.delete_cookie(auth_manager.cookie_name)
