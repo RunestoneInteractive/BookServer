@@ -62,8 +62,11 @@ class Settings(BaseSettings):
     # _`book_path`: specify the directory to serve books from.
     book_path: Path = Path.home() / "Runestone/books"
 
+    # The path to store error logs.
+    error_path: Path = Path.home() / "Runestone/errors"
+
     # The path to web2py.
-    web2py_path: str = str(
+    web2py_path: Path = (
         Path(_book_server_path).parents[1] / "web2py/applications/runestone"
     )
     # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
@@ -123,7 +126,7 @@ class Settings(BaseSettings):
         # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
         @lru_cache
         def read_key():
-            key_file = Path(self.web2py_path) / "private/auth.key"
+            key_file = self.web2py_path / "private/auth.key"
             if key_file.exists():
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()

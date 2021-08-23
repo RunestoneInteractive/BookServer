@@ -109,6 +109,15 @@ async def login(
     return response
 
 
+# To log out, simply delete the cookie containing auth information.
+@router.get("/logout")
+async def logout(response_class: RedirectResponse):
+    # Send the user to the login page after the logout.
+    response = RedirectResponse("/auth/login")
+    response.delete_cookie(auth_manager.cookie_name)
+    return response
+
+
 # todo: Write a second version of validate that returns the token as json
 # this can be used by the docs/testing system.
 

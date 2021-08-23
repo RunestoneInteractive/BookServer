@@ -445,10 +445,6 @@ def selenium_utils_user_2(selenium_utils_user):
     return selenium_utils_user
 
 
-# Check rendering of selectquestion, which requires server-side support.
-
-
-@pytest.mark.skip(reason="This passes but causes the next test to fail")
 @pytest.mark.asyncio
 async def test_selectquestion_1(selenium_utils_user_2, bookserver_session):
     await test_poll_1(selenium_utils_user_2, bookserver_session)
@@ -539,8 +535,7 @@ async def test_timed_1(selenium_utils_user_timed, bookserver_session):
 
 
 # progress tests
-
-
+# --------------
 @pytest.mark.asyncio
 async def test_toc_decorators(selenium_utils_user, bookserver_session):
     su = selenium_utils_user

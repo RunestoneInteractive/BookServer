@@ -10,6 +10,7 @@
 # Standard library
 # ----------------
 import json
+import os
 import traceback
 import datetime
 
@@ -39,7 +40,7 @@ from .session import auth_manager
 # FastAPI setup
 # =============
 app = FastAPI()
-print(f"Serving books from {settings.book_path}.\n")
+rslogger.info(f"Serving books from {settings.book_path}.\n")
 
 # Install the auth_manager as middleware This will make the user
 # part of the request ``request.state.user`` `See FastAPI_Login Advanced <https://fastapi-login.readthedocs.io/advanced_usage/>`_
@@ -63,6 +64,13 @@ app.include_router(discuss.router)
 # ^^^^^^^^^^^^
 @app.on_event("startup")
 async def startup():
+    # Check/create paths used by the server.
+    os.makedirs(settings.book_path, exist_ok=True)
+    os.makedirs(settings.error_path, exist_ok=True)
+    assert (
+        settings.web2py_path.exists()
+    ), f"web2py path {settings.web2py_path} does not exist."
+
     await init_models()
     await create_initial_courses_users()
     init_graders()
@@ -154,8 +162,8 @@ def generic_error_handler(request: Request, exc: Exception):
     """
     rslogger.error("UNHANDLED ERROR")
     rslogger.error(exc)
-    date = datetime.datetime.utcnow().strftime("%Y_%m_%d-%I:%M:%S_%p")
-    with open(f"../errors/{date}_traceback.txt", "w") as f:
+    date = datetime.datetime.utcnow().strftime("%Y_%m_%d-%I.%M.%S_%p")
+    with open(f"{settings.error_path}/{date}_traceback.txt", "w") as f:
         traceback.print_tb(exc.__traceback__, file=f)
         f.write(f"Error Message: \n{str(exc)}")
 
