@@ -6,5 +6,7 @@ The files below allow deployment of both the old web2py server and this new Book
 .. toctree::
     :maxdepth: 1
 
+    run_server.sh
     nginx.conf
     uwsgi.ini
+    gunicorn.conf.py
