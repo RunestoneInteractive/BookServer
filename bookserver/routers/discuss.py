@@ -85,10 +85,10 @@ class ConnectionManager:
 
     async def send_personal_message(
         self,
-        receiver: bytes,
+        receiver: str,
         message: PeerMessage,
     ):
-        to = receiver.decode("utf8")
+        to = receiver
         if to in self.active_connections:
             await self.active_connections[to].send_json(message)
         else:
@@ -162,19 +162,22 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                         if data["broadcast"]:
                             await manager.broadcast(data)
                         else:
-                            partner = r.hget("partnerdb", username)
+                            partner = await r.hget("partnerdb", username)
+                            partner = partner.decode("utf8")
                             if partner in local_users:
                                 await manager.send_personal_message(partner, data)
                                 await create_useinfo_entry(
                                     UseinfoValidation(
                                         event="sendmessage",
-                                        act=f"to:{partner}:{data.message}",
-                                        div_id=data.div_id,
-                                        course_id=data.course_name,
+                                        act=f"to:{partner}:{data['message']}",
+                                        div_id=data["div_id"],
+                                        course_id=data["course_name"],
                                         sid=username,
                                         timestamp=datetime.utcnow(),
                                     )
                                 )
+                            else:
+                                rslogger.debug(f"{partner=} is not in local_users")
             except asyncio.TimeoutError:
                 pass
 
