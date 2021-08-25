@@ -35,13 +35,13 @@ sudo env \
     "PATH=$PATH" \
     WEB2PY_CONFIG=production \
     WEB2PY_MIGRATE=Yes \
-    DBURL=postgresql://POSTGRESQL_URL \
+    DBURL=postgresql://$POSTGRESQL_URL \
     uwsgi --ini $PWD/uwsgi.ini --chdir=$WEB2PY_PATH &
 
 sudo pkill gunicorn
 # This runs the BookServer.
 sudo env \
     "PATH=$PATH" \
-    DBURL=postgresql+asyncpg://$POSTGRESQL_URL \
+    PROD_DBURL=postgresql+asyncpg://$POSTGRESQL_URL \
     BOOK_SERVER_CONFIG=production \
     gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/gunicorn.sock &
