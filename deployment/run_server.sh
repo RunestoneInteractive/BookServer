@@ -44,4 +44,5 @@ sudo env \
     "PATH=$PATH" \
     PROD_DBURL=postgresql+asyncpg://$POSTGRESQL_URL \
     BOOK_SERVER_CONFIG=production \
+    ROOT_PATH=/ns \
     gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/gunicorn.sock &
