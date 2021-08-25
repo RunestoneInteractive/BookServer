@@ -162,9 +162,12 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                         if data["broadcast"]:
                             await manager.broadcast(data)
                         else:
-                            partner = await r.hget("partnerdb", username)
+                            # because **every** connection is in this loop we only
+                            # want to send a non-broadcast message if it is to
+                            # ourself.
+                            partner = await r.hget("partnerdb", data["from"])
                             partner = partner.decode("utf8")
-                            if partner in local_users:
+                            if partner == username:
                                 await manager.send_personal_message(partner, data)
                                 await create_useinfo_entry(
                                     UseinfoValidation(
@@ -177,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                                     )
                                 )
                             else:
-                                rslogger.debug(f"{partner=} is not in local_users")
+                                rslogger.debug(f"{partner=} is not {username}")
             except asyncio.TimeoutError:
                 pass
 
