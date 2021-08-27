@@ -348,13 +348,13 @@ class Courses(Base, IdMixin):
     course_name = Column(String(512), unique=True, nullable=False)
     term_start_date = Column(Date, nullable=False)
     institution = Column(String(512), nullable=False)
-    # TODO: Why not use base_course_id instead? _`base_course`: the course from which this course was derived. TODO: If this is a base course, this field should be identical to the course_name_?
+    # _`base_course`: the course from which this course was derived. If this is a base course, this field is identical to the course_name_.
     base_course = Column(String(512), ForeignKey("courses.course_name"), nullable=False)
+    python3 = Column(Web2PyBoolean, default=True)
     login_required = Column(Web2PyBoolean, nullable=False)
     allow_pairs = Column(Web2PyBoolean, nullable=False)
     student_price = Column(Integer)
     downloads_enabled = Column(Web2PyBoolean, nullable=False)
-    # Earlier courses didn't have this specified, so allow these old records to remain that way. New records should always specify this value.
     courselevel = Column(String, nullable=False)
     institution = Column(String, nullable=False)
 
