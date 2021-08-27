@@ -9,12 +9,13 @@
 # ================
 [tool.poetry]
 name = "bookserver"
-version = "0.1.0"
+version = "0.2.2"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>"]
 license = "MIT"
 readme = "README.rst"
 documentation = "https://bookserver.readthedocs.io/en/latest/"
+include = ["deployment/*"]
 
 # Dependencies
 # ============

@@ -9,24 +9,72 @@
 #
 # Standard library
 # ----------------
+import os
 from pathlib import Path
 import subprocess
 import sys
 
 # Third-party imports
 # -------------------
-# None.
+import click
+
 #
 # Local application imports
 # -------------------------
 # None.
 #
 #
+
+
 # Code
 # ====
-def run():
+@click.command()
+@click.option(
+    "--web2py",
+    default=os.environ.get("WEB2PY_PATH", None),
+    help="path to web2py install",
+)
+@click.option(
+    "--gconfig", default="./gunicorn.config.py", help="path to gunicorn config file"
+)
+@click.option("--book_path", default=None, help="Path to folder of books")
+@click.option("--error_path", default=None, help="Path to folder to dump tracebacks")
+@click.option(
+    "--bks_config",
+    default=os.environ.get("BOOK_SERVER_CONFIG", "development"),
+    help="bookserver mode (test, development, production)",
+)
+@click.option("--dburl", default=None, help="Database URL to use regardless of mode")
+@click.option(
+    "--bind", default="localhost:8080", help="Where to listen or socket to bind"
+)
+@click.option("--verbose", is_flag=True, help="Print out config information")
+def run(
+    web2py: str,
+    gconfig: str,
+    book_path: str,
+    error_path: str,
+    bks_config: str,
+    dburl: str,
+    bind: str,
+    verbose: bool,
+):
     is_win = sys.platform == "win32"
-    # gnuicorn doesn't `run on Windows <https://github.com/benoitc/gunicorn/issues/524>`_.
+
+    if Path(web2py).exists() is False:
+        click.echo(f"Warning: web2py_path {web2py} does not exist")
+
+    if verbose:
+        click.echo(f"{web2py=}")
+        click.echo(f"{sys.executable=}")
+
+    # set of verify will upcase the names
+    set_or_verify_env("book_path", book_path)
+    set_or_verify_env("error_path", error_path)
+    set_or_verify_env("book_server_config", bks_config)
+    set_or_verify_dburl(bks_config, dburl)
+
+    # gunicorn doesn't `run on Windows <https://github.com/benoitc/gunicorn/issues/524>`_.
     if is_win:
         args = [
             sys.executable,
@@ -46,9 +94,10 @@ def run():
             # `-c <https://docs.gunicorn.org/en/stable/settings.html#config>`_: The Gunicorn config file. Use `deployment/gunicorn.conf.py`.
             "--config",
             # Provide an absolute path to the Gunicorn config file.
-            Path(__file__).parents[1] / "deployment/gunicorn.conf.py",
-            # Serve on port 8080.
-            "--bind=localhost:8080",
+            # Path(__file__).parents[1] / "deployment/gunicorn.conf.py",
+            f"{gconfig}",
+            # Where to serve or bind to socket for production
+            f"--bind={bind}",
         ]
 
     # Suppress a traceback on a keyboard interrupt.
@@ -56,6 +105,45 @@ def run():
         return subprocess.run(args).returncode
     except KeyboardInterrupt:
         return 1
+
+
+def set_or_verify_dburl(mode: str, value: str):
+    """
+    if bookserver is given a --dburl parameter then set the environment
+    variable for appropriate mode.  The environment variable value will be
+    inheritend by all subprocesses
+    """
+    if mode == "production":
+        if value:
+            os.environ["PROD_DBURL"] = value
+        else:
+            click.echo(f"{os.environ['PROD_DBURL']=}")
+    elif mode == "development":
+        if value:
+            os.environ["DEV_DBURL"] = value
+        else:
+            click.echo(f"{os.environ['DEV_DBURL']=}")
+    elif mode == "test":
+        if value:
+            os.environ["TEST_DBURL"] = value
+        else:
+            click.echo(f"{os.environ['TEST_DBURL']=}")
+    else:
+        click.echo("ERROR book_server_config must be production, development, or test!")
+
+
+def set_or_verify_env(name, value, verbose=False):
+    name = name.upper()
+    if name in os.environ and value:
+        if verbose:
+            click.echo(f"Updating {name} to {value}")
+        os.environ[name] = value
+    if value and name not in os.environ:
+        if verbose:
+            click.echo(f"Setting {name} to {value}")
+        os.environ[name] = value
+    if not value and verbose:
+        click.echo(f"Using {os.environ[name]=}")
 
 
 if __name__ == "__main__":
