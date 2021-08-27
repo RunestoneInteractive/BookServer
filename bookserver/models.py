@@ -357,6 +357,9 @@ class Courses(Base, IdMixin):
     # Earlier courses didn't have this specified, so allow these old records to remain that way. New records should always specify this value.
     courselevel = Column(String, nullable=False)
     institution = Column(String, nullable=False)
+    # This is (hopefully) a temporary field to indicate that this book
+    # should be served by the new bookserver
+    new_server = Column(Web2PyBoolean, default=False)
 
 
 CoursesValidator = sqlalchemy_to_pydantic(Courses)

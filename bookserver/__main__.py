@@ -46,6 +46,9 @@ import click
 )
 @click.option("--dburl", default=None, help="Database URL to use regardless of mode")
 @click.option(
+    "--root", default=None, help="Set the root path for uvicorn when behind a proxy"
+)
+@click.option(
     "--bind", default="localhost:8080", help="Where to listen or socket to bind"
 )
 @click.option("--verbose", is_flag=True, help="Print out config information")
@@ -56,19 +59,24 @@ def run(
     error_path: str,
     bks_config: str,
     dburl: str,
+    root: str,
     bind: str,
     verbose: bool,
 ):
     is_win = sys.platform == "win32"
 
-    if Path(web2py).exists() is False:
+    if web2py and Path(web2py).exists() is False:
         click.echo(f"Warning: web2py_path {web2py} does not exist")
+    else:
+        click.echo("Warning: web2py_path is not defined.")
 
     if verbose:
         click.echo(f"{web2py=}")
         click.echo(f"{sys.executable=}")
 
     # set of verify will upcase the names
+    set_or_verify_env("web2py_path", web2py)
+    set_or_verify_env("root_path", root)
     set_or_verify_env("book_path", book_path)
     set_or_verify_env("error_path", error_path)
     set_or_verify_env("book_server_config", bks_config)
