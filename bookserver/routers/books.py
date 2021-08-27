@@ -160,14 +160,16 @@ async def serve_page(
         is_logged_in=logged_in,
         is_instructor="true",
         enable_compare_me="true",
-        new_server_prefix="/ns",
         readings=[],
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
     try:
         return templates.TemplateResponse(pagepath, context)
     except TemplateNotFound:
-        raise HTTPException(status_code=404, detail=f"Page {pagepath} not found in base course {course_row.base_course}.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Page {pagepath} not found in base course {course_row.base_course}.",
+        )
 
 
 # Utilities
