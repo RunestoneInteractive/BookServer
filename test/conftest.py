@@ -64,12 +64,12 @@ cov.start()
 # These all need a ``noqa: E402`` comment, since they come after the statements above.
 from bookserver.config import DatabaseType, settings  # noqa; E402
 from bookserver.db import async_session, engine  # noqa; E402
-from bookserver.crud import (
+from bookserver.crud import (  # noqa; E402
     create_user,
     create_course,
     fetch_base_course,
     fetch_course,
-)  # noqa; E402
+)
 from bookserver.main import app  # noqa; E402
 from bookserver.models import AuthUserValidator, CoursesValidator  # noqa; E402
 from .ci_utils import is_linux, is_darwin, is_win, pushd  # noqa; E402
