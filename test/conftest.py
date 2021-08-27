@@ -441,6 +441,7 @@ async def test_course_1(create_test_course):
         student_price=None,
         downloads_enabled=True,
         courselevel="",
+        new_server=False,
     )
 
 
