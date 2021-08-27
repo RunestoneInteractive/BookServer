@@ -243,11 +243,10 @@ async def fetch_base_course(base_course: str) -> CoursesValidator:
         return CoursesValidator.from_orm(base_course)
 
 
-async def create_course(course_info: CoursesValidator) -> CoursesValidator:
+async def create_course(course_info: CoursesValidator) -> None:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
         session.add(new_course)
-    return CoursesValidator.from_orm(new_course)
 
 
 # auth_user
