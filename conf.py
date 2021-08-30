@@ -143,9 +143,8 @@ source_suffix = ".rst"
 # given glob-style pattern (e.g. `glob
 # <https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.match>`_).
 CodeChat_lexer_for_glob = {
-    # The codechat_config.json file is composed of Python literals, though its suffix suggests JSON.
-    "codechat_config.json": "Python",
     # These files also use ``#`` for comments, but the non-comments aren't valid Python. Call these an INI file instead.
+    "nginx.conf": "INI",
     ".gitignore": "INI",
     ".flake8": "INI",
     "requirements-rtd.txt": "INI",

@@ -39,7 +39,11 @@ from .session import auth_manager
 
 # FastAPI setup
 # =============
-app = FastAPI()
+# _`setting root_path`: see `root_path <root_path>`; this approach comes from `github <https://github.com/tiangolo/uvicorn-gunicorn-fastapi-docker/issues/55#issuecomment-879903517>`_.
+kwargs = {}
+if root_path := os.environ.get("ROOT_PATH"):
+    kwargs["root_path"] = root_path
+app = FastAPI(**kwargs)  # type: ignore
 rslogger.info(f"Serving books from {settings.book_path}.\n")
 
 # Install the auth_manager as middleware This will make the user
