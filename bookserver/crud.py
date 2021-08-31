@@ -15,13 +15,13 @@
 import datetime
 import json
 from collections import namedtuple
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 # Third-party imports
 # -------------------
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
-from sqlalchemy import and_, func, update, distinct
+from sqlalchemy import and_, distinct, func, update
 from sqlalchemy.sql import select, text
 
 from . import schemas
@@ -127,23 +127,23 @@ async def fetch_page_activity_counts(
     and then finds out which of those elements the student has interacted
     with.  It returns a dictionary of {divid: 0/1}
     """
-    query = select(Question).where(
+
+    where_clause_common = (
         (Question.subchapter == subchapter)
         & (Question.chapter == chapter)
         & (Question.from_source == True)  # noqa: E712
         & ((Question.optional == False) | (Question.optional == None))
         & (Question.base_course == base_course)
     )
+
+    query = select(Question).where(where_clause_common)
+
     async with async_session() as session:
         page_divids = await session.execute(query)
     rslogger.debug(f"PDVD {page_divids}")
     div_counts = {q.name: 0 for q in page_divids.scalars()}
     query = select(distinct(Useinfo.div_id)).where(
-        (Question.subchapter == subchapter)
-        & (Question.chapter == chapter)
-        & (Question.base_course == base_course)
-        & (Question.from_source == True)  # noqa: E712
-        & ((Question.optional == False) | (Question.optional == None))
+        where_clause_common
         & (Question.name == Useinfo.div_id)
         & (Useinfo.course_id == course_name)
         & (Useinfo.sid == username)
