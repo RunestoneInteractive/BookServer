@@ -121,6 +121,12 @@ async def count_useinfo_for(
 async def fetch_page_activity_counts(
     chapter: str, subchapter: str, base_course: str, course_name: str, username: str
 ) -> Dict[str, int]:
+    """
+    Used for the progress bar at the bottom of each page.  This function
+    finds all of the components for a particular page (chaper/subchapter)
+    and then finds out which of those elements the student has interacted
+    with.  It returns a dictionary of {divid: 0/1}
+    """
     query = select(Question).where(
         (Question.subchapter == subchapter)
         & (Question.chapter == chapter)

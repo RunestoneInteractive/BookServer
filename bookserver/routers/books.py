@@ -115,13 +115,15 @@ async def serve_page(
     else:
         logged_in = "false"
         activity_info = {}
+        user_is_instructor = False
+
     course_row = await fetch_course(user.course_name)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
     subchapter = os.path.basename(os.path.splitext(pagepath)[0])
-    if logged_in:
+    if user:
         activity_info = await fetch_page_activity_counts(
             chapter, subchapter, course_row.base_course, user.username, course_name
         )
