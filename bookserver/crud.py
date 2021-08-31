@@ -15,13 +15,13 @@
 import datetime
 import json
 from collections import namedtuple
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 # Third-party imports
 # -------------------
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
-from sqlalchemy import and_, func, update
+from sqlalchemy import and_, func, update, distinct
 from sqlalchemy.sql import select, text
 
 from . import schemas
@@ -116,6 +116,39 @@ async def count_useinfo_for(
         res = await session.execute(query)
         rslogger.debug(f"res = {res}")
         return res.all()
+
+
+async def fetch_page_activity_counts(
+    chapter: str, subchapter: str, base_course: str, course_name: str, username: str
+) -> Dict[str, int]:
+    query = select(Question).where(
+        (Question.subchapter == subchapter)
+        & (Question.chapter == chapter)
+        & (Question.from_source == True)  # noqa: E712
+        & ((Question.optional == False) | (Question.optional == None))
+        & (Question.base_course == base_course)
+    )
+    async with async_session() as session:
+        page_divids = await session.execute(query)
+    rslogger.debug(f"PDVD {page_divids}")
+    div_counts = {q.name: 0 for q in page_divids.scalars()}
+    query = select(distinct(Useinfo.div_id)).where(
+        (Question.subchapter == subchapter)
+        & (Question.chapter == chapter)
+        & (Question.base_course == base_course)
+        & (Question.from_source == True)  # noqa: E712
+        & ((Question.optional == False) | (Question.optional == None))
+        & (Question.name == Useinfo.div_id)
+        & (Useinfo.course_id == course_name)
+        & (Useinfo.sid == username)
+    )
+    async with async_session() as session:
+        sid_counts = await session.execute(query)
+
+    for row in sid_counts.scalars():
+        div_counts[row.div_id] = 1
+
+    return div_counts
 
 
 async def fetch_poll_summary(div_id: str, course_name: str) -> List[tuple]:
@@ -404,6 +437,7 @@ async def create_initial_courses_users():
                 downloads_enabled=False,
                 courselevel="",
                 institution="",
+                new_server=False,
             )
             await create_course(new_course)
         # make a user
