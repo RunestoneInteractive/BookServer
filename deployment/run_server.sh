@@ -28,21 +28,23 @@ SITE_NAME=127.0.0.1 WEB2PY_PATH=$WEB2PY_PATH envsubst '${SITE_NAME} ${WEB2PY_PAT
 sudo nginx -s stop
 sudo nginx -c /tmp/nginx.conf
 
-# See `stopping the server <https://uwsgi-docs.readthedocs.io/en/latest/Management.html#stopping-the-server>`_.
-sudo env "PATH=$PATH" uwsgi --stop /tmp/uwsgi.pid
+sudo pkill gunicorn
 # This runs web2py. See `uWSGI docs <https://uwsgi-docs.readthedocs.io/en/latest/Configuration.html#loading-configuration-files>`_. TODO: this hard-codes the location of web2py relative to the BookServer.
 sudo env \
     "PATH=$PATH" \
     WEB2PY_CONFIG=production \
     WEB2PY_MIGRATE=Yes \
     DBURL=postgresql://$POSTGRESQL_URL \
-    uwsgi --ini $PWD/uwsgi.ini --chdir=$WEB2PY_PATH &
+    gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/web2py.sock --chdir=${WEB2PY_PATH} gluon.main:wsgibase &
 
-sudo pkill gunicorn
 # This runs the BookServer.
+#
+# Notes on the command:
+#
+# - `worker-class <https://docs.gunicorn.org/en/stable/settings.html#worker-class>`_: The type of workers to use. Use `uvicorn's worker class for gunicorn <https://www.uvicorn.org/deployment/#gunicorn>`_.
 sudo env \
     "PATH=$PATH" \
     PROD_DBURL=postgresql+asyncpg://$POSTGRESQL_URL \
     BOOK_SERVER_CONFIG=production \
     ROOT_PATH=/ns \
-    gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/gunicorn.sock &
+    gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/fastapi.sock --worker-class=uvicorn.workers.UvicornWorker bookserver.main:app &

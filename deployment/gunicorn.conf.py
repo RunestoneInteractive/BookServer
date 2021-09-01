@@ -24,9 +24,6 @@ import multiprocessing
 #
 # Configuration
 # =============
-# `wsgi_app <https://docs.gunicorn.org/en/stable/settings.html#wsgi-app>`_: A WSGI application path in pattern ``$(MODULE_NAME):$(VARIABLE_NAME)``.
-wsgi_app = "bookserver.main:app"
-
 # `user <https://docs.gunicorn.org/en/stable/settings.html#user>`_: Switch worker processes to run as this user.
 user = "www-data"
 
@@ -34,7 +31,4 @@ user = "www-data"
 group = "www-data"
 
 # `workers <https://docs.gunicorn.org/en/stable/settings.html#workers>`_: The number of worker processes for handling requests. Pick this based on CPU count.
-workers = multiprocessing.cpu_count() * 2 + 1
-
-# `worker_class <https://docs.gunicorn.org/en/stable/settings.html#worker-class>`_: The type of workers to use. Use `uvicorn's worker class for gunicorn <https://www.uvicorn.org/deployment/#gunicorn>`_.
-worker_class = "uvicorn.workers.UvicornWorker"
+workers = multiprocessing.cpu_count() + 1
