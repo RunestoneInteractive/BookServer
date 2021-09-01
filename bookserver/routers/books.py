@@ -135,16 +135,7 @@ async def serve_page(
         )
     )
 
-    # Notes::
-    #
-    #   request.application -- NA for FastAPI
-    #   course_name
-    #   base_course
-    #   user_email
-    #   user_id
-    #   downloads_enabled
-    #   allow_pairs
-    #   activity_info
+    #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
     await create_useinfo_entry(
         UseinfoValidation(
@@ -163,8 +154,7 @@ async def serve_page(
         user_id=user.username,
         # _`root_path`: The server is mounted in a different location depending on how it's run (directly from gunicorn/uvicorn or under the ``/ns`` prefix using nginx). Tell the JS what prefix to use for Ajax requests. See also `setting root_path <setting root_path>` and the `FastAPI docs <https://fastapi.tiangolo.com/advanced/behind-a-proxy/>`_. This is then used in the ``eBookConfig`` of :doc:`runestone/common/project_template/_templates/plugin_layouts/sphinx_bootstrap/layout.html`.
         new_server_prefix=request.scope.get("root_path"),
-        # TODO
-        user_email=user.email if logged_in else "",
+        user_email=user.email if user else "",
         downloads_enabled="false",
         allow_pairs="false",
         activity_info=json.dumps(activity_info),
