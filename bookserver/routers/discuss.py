@@ -96,11 +96,19 @@ class ConnectionManager:
 
     async def broadcast(self, message: str):
         rslogger.debug(f"{self.active_connections=} {message=}")
-        for connection in self.active_connections.values():
+        to_remove = []
+        for key, connection in self.active_connections.items():
             rslogger.debug(f"sending to {connection}")
-            res = await connection.send_json(message)
+            # TODO: try to send, and if we get a fail then remove the connection
+            try:
+                res = await connection.send_json(message)
+            except RuntimeError:
+                rslogger.debug("Failed to send")
+                to_remove.append(key)
             # res = await connection.send_text("hello world")
             rslogger.debug(f"result of send = {res}")
+        for key in to_remove:
+            del self.connections[key]
 
 
 # this is good for prototyping, but we will need to integrate with
