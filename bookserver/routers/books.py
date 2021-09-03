@@ -10,6 +10,7 @@
 # Standard library
 # ----------------
 from datetime import datetime
+import json
 import os.path
 import posixpath
 
@@ -25,9 +26,9 @@ from pydantic import constr
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
-from ..crud import create_useinfo_entry, fetch_course
+from ..crud import create_useinfo_entry, fetch_course, fetch_page_activity_counts
 from ..models import UseinfoValidation
-from ..session import auth_manager
+from ..session import auth_manager, is_instructor
 
 # .. _APIRouter config:
 #
@@ -110,29 +111,31 @@ async def serve_page(
     # need to use lowercase true and false.
     if user:
         logged_in = "true"
+        user_is_instructor = await is_instructor(request)
     else:
         logged_in = "false"
+        activity_info = {}
+        user_is_instructor = False
 
     course_row = await fetch_course(user.course_name)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
     rslogger.debug(f"Base course = {course_row.base_course}")
+    chapter = os.path.split(os.path.split(pagepath)[0])[1]
+    subchapter = os.path.basename(os.path.splitext(pagepath)[0])
+    if user:
+        activity_info = await fetch_page_activity_counts(
+            chapter, subchapter, course_row.base_course, user.username, course_name
+        )
+
     # The template path comes from the base course's name.
     templates = Jinja2Templates(
         directory=safe_join(
             settings.book_path, course_row.base_course, "build", course_row.base_course
         )
     )
-    # Notes::
-    #
-    #   request.application -- NA for FastAPI
-    #   course_name
-    #   base_course
-    #   user_email
-    #   user_id
-    #   downloads_enabled
-    #   allow_pairs
-    #   activity_info
+
+    #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
     await create_useinfo_entry(
         UseinfoValidation(
@@ -151,14 +154,13 @@ async def serve_page(
         user_id=user.username,
         # _`root_path`: The server is mounted in a different location depending on how it's run (directly from gunicorn/uvicorn or under the ``/ns`` prefix using nginx). Tell the JS what prefix to use for Ajax requests. See also `setting root_path <setting root_path>` and the `FastAPI docs <https://fastapi.tiangolo.com/advanced/behind-a-proxy/>`_. This is then used in the ``eBookConfig`` of :doc:`runestone/common/project_template/_templates/plugin_layouts/sphinx_bootstrap/layout.html`.
         new_server_prefix=request.scope.get("root_path"),
-        # TODO
-        user_email="bonelake@mac.com",
+        user_email=user.email if user else "",
         downloads_enabled="false",
         allow_pairs="false",
-        activity_info={},
+        activity_info=json.dumps(activity_info),
         settings=settings,
         is_logged_in=logged_in,
-        is_instructor="true",
+        is_instructor="true" if user_is_instructor else "false",
         enable_compare_me="true",
         readings=[],
     )
