@@ -29,13 +29,13 @@ sudo nginx -s stop
 sudo nginx -c /tmp/nginx.conf
 
 sudo pkill gunicorn
-# This runs web2py. See `uWSGI docs <https://uwsgi-docs.readthedocs.io/en/latest/Configuration.html#loading-configuration-files>`_. TODO: this hard-codes the location of web2py relative to the BookServer.
+# This runs web2py. It assumes that the ``wsgihandler.py`` script was been copied to the root web2py directory (see the `web2py docs <http://web2py.com/books/default/chapter/29/13/deployment-recipes#Move-the-handler-script>`_). To configure logging and other options, edit ``wsgihandler.py`` per the instructions in that file.
 sudo env \
     "PATH=$PATH" \
     WEB2PY_CONFIG=production \
     WEB2PY_MIGRATE=Yes \
     DBURL=postgresql://$POSTGRESQL_URL \
-    gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/web2py.sock --chdir=${WEB2PY_PATH} gluon.main:wsgibase &
+    gunicorn --config $PWD/gunicorn.conf.py --bind=unix:/run/web2py.sock --chdir=${WEB2PY_PATH} wsgihandler:application &
 
 # This runs the BookServer.
 #
