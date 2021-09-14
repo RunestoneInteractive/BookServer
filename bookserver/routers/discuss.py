@@ -90,7 +90,12 @@ class ConnectionManager:
     ):
         to = receiver
         if to in self.active_connections:
-            await self.active_connections[to].send_json(message)
+            try:
+                rslogger.debug(f"sending PM to {to} on {self.active_connections[to]}")
+                await self.active_connections[to].send_json(message)
+            except Exception as e:
+                rslogger.error(f"Error sending to {to} is {e}")
+                del self.active_connections[to]
         else:
             rslogger.error(f"{to} is not connected {self.active_connections}")
 
@@ -99,16 +104,15 @@ class ConnectionManager:
         to_remove = []
         for key, connection in self.active_connections.items():
             rslogger.debug(f"sending to {connection}")
-            # TODO: try to send, and if we get a fail then remove the connection
+            res = None
             try:
                 res = await connection.send_json(message)
-            except RuntimeError:
-                rslogger.debug("Failed to send")
+            except Exception as e:
+                rslogger.debug(f"Failed to send {e}")
                 to_remove.append(key)
-            # res = await connection.send_text("hello world")
             rslogger.debug(f"result of send = {res}")
         for key in to_remove:
-            del self.connections[key]
+            del self.active_connections[key]
 
 
 # this is good for prototyping, but we will need to integrate with
@@ -141,7 +145,6 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     Using a non async library like plain redis-py will not work as the subscriber
     will block
     """
-    rslogger.debug("f{uname=}")
     rslogger.debug(f"IN WEBSOCKET {uname=}")
     # res = await auth_manager.get_current_user(user)
     # username = res.username
