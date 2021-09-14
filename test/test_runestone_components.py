@@ -236,62 +236,75 @@ async def test_fitb_1(selenium_utils_user_1, bookserver_session):
         return json.loads(answer), correct, percent
 
     test_fitb.test_fitb1(selenium_utils_user_1)
-    assert await fitb_check_common_fields(0, "test_fitb_string") == (["", ""], False, 0)
+    assert await fitb_check_common_fields(1, "test_fitb_string") == (["", ""], False, 0)
 
     test_fitb.test_fitb2(selenium_utils_user_1)
-    assert await fitb_check_common_fields(1, "test_fitb_string") == (
+    assert await fitb_check_common_fields(2, "test_fitb_string") == (
         ["red", ""],
         False,
         0.5,
     )
 
     test_fitb.test_fitb3(selenium_utils_user_1)
-    assert await fitb_check_common_fields(2, "test_fitb_string") == (
-        ["red", "away"],
-        True,
-        1,
-    )
-
-    test_fitb.test_fitb4(selenium_utils_user_1)
     assert await fitb_check_common_fields(3, "test_fitb_string") == (
         ["red", "away"],
         True,
         1,
     )
 
+    test_fitb.test_fitb4(selenium_utils_user_1)
+    assert await fitb_check_common_fields(4, "test_fitb_string") == (
+        ["red", "away"],
+        True,
+        1,
+    )
+
     test_fitb.test_fitboneblank_too_low(selenium_utils_user_1)
-    assert await fitb_check_common_fields(0, "test_fitb_number") == ([" 6"], False, 0)
+    assert await fitb_check_common_fields(1, "test_fitb_number") == ([" 6"], False, 0)
 
     test_fitb.test_fitboneblank_wildcard(selenium_utils_user_1)
-    assert await fitb_check_common_fields(1, "test_fitb_number") == (
+    assert await fitb_check_common_fields(2, "test_fitb_number") == (
         ["I give up"],
         False,
         0,
     )
 
     test_fitb.test_fitbfillrange(selenium_utils_user_1)
-    assert await fitb_check_common_fields(2, "test_fitb_number") == (
+    assert await fitb_check_common_fields(3, "test_fitb_number") == (
         [" 6.28 "],
         True,
         1,
     )
 
     test_fitb.test_fitbregex(selenium_utils_user_1)
-    assert await fitb_check_common_fields(0, "test_fitb_regex_1") == (
+    assert await fitb_check_common_fields(1, "test_fitb_regex_1") == (
         [" maire ", "LITTLE", "2"],
         True,
         1,
     )
 
     test_fitb.test_regexescapes1(selenium_utils_user_1)
-    assert await fitb_check_common_fields(0, "test_fitb_regex_2") == (
+    assert await fitb_check_common_fields(1, "test_fitb_regex_2") == (
         [r"C:\windows\system"],
         True,
         1,
     )
 
     test_fitb.test_regexescapes2(selenium_utils_user_1)
-    assert await fitb_check_common_fields(0, "test_fitb_regex_3") == (["[]"], True, 1)
+    assert await fitb_check_common_fields(1, "test_fitb_regex_3") == (["[]"], True, 1)
+
+    # See `notes <dynamic problem value repetition>` about the repetition.
+    test_fitb._test_dynamic_1(
+        selenium_utils_user_1,
+        [0.2, 0.1, 0.2, 0.1, 0.2, 0.1, 0.2, 0.1, 0.2, 0.1, 0.3, 0.4, 0.3, 0.4],
+    )
+    id_ = "test_fitb_dynamic_1"
+    # The first useful entry to check is 2. Entry 0 is the initial random seed; entry 1 is the next random seed from the first press of the "Randomize" button.
+    assert await fitb_check_common_fields(2, id_) == ([" 3"], True, 1)
+    assert await fitb_check_common_fields(3, id_) == (["1.0 "], False, 0)
+    assert await fitb_check_common_fields(4, id_) == ([" 0x2 "], False, 0)
+    assert await fitb_check_common_fields(5, id_) == ([" 4e0"], False, 0)
+    assert await fitb_check_common_fields(7, id_) == (["  0b111 "], True, 1)
 
 
 # Lp

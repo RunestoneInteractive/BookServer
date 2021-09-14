@@ -9,16 +9,16 @@
 #
 # Standard library
 # ----------------
-import ast
-from bookserver.crud import fetch_course
+from functools import lru_cache
 import json
 import os
-import re
+from pathlib import Path
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 # Third-party imports
 # -------------------
+import js2py
 from runestone.lp.lp_common_lib import (
     STUDENT_SOURCE_PATH,
     code_here_comment,
@@ -43,6 +43,133 @@ def init_graders():
         runestone_component_dict[table_name].grader = grader
 
 
+# Provide test code a way to send random numbers. See `RAND_FUNC <RAND_FUNC>`. To do so, read from the file. Return 0 as a "random" value if we can't read from the file (or even open it).
+class TestFileValues:
+    def __init__(self):
+        self.values = []
+        self.index = 0
+        self.test_file_path = Path(settings._book_server_path / "../test/rand.txt")
+        self.stat = None
+
+    def get_value(self):
+        # If the file changed, re-read values from it.
+        try:
+            stat = self.test_file_path.stat()
+        except Exception:
+            pass
+        else:
+            if stat != self.stat:
+                self._read_test_file()
+
+        # If we have values from a previous read of the file, return them.
+        if self.index < len(self.values):
+            self.index += 1
+            return self.values[self.index - 1]
+
+        # Re-use these values if possible.
+        if len(self.values):
+            self.index = 1
+            return self.values[0]
+
+        # Otherwise, return a "random" value of 0.
+        return 0
+
+    # Read the test file.
+    def _read_test_file(self):
+        try:
+            with open(self.test_file_path) as f:
+                lines = f.readlines()
+            self.values = [float(v) for v in lines]
+            self.index = 0
+            self.stat = self.test_file_path.stat()
+        except Exception:
+            pass
+
+
+# Make this global so its state remains between calls to ``get_js_context``.
+test_file_values = TestFileValues()
+
+
+# Load the JavaScript context needed for dynamic problems. Cache the results to make grading multiple problems faster.
+@lru_cache(maxsize=16)
+def get_js_context(book_path: Path):
+    # By default, Babel assigns to ``exports`` before defining it. This is fine in the browser, but makes js2py choke. Pre-define it. Also, provide a way for tests to inject pre-defined "random" numbers.
+    context = js2py.EvalJs(dict(exports={}, rs_test_rand=test_file_values.get_value))
+
+    # These functions don't exist in ES5.1, but FITB code uses them. Here are simple polyfills. See `MDN's Object.entries polyfill <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries#polyfill>`_, `MDN Object.assign polyfill <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#polyfill>`_. Note: ``Object.assign`` and ``console.log`` does exist in ES5.1, but js2py doesn't implement it.
+    context.execute(
+        """
+        console.assert = function(test, arg) {
+            if (test) {
+                console.log(arg);
+            }
+        }
+
+        // ES5 doesn't support binary numbers starting with ``0b``, so write a polyfill. Js2py doesn't allow me to override the built-in Number class, so use another name.
+        Number_ = function(n) {
+            if (typeof n === "string" && n.trim().slice(0, 2).toLowerCase() === "0b") {
+                return parseInt(n.trim().slice(2), 2);
+            }
+            return Number(n);
+        }
+
+        // Must be writable: true, enumerable: false, configurable: true
+        Object.defineProperty(Object, "assign", {
+            value: function assign(target, varArgs) { // .length of function is 2
+                'use strict';
+                if (target === null || target === undefined) {
+                    throw new TypeError('Cannot convert undefined or null to object');
+                }
+
+                var to = Object(target);
+
+                for (var index = 1; index < arguments.length; index++) {
+                    var nextSource = arguments[index];
+
+                    if (nextSource !== null && nextSource !== undefined) {
+                        for (var nextKey in nextSource) {
+                            // Avoid bugs when hasOwnProperty is shadowed
+                            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+                                to[nextKey] = nextSource[nextKey];
+                            }
+                        }
+                    }
+                }
+                return to;
+            },
+            writable: true,
+            configurable: true
+        });
+
+        Object.entries = function( obj ) {
+            var ownProps = Object.keys( obj ),
+                i = ownProps.length,
+                resArray = new Array(i); // preallocate the Array
+            while (i--)
+                resArray[i] = [ownProps[i], obj[ownProps[i]]];
+
+            return resArray;
+        };
+
+        Object.values = function (obj) {
+            return Object.keys(obj).map(function (e) {
+                return obj[e];
+            });
+        };
+
+        Math.imul = function(a, b) {
+            return (a*b)&0xFFFFFFFF;
+        }
+    """
+    )
+
+    # Load in the server-side code.
+    with open(book_path / "_static/server_side.js", encoding="utf-8") as f:
+        context.execute(f.read())
+
+    return context.serverSide
+
+
 # Provide feedback for a fill-in-the-blank problem. This should produce
 # identical results to the code in ``evaluateAnswers`` in ``fitb.js``.
 async def fitb_feedback(
@@ -50,92 +177,73 @@ async def fitb_feedback(
     fitb_validator: Any,
     # The feedback to use when grading this question, taken from the ``feedback`` field of the ``fitb_answers`` table.
     feedback: Dict[Any, Any],
+    # The base course this question appears in.
+    base_course: str,
 ) -> Dict[str, Any]:
-    # Grade based on this feedback. The new format is JSON; the old is
-    # comma-separated.
+    # Load and run the JS grader.
+    dyn_vars = feedback["dyn_vars"]
+    blankNames = feedback["blankNames"]
+    js_context = get_js_context(
+        Path(settings.book_path) / base_course / "published" / base_course
+    )
+    # Use a render to get the dynamic vars for a dynamic problem.
+    dyn_vars_eval = None
+    problemHtml = ""
+    if dyn_vars:
+        problemHtml, dyn_vars_eval = js_context.fitb.renderDynamicContent(
+            fitb_validator.seed, dyn_vars, feedback["problemHtml"]
+        )
+
+    # Get the answer.
     answer_json = fitb_validator.answer
+    # If there's no answer, skip grading.
+    if answer_json is None:
+        return dict(seed=fitb_validator.seed, problemHtml=problemHtml)
     try:
+        # The new format is JSON.
         answer = json.loads(answer_json)
         # Some answers may parse as JSON, but still be in the old format. The
         # new format should always return an array.
         assert isinstance(answer, list)
     except Exception:
+        # The old format is comma-separated.
         answer = answer_json.split(",")
-    displayFeed = []
-    isCorrectArray: List[Optional[bool]] = []
-    # The overall correctness of the entire problem.
-    correct = True
-    for blank, feedback_for_blank in zip(answer, feedback):
-        if not blank:
-            isCorrectArray.append(None)
-            displayFeed.append("No answer provided.")
-            correct = False
-        else:
-            # The correctness of this problem depends on if the first item matches.
-            is_first_item = True
-            # Check everything but the last answer, which always matches.
-            for fb in feedback_for_blank[:-1]:
-                if "regex" in fb:
-                    if re.search(
-                        fb["regex"], blank, re.I if fb["regexFlags"] == "i" else 0
-                    ):
-                        isCorrectArray.append(is_first_item)
-                        if not is_first_item:
-                            correct = False
-                        displayFeed.append(fb["feedback"])
-                        break
-                else:
-                    assert "number" in fb
-                    min_, max_ = fb["number"]
-                    try:
-                        # Note that ``literal_eval`` does **not** discard leading / trailing spaces, but considers them indentation errors. So, explicitly invoke ``strip``.
-                        val = ast.literal_eval(blank.strip())
-                        in_range = val >= min_ and val <= max_
-                    except Exception:
-                        # In case something weird or invalid was parsed (dict, etc.)
-                        in_range = False
-                    if in_range:
-                        isCorrectArray.append(is_first_item)
-                        if not is_first_item:
-                            correct = False
-                        displayFeed.append(fb["feedback"])
-                        break
-                is_first_item = False
-            # Nothing matched. Use the last feedback.
-            else:
-                isCorrectArray.append(False)
-                correct = False
-                displayFeed.append(feedback_for_blank[-1]["feedback"])
 
-    # Note that this isn't a percentage, but a ratio where 1.0 == all correct.
-    percent = (
-        isCorrectArray.count(True) / len(isCorrectArray) if len(isCorrectArray) else 0
+    # Grade using the JavaScript grader.
+    displayFeed, correct, isCorrectArray, percent = js_context.fitb.evaluateAnswersCore(
+        blankNames, answer, feedback["feedbackArray"], dyn_vars_eval, True
     )
+    # For dynamic problems, render the feedback.
+    if dyn_vars:
+        for index in range(len(displayFeed)):
+            displayFeed[index] = js_context.fitb.renderDynamicFeedback(
+                blankNames, answer, index, displayFeed[index], dyn_vars_eval
+            )
 
-    # Update the values to be stored in the db.
+    # Store updates to the database.
     fitb_validator.correct = correct
     fitb_validator.percent = percent
 
     # Return grading results to the client for a non-exam scenario.
     if settings.is_exam:
         return dict(
-            correct=True,
             displayFeed=["Response recorded."] * len(answer),
+            correct=True,
             isCorrectArray=[True] * len(answer),
-            percent=1,
+            problemHtml=problemHtml,
         )
     else:
         return dict(
-            correct=correct,
             displayFeed=displayFeed,
+            correct=correct,
             isCorrectArray=isCorrectArray,
-            percent=percent,
+            problemHtml=problemHtml,
         )
 
 
 # lp feedback
 # ===========
-async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any]):
+async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any], base_course: str):
     # Begin by reformatting the answer for storage in the database. Do this now, so the code will be stored correctly even if the function returns early due to an error.
     try:
         code_snippets = json.loads(lp_validator.answer)
@@ -144,8 +252,7 @@ async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any]):
         return {"errors": [f"Unable to load answers from '{lp_validator.answer}'."]}
     lp_validator.answer = json.dumps(dict(code_snippets=code_snippets))
 
-    course = await fetch_course(lp_validator.course_name)
-    sphinx_base_path = os.path.join(settings.book_path, course.base_course)
+    sphinx_base_path = os.path.join(settings.book_path, base_course)
     source_path = feedback["source_path"]
     # Read the Sphinx config file to find paths relative to this directory.
     sphinx_config = read_sphinx_config(sphinx_base_path)

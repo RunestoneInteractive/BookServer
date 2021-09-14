@@ -31,9 +31,11 @@ from bleach import clean
 # -------------------------
 from ..applogger import rslogger
 from ..crud import (
-    count_useinfo_for,
+    create_seed,
     create_selected_question,
     create_user_experiment_entry,
+    count_useinfo_for,
+    EVENT2TABLE,
     fetch_assignment_question,
     fetch_code,
     fetch_course,
@@ -48,10 +50,12 @@ from ..crud import (
     fetch_top10_fitb,
     fetch_user_experiment,
     fetch_viewed_questions,
+    is_server_feedback,
     update_selected_question,
 )
+from ..models import runestone_component_dict
 from ..internal.utils import make_json_response
-from ..schemas import AssessmentRequest, SelectQRequest
+from ..schemas import AssessmentRequest, SeedRequest, SelectQRequest
 from ..session import is_instructor
 
 # Routing
@@ -63,6 +67,8 @@ router = APIRouter(
 )
 
 
+# .. _getAssessResults:
+#
 # getAssessResults
 # ----------------
 @router.post("/results")
@@ -70,7 +76,8 @@ async def get_assessment_results(
     request_data: AssessmentRequest,
     request: Request,
 ):
-    if not request.state.user:
+    user = request.state.user
+    if not user:
         return make_json_response(
             status=status.HTTP_401_UNAUTHORIZED, detail="not logged in"
         )
@@ -80,28 +87,53 @@ async def get_assessment_results(
     # use the user objects username
     if await is_instructor(request):
         if not request_data.sid:
-            request_data.sid = request.state.user.username
+            request_data.sid = user.username
     else:
         if request_data.sid:
             # someone is attempting to spoof the api
             return make_json_response(
                 status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
             )
-        request_data.sid = request.state.user.username
+        request_data.sid = user.username
 
-    row = await fetch_last_answer_table_entry(request_data)
+    if request_data.new_seed:
+        # This tells the following code to create a new seed.
+        row = None
+        # We assume this table has seeds if it's asking for a new one...
+        has_seed = True
+    else:
+        row, has_seed = await fetch_last_answer_table_entry(request_data)
+
+    # Determine if this is a server-side graded problem.
+    feedback, base_course = await is_server_feedback(
+        request_data.div_id, user.course_name
+    )
+
     # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
     if not row or row.id is None:  # type: ignore
-        return make_json_response(detail="no data")
+        # Create and save a seed for server-side graded problems that need it.
+        if has_seed and feedback:
+            # Sigh -- must rename a field due to inconsistent naming conventions.
+            rd = request_data.dict()
+            rd["course_name"] = rd.pop("course")
+            await create_seed(SeedRequest(**rd))
+            # Get this new seed and return it.
+            row, has_seed = await fetch_last_answer_table_entry(request_data)
+            assert has_seed
+            assert row and row.id  # type: ignore
+        else:
+            return make_json_response(detail="no data")
 
-    # :index:`todo``: **port the serverside grading** code::
-    #
-    #   do_server_feedback, feedback = is_server_feedback(div_id, course)
-    #   if do_server_feedback:
-    #       correct, res_update = fitb_feedback(rows.answer, feedback)
-    #       res.update(res_update)
-    rslogger.debug(f"Returning {row}")
-    return make_json_response(detail=row)
+    row_dict = row.dict()
+    # Do server-side grading if needed.
+    if feedback:
+        # The grader should also be defined if there's feedback.
+        rcd = runestone_component_dict[EVENT2TABLE[request_data.event]]
+        assert rcd.grader
+        row_dict.update(await rcd.grader(row, feedback, base_course))
+
+    rslogger.debug(f"Returning {row_dict}")
+    return make_json_response(detail=row_dict)
 
 
 # Define a simple model for the gethist request.

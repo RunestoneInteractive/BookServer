@@ -15,7 +15,8 @@
 import datetime
 import json
 from collections import namedtuple
-from typing import Dict, List, Optional
+from random import randrange
+from typing import Dict, List, Optional, Tuple
 
 # Third-party imports
 # -------------------
@@ -65,6 +66,7 @@ from .models import (
     UserSubChapterProgressValidator,
     runestone_component_dict,
 )
+from .schemas import SeedRequest
 
 # Map from the ``event`` field of a ``LogItemIncoming`` to the database table used to store data associated with this event.
 EVENT2TABLE = {
@@ -216,9 +218,21 @@ async def create_answer_table_entry(
     return rcd.validator.from_orm(new_entry)  # type: ignore
 
 
+# Create a new random seed for a problem, discarding any previous answers.
+async def create_seed(seed_request: SeedRequest):
+    sr = seed_request.dict()
+    event = sr.pop("event")
+    rcd = runestone_component_dict[EVENT2TABLE[event]]
+    new_entry = rcd.model(**sr, correct=False, timestamp=datetime.datetime.utcnow())
+    new_entry.seed = randrange(2 ** 32 - 1)
+    async with async_session.begin() as session:
+        session.add(new_entry)
+
+
+# Return the last table entry as a Pydantic schema and a True if this table contains a seed, or False if not.
 async def fetch_last_answer_table_entry(
     query_data: schemas.AssessmentRequest,
-) -> schemas.LogItemIncoming:
+) -> Tuple[schemas.LogItemIncoming, bool]:
     rcd = runestone_component_dict[EVENT2TABLE[query_data.event]]
     tbl = rcd.model
     query = (
@@ -233,9 +247,9 @@ async def fetch_last_answer_table_entry(
         .order_by(tbl.timestamp.desc())
     )
     async with async_session() as session:
-        res = await session.execute(query)
+        res = (await session.execute(query)).scalars().first()
         rslogger.debug(f"res = {res}")
-        return rcd.validator.from_orm(res.scalars().first())  # type: ignore
+        return rcd.validator.from_orm(res), bool(getattr(tbl, "seed", False))  # type: ignore
 
 
 async def fetch_last_poll_response(sid: str, course_name: str, poll_id: str) -> str:
@@ -389,9 +403,9 @@ async def is_server_feedback(div_id, course):
         feedback = query_results and query_results.Question.feedback
         # If there's feedback and a login is required (necessary for server-side grading), return the decoded feedback.
         if feedback and query_results.Courses.login_required:
-            return json.loads(feedback)
+            return json.loads(feedback), query_results.Courses.base_course
         # Otherwise, grade on the client.
-        return None
+        return None, None
 
 
 # Development and Testing Utils
