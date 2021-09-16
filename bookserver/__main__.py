@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from pkg_resources import require
 
 # Third-party imports
 # -------------------
@@ -45,6 +46,7 @@ import click
     help="bookserver mode (test, development, production)",
 )
 @click.option("--dburl", default=None, help="Database URL to use regardless of mode")
+@click.option("--reload", is_flag=False, help="reload when code changes")
 @click.option(
     "--root", default=None, help="Set the root path for uvicorn when behind a proxy"
 )
@@ -52,6 +54,7 @@ import click
     "--bind", default="localhost:8080", help="Where to listen or socket to bind"
 )
 @click.option("--verbose", is_flag=True, help="Print out config information")
+@click.option("--version", is_flag=True, help="Print out version and exit")
 def run(
     web2py: str,
     gconfig: str,
@@ -59,11 +62,18 @@ def run(
     error_path: str,
     bks_config: str,
     dburl: str,
+    reload: bool,
     root: str,
     bind: str,
     verbose: bool,
+    version: bool,
 ):
     is_win = sys.platform == "win32"
+
+    if version:
+        version = require("bookserver")[0].version
+        print("BookServer Version {}".format(version))
+        sys.exit()
 
     if web2py and Path(web2py).exists() is False:
         click.echo(f"Warning: web2py_path {web2py} does not exist")
@@ -107,7 +117,8 @@ def run(
             # Where to serve or bind to socket for production
             f"--bind={bind}",
         ]
-
+        if reload:
+            args.append("--reload")
     # Suppress a traceback on a keyboard interrupt.
     try:
         return subprocess.run(args).returncode
