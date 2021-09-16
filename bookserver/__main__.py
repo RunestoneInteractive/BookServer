@@ -46,7 +46,7 @@ import click
     help="bookserver mode (test, development, production)",
 )
 @click.option("--dburl", default=None, help="Database URL to use regardless of mode")
-@click.option("--reload", is_flag=False, help="reload when code changes")
+@click.option("--reload", is_flag=True, help="reload when code changes")
 @click.option(
     "--root", default=None, help="Set the root path for uvicorn when behind a proxy"
 )
@@ -71,8 +71,8 @@ def run(
     is_win = sys.platform == "win32"
 
     if version:
-        version = require("bookserver")[0].version
-        print("BookServer Version {}".format(version))
+        vname = require("bookserver")[0].version
+        print("BookServer Version {}".format(vname))
         sys.exit()
 
     if web2py and Path(web2py).exists() is False:
