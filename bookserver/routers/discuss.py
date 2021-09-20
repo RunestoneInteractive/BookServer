@@ -37,6 +37,7 @@ import json
 import os
 from datetime import datetime
 from typing import Dict, Optional
+from multi_await import multi_await
 
 import aioredis
 import async_timeout
@@ -154,47 +155,76 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     await manager.connect(username, websocket)
     r = aioredis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
     subscriber = r.pubsub()
-    await subscriber.subscribe("peermessages")
-    # subscriber.subscribe(peermessages=callable) # in this case callable is automatically called
-    try:
-        while True:
-            try:
-                async with async_timeout.timeout(1):
-                    pmess = await subscriber.get_message(ignore_subscribe_messages=True)
-                    if pmess:
-                        rslogger.debug(f"{pmess=}")
-                        if pmess["type"] == "message":
-                            # This is a message sent into the channel, our stuff is in
-                            # the ``data`` field of the redis message
-                            data = json.loads(pmess["data"])
-                        else:
-                            rslogger.error("unknown message type {pmess['type']}")
-                            continue
-                        if data["broadcast"]:
-                            await manager.broadcast(data)
-                        else:
-                            # because **every** connection is in this loop we only
-                            # want to send a non-broadcast message if it is to
-                            # ourself.
-                            partner = await r.hget("partnerdb", data["from"])
-                            partner = partner.decode("utf8")
-                            if partner == username:
-                                await manager.send_personal_message(partner, data)
-                                await create_useinfo_entry(
-                                    UseinfoValidation(
-                                        event="sendmessage",
-                                        act=f"to:{partner}:{data['message']}",
-                                        div_id=data["div_id"],
-                                        course_id=data["course_name"],
-                                        sid=username,
-                                        timestamp=datetime.utcnow(),
-                                    )
-                                )
-                            else:
-                                rslogger.debug(f"{partner=} is not {username}")
-            except asyncio.TimeoutError:
-                pass
 
+    def distribute_message(mess):
+        rslogger.debug(f"hello from distribute message {pmess}")
+
+    # await subscriber.subscribe("peermessages")
+    await subscriber.subscribe(
+        peermessages=distribute_message
+    )  # in this case callable is automatically called
+    rslogger.debug("After subscribe")
+    try:
+        async with multi_await() as mawait:
+            mawait.add(subscriber.get_message)
+            mawait.add(websocket.receive_text)
+            results = [[], []]
+            while True:
+                complete, failures = await mawait.get()
+                # i == 0 --> pubsub message
+                # i == 1 --> websocket message
+                for i, result in enumerate(complete):
+                    if result is not None:
+                        results[i].append(result)
+                        # if i == 0 - handle pubsub message
+
+                rslogger.debug(f"results is now {results}")
+
+                # i == 0 --> pubsub failure
+                # i == 1 --> websocket fail --> update connections
+                for f in failures:
+                    if failures is not None:
+                        rslogger.debug(f"FAIL -- {failures}")
+                        # if i == 1 - deal with disconnect message
+                        # RuntimeError('Cannot call "receive" once a disconnect message has been received.')
+                # try:
+                #     async with async_timeout.timeout(1):
+                #         pmess = await subscriber.get_message(ignore_subscribe_messages=True)
+                #         if pmess:
+                #             rslogger.debug(f"{pmess=}")
+                #             if pmess["type"] == "message":
+                #                 # This is a message sent into the channel, our stuff is in
+                #                 # the ``data`` field of the redis message
+                #                 data = json.loads(pmess["data"])
+                #             else:
+                #                 rslogger.error("unknown message type {pmess['type']}")
+                #                 continue
+                #             if data["broadcast"]:
+                #                 await manager.broadcast(data)
+                #             else:
+                #                 # because **every** connection is in this loop we only
+                #                 # want to send a non-broadcast message if it is to
+                #                 # ourself.
+                #                 partner = await r.hget("partnerdb", data["from"])
+                #                 partner = partner.decode("utf8")
+                #                 if partner == username:
+                #                     await manager.send_personal_message(partner, data)
+                #                     await create_useinfo_entry(
+                #                         UseinfoValidation(
+                #                             event="sendmessage",
+                #                             act=f"to:{partner}:{data['message']}",
+                #                             div_id=data["div_id"],
+                #                             course_id=data["course_name"],
+                #                             sid=username,
+                #                             timestamp=datetime.utcnow(),
+                #                         )
+                #                     )
+                #                 else:
+                #                     rslogger.debug(f"{partner=} is not {username}")
+                # except asyncio.TimeoutError:
+                #     pass
+                # rslogger.debug("awaiting websocket message")
+                # mess = await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(username)
         rslogger.info(f"{username} has disconnected")
