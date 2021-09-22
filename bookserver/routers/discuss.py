@@ -28,7 +28,6 @@
 # If the message is a broadcast message then all instances of the consumer forward that
 # message to all connected parties.
 
-import asyncio
 import json
 
 #
@@ -37,10 +36,9 @@ import json
 import os
 from datetime import datetime
 from typing import Dict, Optional
-from multi_await import multi_await
+from multi_await import multi_await  # type: ignore
 
 import aioredis
-import async_timeout
 
 # Local application imports
 # -------------------------
@@ -49,7 +47,6 @@ from fastapi import (
     Cookie,
     Query,
     WebSocket,  # Depends,; noqa F401
-    WebSocketDisconnect,
     status,
 )
 from fastapi.templating import Jinja2Templates

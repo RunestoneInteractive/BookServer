@@ -95,3 +95,7 @@ env = [
 ]
 # The _`default logging level` of INFO produces a LOT of output. Use a higher level of ``WARNING`` to reduce the noise.
 log_cli_level = 30
+
+
+[tool.mypy]
+ignore_missing_imports = true
