@@ -144,9 +144,6 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     will block
     """
     rslogger.debug(f"IN WEBSOCKET {uname=}")
-    # res = await auth_manager.get_current_user(user)
-    # username = res.username
-    # rslogger.debug(f"{res=}")
     username = uname
     local_users.add(username)
     await manager.connect(username, websocket)
@@ -198,13 +195,14 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                 if data["broadcast"]:
                     await manager.broadcast(data)
                 else:
-                    # because **every** connection is in this loop we only
-                    # want to send a non-broadcast message if it is to
-                    # ourself.
+                    # because **every** connection runs this same loop
+                    # we only want to send a non-broadcast message if
+                    # it is to ourself.
                     partner = await r.hget("partnerdb", data["from"])
                     partner = partner.decode("utf8")
                     if partner == username:
                         await manager.send_personal_message(partner, data)
+                        # log the message
                         await create_useinfo_entry(
                             UseinfoValidation(
                                 event="sendmessage",
@@ -221,6 +219,10 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                 rslogger.debug(
                     f"We don't expect in coming websock messages but got: {wsres}"
                 )
+                # TODO: now that we have multi-await working it *may* be more
+                # efficient to go back to sending all peer messages by websocket
+                # and putting them into the subscriber queue here rather than
+                # having a separate endpoint.
 
 
 @router.post("/send_message")
