@@ -33,7 +33,6 @@ import json
 #
 # Third-party imports
 # -------------------
-import os
 from datetime import datetime
 from typing import Dict, Optional
 from multi_await import multi_await  # type: ignore
@@ -145,13 +144,15 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     """
     rslogger.debug(f"IN WEBSOCKET {uname=}")
     username = uname
+    # local_users is a global/module variable shared by all  requests served
+    # by the same worker process.
     local_users.add(username)
     await manager.connect(username, websocket)
-    r = aioredis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    r = aioredis.from_url(settings.redis_uri)
     subscriber = r.pubsub()
 
     async def my_get_message():
-        return await subscriber.get_message(timeout=1.0)
+        return await subscriber.get_message(timeout=1.0, ignore_subscribe_messages=True)
 
     await subscriber.subscribe("peermessages")
 
@@ -190,7 +191,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     # the ``data`` field of the redis message
                     data = json.loads(pmess["data"])
                 else:
-                    rslogger.error("unknown message type {pmess['type']}")
+                    rslogger.error(f"unknown message type {pmess['type']}")
                     continue
                 if data["broadcast"]:
                     await manager.broadcast(data)
@@ -227,5 +228,5 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
 
 @router.post("/send_message")
 async def send_message(packet: PeerMessage):
-    r = await aioredis.from_url(os.environ.get("REDIS_URI", "redis://localhost:6379/0"))
+    r = await aioredis.from_url(settings.redis_uri)
     r.publish("peermessages", packet.json())

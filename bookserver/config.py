@@ -109,6 +109,9 @@ class Settings(BaseSettings):
         else:
             raise RuntimeError(f"Unknown database type; URL is {dburl}.")
 
+    # The docker-compose.yml file will set the REDIS_URI environment variable
+    redis_uri = "redis://localhost:6379/0"
+
     # Select normal mode or a high-stakes assessment mode (for administering a examination). In this mode, answers to supported question types are not shown.
     is_exam: bool = False
 
