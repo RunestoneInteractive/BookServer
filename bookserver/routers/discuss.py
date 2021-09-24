@@ -211,16 +211,22 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     if partner:
                         partner = partner.decode("utf8")
                     else:
-                        mess = {
-                            "type": "text",
-                            "from": data["from"],
-                            "message": "Could not find a partner for you",
-                            "time": time.time(),
-                            "broadcast": False,
-                            "course_name": data["course_name"],
-                            "div_id": data["div_id"],
-                        }
-                        await manager.send_personal_message(data["from"], mess)
+                        try:
+                            mess = {
+                                "type": "text",
+                                "from": data["from"],
+                                "message": "Could not find a partner for you",
+                                "time": time.time(),
+                                "broadcast": False,
+                                "course_name": data["course_name"],
+                                "div_id": data["div_id"],
+                            }
+                            await manager.send_personal_message(data["from"], mess)
+                        except KeyError:
+                            rslogger.error(
+                                f"Not enough data to construct a message: {data}"
+                            )
+
                         rslogger.error(
                             f"{os.getpid()}: Failed to find a partner for {data['from']}"
                         )
