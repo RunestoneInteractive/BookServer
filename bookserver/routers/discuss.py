@@ -217,8 +217,8 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                             "message": "Could not find a partner for you",
                             "time": time.time(),
                             "broadcast": False,
-                            "course_name": pmess["course_name"],
-                            "div_id": pmess["div_id"],
+                            "course_name": data["course_name"],
+                            "div_id": data["div_id"],
                         }
                         await manager.send_personal_message(data["from"], mess)
                         rslogger.error(
