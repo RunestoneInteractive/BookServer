@@ -29,6 +29,8 @@
 # message to all connected parties.
 
 import json
+import os
+import time
 
 #
 # Third-party imports
@@ -88,26 +90,30 @@ class ConnectionManager:
         to = receiver
         if to in self.active_connections:
             try:
-                rslogger.debug(f"sending PM to {to} on {self.active_connections[to]}")
+                rslogger.debug(
+                    f"{os.getpid()}: sending {message} to {to} on {self.active_connections[to]}"
+                )
                 await self.active_connections[to].send_json(message)
             except Exception as e:
-                rslogger.error(f"Error sending to {to} is {e}")
+                rslogger.error(f"{os.getpid()}: Error sending to {to} is {e}")
                 del self.active_connections[to]
         else:
-            rslogger.error(f"{to} is not connected {self.active_connections}")
+            rslogger.error(
+                f"{os.getpid()}: {to} is not connected here {self.active_connections}"
+            )
 
     async def broadcast(self, message: str):
-        rslogger.debug(f"{self.active_connections=} {message=}")
+        rslogger.debug(f"{os.getpid()}: {self.active_connections=} {message=}")
         to_remove = []
         for key, connection in self.active_connections.items():
-            rslogger.debug(f"sending to {connection}")
+            rslogger.debug(f"{os.getpid()}: sending to {connection}")
             res = None
             try:
                 res = await connection.send_json(message)
             except Exception as e:
-                rslogger.debug(f"Failed to send {e}")
+                rslogger.debug(f"{os.getpid()}: Failed to send {e}")
                 to_remove.append(key)
-            rslogger.debug(f"result of send = {res}")
+            rslogger.debug(f"{os.getpid()}: result of send = {res}")
         for key in to_remove:
             del self.active_connections[key]
 
@@ -123,7 +129,7 @@ async def get_cookie_or_token(
     access_token: Optional[str] = Cookie(None),
     user: Optional[str] = Query(None),
 ):
-    rslogger.debug(f"HELLO {access_token=} or {user=}")
+    rslogger.debug(f"{os.getpid()}: HELLO {access_token=} or {user=}")
     if access_token is None and user is None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     return access_token or user
@@ -142,7 +148,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
     Using a non async library like plain redis-py will not work as the subscriber
     will block
     """
-    rslogger.debug(f"IN WEBSOCKET {uname=}")
+    rslogger.debug(f"{os.getpid()}: IN WEBSOCKET {uname=}")
     username = uname
     # local_users is a global/module variable shared by all  requests served
     # by the same worker process.
@@ -185,13 +191,15 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
 
             # handle message from the pubsub queue
             if pmess is not None:
-                rslogger.debug(f"{pmess=}")
+                rslogger.debug(f"{os.getpid()}: {pmess=}")
                 if pmess["type"] == "message":
                     # This is a message sent into the channel, our stuff is in
                     # the ``data`` field of the redis message
                     data = json.loads(pmess["data"])
                 else:
-                    rslogger.error(f"unknown message type {pmess['type']}")
+                    rslogger.error(
+                        f"{os.getpid()}: unknown message type {pmess['type']}"
+                    )
                     continue
                 if data["broadcast"]:
                     await manager.broadcast(data)
@@ -200,7 +208,22 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     # we only want to send a non-broadcast message if
                     # it is to ourself.
                     partner = await r.hget("partnerdb", data["from"])
-                    partner = partner.decode("utf8")
+                    if partner:
+                        partner = partner.decode("utf8")
+                    else:
+                        mess = {
+                            "type": "text",
+                            "from": data["from"],
+                            "message": "Could not find a partner for you",
+                            "time": time.time(),
+                            "broadcast": False,
+                            "course_name": pmess["course_name"],
+                            "div_id": pmess["div_id"],
+                        }
+                        await manager.send_personal_message(data["from"], mess)
+                        rslogger.error(
+                            f"{os.getpid()}: Failed to find a partner for {data['from']}"
+                        )
                     if partner == username:
                         await manager.send_personal_message(partner, data)
                         # log the message
@@ -210,15 +233,16 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                                 act=f"to:{partner}:{data['message']}",
                                 div_id=data["div_id"],
                                 course_id=data["course_name"],
-                                sid=username,
+                                sid=data["from"],
                                 timestamp=datetime.utcnow(),
                             )
                         )
                     else:
-                        rslogger.debug(f"{partner=} is not {username}")
+                        rslogger.debug(f"{os.getpid()}: {partner=} is not {username}")
+
             if wsres is not None:
                 rslogger.debug(
-                    f"We don't expect in coming websock messages but got: {wsres}"
+                    f"{os.getpid()}: We don't expect in coming websock messages but got: {wsres}"
                 )
                 # TODO: now that we have multi-await working it *may* be more
                 # efficient to go back to sending all peer messages by websocket

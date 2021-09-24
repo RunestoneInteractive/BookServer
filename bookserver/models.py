@@ -506,7 +506,9 @@ class AssignmentQuestion(Base, IdMixin):
     which_to_grade = Column(String(512), nullable=False)
     reading_assignment = Column(Web2PyBoolean)
     sorting_priority = Column(Integer, nullable=False)
-    activities_required = Column(Integer, nullable=False)
+    activities_required = Column(
+        Integer
+    )  # only reading assignments will have this populated
 
 
 AssignmentQuestionValidator = sqlalchemy_to_pydantic(AssignmentQuestion)
@@ -593,7 +595,7 @@ class UserSubChapterProgress(Base, IdMixin):
     chapter_id = Column(String(512), index=True, nullable=False)
     sub_chapter_id = Column(String(512), index=True, nullable=False)
     # Initial values for this don't have dates.
-    start_date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
     # Older courses lack this; all newer courses should have one.

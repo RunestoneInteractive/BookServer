@@ -109,6 +109,9 @@ class Settings(BaseSettings):
         else:
             raise RuntimeError(f"Unknown database type; URL is {dburl}.")
 
+    # Setting db_echo to True makes for a LOT of sqlalchemy output - it gives you the SQL for every query!
+    db_echo = False
+
     # The docker-compose.yml file will set the REDIS_URI environment variable
     redis_uri = "redis://localhost:6379/0"
 
