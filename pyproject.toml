@@ -9,7 +9,7 @@
 # ================
 [tool.poetry]
 name = "bookserver"
-version = "0.2.3"
+version = "0.3.6"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>"]
 license = "MIT"
@@ -20,6 +20,8 @@ include = ["deployment/*"]
 # Dependencies
 # ============
 [tool.poetry.dependencies]
+aioredis = "^2.0.0"
+async-timeout = "^3.0.0"
 celery = {extras = ["redis"], version = "^5.1.2"}
 python = "^3.7"
 fastapi = "^0.68.0"
@@ -31,15 +33,17 @@ Jinja2 = "^3.0.1"
 aiofiles = "^0.6.0"
 alembic = "^1.4.3"
 python-dateutil = "^2.8.1"
-fastapi-login = "^1.5.3"
+fastapi-login = "1.6.3"
 pydal = "^20210215.1"
 python-multipart = "^0.0.5"
 asyncpg = "^0.22.0"
 SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
+redis = "^3.5.3"
 # runestone = "^5.6.1" # comment out for now as unit testing fails the install due to version mismatch
 pyhumps = "^3.0.2"
 bleach = "^3.3.0"
+multi-await = "^1.0.1"
 
 # Development dependencies
 # ========================
@@ -91,3 +95,7 @@ env = [
 ]
 # The _`default logging level` of INFO produces a LOT of output. Use a higher level of ``WARNING`` to reduce the noise.
 log_cli_level = 30
+
+
+[tool.mypy]
+ignore_missing_imports = true

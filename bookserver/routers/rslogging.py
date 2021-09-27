@@ -334,6 +334,8 @@ async def getAllCompletionStatus(request: Request):
                 }
                 rowarray_list.append(res)
             return make_json_response(detail=rowarray_list)
+        else:
+            return make_json_response(detail="None")
     else:
         raise HTTPException(401)
 
