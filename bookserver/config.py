@@ -80,22 +80,34 @@ class Settings(BaseSettings):
     #
     book_server_config: BookServerConfig = "development"  # type: ignore
 
-    # Database setup: this must be an async connection; for example:
+    # Database setup: this must be an standard (synchronous) connection; for example:
     #
-    # - ``sqlite+aiosqlite:///./runestone.db``
-    # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
-    prod_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone.db"
-    dev_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_dev.db"
-    test_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_test.db"
+    # - ``sqlite:///./runestone.db``
+    # - ``postgresql://postgres:bully@localhost/runestone``
+    dburl: str = f"sqlite:///{_book_server_path}/runestone.db"
+    dev_dburl: str = f"sqlite:///{_book_server_path}/runestone_dev.db"
+    test_dburl: str = f"sqlite:///{_book_server_path}/runestone_test.db"
 
-    # Determine the database URL based on the ``book_server_config`` and the dburls above.
+    # Given a sync database URI, return its async equivalent.
+    @staticmethod
+    def _sync_to_async_uri(sync_uri: str) -> str:
+        return sync_uri.replace("sqlite://", "sqlite+aiosqlite://", 1).replace(
+            "postgresql://", "postgresql+asyncpg://", 1
+        )
+
+    # Determine the synchronous database URL based on the ``book_server_config`` and the dburls above.
     @property
-    def database_url(self) -> str:
+    def _sync_database_url(self) -> str:
         return {
             "development": self.dev_dburl,
             "test": self.test_dburl,
-            "production": self.prod_dburl,
+            "production": self.dburl,
         }[self.book_server_config.value]
+
+    # Return the async equivalent of the URI from ``sync_database_url``.
+    @property
+    def database_url(self) -> str:
+        return self._sync_to_async_uri(self._sync_database_url)
 
     # Determine the database type from the URL.
     @property
