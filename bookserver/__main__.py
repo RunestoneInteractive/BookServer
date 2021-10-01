@@ -75,9 +75,9 @@ def run(
         print("BookServer Version {}".format(vname))
         sys.exit()
 
-    if web2py and Path(web2py).exists() is False:
+    if web2py and not Path(web2py).exists():
         click.echo(f"Warning: web2py_path {web2py} does not exist")
-    else:
+    elif not web2py:
         click.echo("Warning: web2py_path is not defined.")
 
     if verbose:
