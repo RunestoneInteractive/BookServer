@@ -476,7 +476,7 @@ class Assignment(Base, IdMixin):
 
     course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     name = Column(String(512), nullable=False)
-    points = Column(Integer, nullable=False, default=0)
+    points = Column(Integer, default=0)
     released = Column(Web2PyBoolean, nullable=False)
     description = Column(Text)
     duedate = Column(DateTime, nullable=False)
@@ -488,9 +488,9 @@ class Assignment(Base, IdMixin):
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
-    # is_peer = Column(Web2PyBoolean, default=False)
-    # current_index = Column(Integer, default=0)
-    # enforce_due = Column(Web2PyBoolean)
+    is_peer = Column(Web2PyBoolean, default=False)
+    current_index = Column(Integer, default=0)
+    enforce_due = Column(Web2PyBoolean)
 
 
 class AssignmentQuestion(Base, IdMixin):
