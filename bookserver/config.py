@@ -65,11 +65,10 @@ class Settings(BaseSettings):
     # The path to store error logs.
     error_path: Path = Path.home() / "Runestone/errors"
 
-    # The path to web2py.
-    web2py_path: Path = (
+    # The path to the Runeestone application inside web2py.
+    runestone_path: Path = (
         Path(_book_server_path).parents[1] / "web2py/applications/runestone"
     )
-    # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # Define the mode of operation for the webserver, taken from ``BookServerConfig```. This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
     #
@@ -132,7 +131,7 @@ class Settings(BaseSettings):
         # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
         @lru_cache
         def read_key():
-            key_file = self.web2py_path / "private/auth.key"
+            key_file = self.runestone_path / "private/auth.key"
             if key_file.exists():
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()

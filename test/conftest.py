@@ -314,7 +314,7 @@ def init_db(pytestconfig):
     for retry in range(100):
         try:
             copytree(
-                f"{settings.web2py_path}/tests/test_course_1",
+                f"{settings.runestone_path}/tests/test_course_1",
                 test_book_path,
             )
             break
