@@ -182,6 +182,7 @@ exclude_patterns = [
     ".mypy_cache",
     "poetry.lock",
     ".tox",
+    ".venv",
     # **CodeChat notes:**
     #
     # By default, Enki will instruct Sphinx to place all Sphinx output in
@@ -191,7 +192,7 @@ exclude_patterns = [
     # The ``CodeToRestSphinx`` extension creates a file named
     # ``sphinx-enki-info.txt``, which should be ignored by Sphinx.
     "sphinx-enki-info.txt",
-    # TODO: Notes here. I assume this is produced by the coverage run in the test suite? A link to that point in the code would be nice.
+    # This is produced by the coverage run in the test suite; see `.coveragerc`.
     "test/htmlcov",
 ]
 
