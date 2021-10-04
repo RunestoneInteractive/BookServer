@@ -56,10 +56,8 @@ async def init_models():
             await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    await check_not_null()
 
-
-# Look for any records that violate non-null constraints.
+# Look for any records that violate non-null constraints. TODO: when/where should we call this? Or should it be removed?
 async def check_not_null():
     rslogger.info("Searching for NOT NULL constraint violations..."),
     not_null_count = 0

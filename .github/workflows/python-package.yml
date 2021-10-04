@@ -19,7 +19,7 @@ jobs:
       BOOK_SERVER_CONFIG: test
       TEST_DBURL: postgresql+asyncpg://postgres:foo@localhost/runestone
       BOOK_PATH: ${{ github.workspace }}/../RunestoneServer/books
-      WEB2PY_PATH: ${{ github.workspace }}/../RunestoneServer
+      RUNESTONE_PATH: ${{ github.workspace }}/../RunestoneServer
     strategy:
       matrix:
         python-version: ['3.8', '3.9']
