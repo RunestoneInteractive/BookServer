@@ -495,10 +495,9 @@ async def test_user_1(create_test_user, test_course_1):
 # Create an instance of Selenium once per testing session.
 @pytest.fixture(scope="session")
 def selenium_driver_session(run_bookserver):
-    # Start a virtual display for Linux. TODO: skip this if ``DISPLAY`` is set. First, need to get Chrome running without this (currently, I get a ``DevToolsActivePort file doesn't exist`` error that Google help didn't fix.)
-    is_linux = sys.platform.startswith("linux") # and "DISPLAY" not in os.environ:
-    if is_linux:
-        # Set visible to 1 to see Chrome run in a Xephyr window
+    is_linux = sys.platform.startswith("linux")
+    # Start a virtual display for Linux if there's no display available.
+    if is_linux and "DISPLAY" not in os.environ:
         display = Display(visible=0, size=(1280, 1024))
         display.start()
     else:
