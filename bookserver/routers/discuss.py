@@ -233,16 +233,19 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     if partner == username:
                         await manager.send_personal_message(partner, data)
                         # log the message
-                        await create_useinfo_entry(
-                            UseinfoValidation(
-                                event="sendmessage",
-                                act=f"to:{partner}:{data['message']}",
-                                div_id=data["div_id"],
-                                course_id=data["course_name"],
-                                sid=data["from"],
-                                timestamp=datetime.utcnow(),
+                        # todo - we should not log messages that are 'control' messages
+                        # These individual control messages update partner and answer
+                        if data["type"] != "control":
+                            await create_useinfo_entry(
+                                UseinfoValidation(
+                                    event="sendmessage",
+                                    act=f"to:{partner}:{data['message']}",
+                                    div_id=data["div_id"],
+                                    course_id=data["course_name"],
+                                    sid=data["from"],
+                                    timestamp=datetime.utcnow(),
+                                )
                             )
-                        )
                     else:
                         rslogger.debug(f"{os.getpid()}: {partner=} is not {username}")
 

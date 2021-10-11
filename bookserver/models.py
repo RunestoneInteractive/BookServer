@@ -611,7 +611,7 @@ class UserChapterProgress(Base, IdMixin):
     user_id = Column(String(512), nullable=False)
     chapter_id = Column(String(512), nullable=False)
     # Initial values for this don't have dates.
-    start_date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
 
