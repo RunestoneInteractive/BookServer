@@ -287,7 +287,7 @@ def init_db(pytestconfig):
             os.unlink(path)
 
     elif settings.database_type == DatabaseType.PostgreSQL:
-        # Extract the components of the DBURL. The expected format is ``postgresql+asyncpg://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
+        # Extract the components of the DBURL. The expected format is ``postgresql://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
         (empty1, pguser, pgpassword, pgnetloc, dbname, empty2) = re.split(
             r"^postgresql://(.*):(.*)@(.*)\/(.*)$", dburl
         )
