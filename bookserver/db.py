@@ -32,7 +32,9 @@ else:
 
 # The polling in `../../test/test_runestone_components.py` produces a HUGE amount of output when echo is true.
 extra_settings = (
-    {} if settings.book_server_config == BookServerConfig.test else dict(echo=True)
+    {}
+    if settings.book_server_config == BookServerConfig.test
+    else dict(echo=settings.db_echo)
 )
 engine = create_async_engine(
     settings.database_url, connect_args=connect_args, **extra_settings
@@ -54,10 +56,8 @@ async def init_models():
             await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    await check_not_null()
 
-
-# Look for any records that violate non-null constraints.
+# Look for any records that violate non-null constraints. TODO: when/where should we call this? Or should it be removed?
 async def check_not_null():
     rslogger.info("Searching for NOT NULL constraint violations..."),
     not_null_count = 0

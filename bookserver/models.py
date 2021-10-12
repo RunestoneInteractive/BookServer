@@ -476,7 +476,7 @@ class Assignment(Base, IdMixin):
 
     course = Column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
     name = Column(String(512), nullable=False)
-    points = Column(Integer, nullable=False, default=0)
+    points = Column(Integer, default=0)
     released = Column(Web2PyBoolean, nullable=False)
     description = Column(Text)
     duedate = Column(DateTime, nullable=False)
@@ -488,9 +488,9 @@ class Assignment(Base, IdMixin):
     from_source = Column(Web2PyBoolean, nullable=False)
     nofeedback = Column(Web2PyBoolean)
     nopause = Column(Web2PyBoolean)
-    # is_peer = Column(Web2PyBoolean, default=False)
-    # current_index = Column(Integer, default=0)
-    # enforce_due = Column(Web2PyBoolean)
+    is_peer = Column(Web2PyBoolean, default=False)
+    current_index = Column(Integer, default=0)
+    enforce_due = Column(Web2PyBoolean)
 
 
 class AssignmentQuestion(Base, IdMixin):
@@ -506,7 +506,9 @@ class AssignmentQuestion(Base, IdMixin):
     which_to_grade = Column(String(512), nullable=False)
     reading_assignment = Column(Web2PyBoolean)
     sorting_priority = Column(Integer, nullable=False)
-    activities_required = Column(Integer, nullable=False)
+    activities_required = Column(
+        Integer
+    )  # only reading assignments will have this populated
 
 
 AssignmentQuestionValidator = sqlalchemy_to_pydantic(AssignmentQuestion)
@@ -593,7 +595,7 @@ class UserSubChapterProgress(Base, IdMixin):
     chapter_id = Column(String(512), index=True, nullable=False)
     sub_chapter_id = Column(String(512), index=True, nullable=False)
     # Initial values for this don't have dates.
-    start_date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
     # Older courses lack this; all newer courses should have one.
@@ -609,7 +611,7 @@ class UserChapterProgress(Base, IdMixin):
     user_id = Column(String(512), nullable=False)
     chapter_id = Column(String(512), nullable=False)
     # Initial values for this don't have dates.
-    start_date = Column(DateTime, nullable=False)
+    start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(Integer, nullable=False)
 

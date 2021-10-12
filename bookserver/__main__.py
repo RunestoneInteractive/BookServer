@@ -32,7 +32,7 @@ import click
 @click.command()
 @click.option(
     "--web2py",
-    default=os.environ.get("WEB2PY_PATH", None),
+    default=os.environ.get("RUNESTONE_PATH", None),
     help="path to web2py install",
 )
 @click.option(
@@ -75,17 +75,17 @@ def run(
         print("BookServer Version {}".format(vname))
         sys.exit()
 
-    if web2py and Path(web2py).exists() is False:
-        click.echo(f"Warning: web2py_path {web2py} does not exist")
-    else:
-        click.echo("Warning: web2py_path is not defined.")
+    if web2py and not Path(web2py).exists():
+        click.echo(f"Warning: runestone_path {web2py} does not exist")
+    elif not web2py:
+        click.echo("Warning: runestone_path is not defined.")
 
     if verbose:
         click.echo(f"{web2py=}")
         click.echo(f"{sys.executable=}")
 
     # set of verify will upcase the names
-    set_or_verify_env("web2py_path", web2py)
+    set_or_verify_env("runestone_path", web2py)
     set_or_verify_env("root_path", root)
     set_or_verify_env("book_path", book_path)
     set_or_verify_env("error_path", error_path)

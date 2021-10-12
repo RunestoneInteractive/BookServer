@@ -65,11 +65,10 @@ class Settings(BaseSettings):
     # The path to store error logs.
     error_path: Path = Path.home() / "Runestone/errors"
 
-    # The path to web2py.
-    web2py_path: Path = (
+    # The path to the Runeestone application inside web2py.
+    runestone_path: Path = (
         Path(_book_server_path).parents[1] / "web2py/applications/runestone"
     )
-    # web2py_path: Path = Path.home() / "Runestone/RunestoneServer"
 
     # Define the mode of operation for the webserver, taken from ``BookServerConfig```. This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
     #
@@ -81,22 +80,34 @@ class Settings(BaseSettings):
     #
     book_server_config: BookServerConfig = "development"  # type: ignore
 
-    # Database setup: this must be an async connection; for example:
+    # Database setup: this must be an standard (synchronous) connection; for example:
     #
-    # - ``sqlite+aiosqlite:///./runestone.db``
-    # - ``postgresql+asyncpg://postgres:bully@localhost/runestone``
-    prod_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone.db"
-    dev_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_dev.db"
-    test_dburl: str = f"sqlite+aiosqlite:///{_book_server_path}/runestone_test.db"
+    # - ``sqlite:///./runestone.db``
+    # - ``postgresql://postgres:bully@localhost/runestone``
+    dburl: str = f"sqlite:///{_book_server_path}/runestone.db"
+    dev_dburl: str = f"sqlite:///{_book_server_path}/runestone_dev.db"
+    test_dburl: str = f"sqlite:///{_book_server_path}/runestone_test.db"
 
-    # Determine the database URL based on the ``book_server_config`` and the dburls above.
+    # Given a sync database URI, return its async equivalent.
+    @staticmethod
+    def _sync_to_async_uri(sync_uri: str) -> str:
+        return sync_uri.replace("sqlite://", "sqlite+aiosqlite://", 1).replace(
+            "postgresql://", "postgresql+asyncpg://", 1
+        )
+
+    # Determine the synchronous database URL based on the ``book_server_config`` and the dburls above.
     @property
-    def database_url(self) -> str:
+    def _sync_database_url(self) -> str:
         return {
             "development": self.dev_dburl,
             "test": self.test_dburl,
-            "production": self.prod_dburl,
+            "production": self.dburl,
         }[self.book_server_config.value]
+
+    # Return the async equivalent of the URI from ``sync_database_url``.
+    @property
+    def database_url(self) -> str:
+        return self._sync_to_async_uri(self._sync_database_url)
 
     # Determine the database type from the URL.
     @property
@@ -108,6 +119,9 @@ class Settings(BaseSettings):
             return DatabaseType.PostgreSQL
         else:
             raise RuntimeError(f"Unknown database type; URL is {dburl}.")
+
+    # Setting db_echo to True makes for a LOT of sqlalchemy output - it gives you the SQL for every query!
+    db_echo = False
 
     # The docker-compose.yml file will set the REDIS_URI environment variable
     redis_uri = "redis://localhost:6379/0"
@@ -129,7 +143,7 @@ class Settings(BaseSettings):
         # Put the cache here; above the def, it produces ``TypeError: unhashable type: 'Settings'``.
         @lru_cache
         def read_key():
-            key_file = self.web2py_path / "private/auth.key"
+            key_file = self.runestone_path / "private/auth.key"
             if key_file.exists():
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()
