@@ -36,7 +36,7 @@ import time
 # Third-party imports
 # -------------------
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from multi_await import multi_await  # type: ignore
 
 import aioredis
@@ -85,7 +85,7 @@ class ConnectionManager:
     async def send_personal_message(
         self,
         receiver: str,
-        message: PeerMessage,
+        message: Dict[str, Any],
     ):
         to = receiver
         if to in self.active_connections:
