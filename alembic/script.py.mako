@@ -7,6 +7,8 @@ Create Date: ${create_date}
 """
 from alembic import op
 import sqlalchemy as sa
+# This is needed for the Web2PyBoolean class.
+import bookserver.models
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.

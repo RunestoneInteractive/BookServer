@@ -152,6 +152,7 @@ bookserver_tables = dedent(
  user_chapter_progress
  user_courses
  user_experiment
+ user_state
  user_sub_chapter_progress
 """
 ).split()
