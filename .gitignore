@@ -26,3 +26,7 @@ alembic/versions/*.py
 .vscode
 .nova
 .idea
+
+# ignore config files for development
+gdev.conf.py
+auth_user.csv

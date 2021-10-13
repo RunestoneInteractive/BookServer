@@ -281,15 +281,15 @@ def init_db(pytestconfig):
 
     # Start with a clean database.
     if settings.database_type == DatabaseType.SQLite:
-        match = re.match(r"sqlite.*?///(.*)", dburl)
+        match = re.match(r"^sqlite:///(.*)$", dburl)
         path = match.group(1)
         if Path(path).exists():
             os.unlink(path)
 
     elif settings.database_type == DatabaseType.PostgreSQL:
-        # Extract the components of the DBURL. The expected format is ``postgresql+asyncpg://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
+        # Extract the components of the DBURL. The expected format is ``postgresql://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
         (empty1, pguser, pgpassword, pgnetloc, dbname, empty2) = re.split(
-            r"^postgresql\+asyncpg:\/\/(.*):(.*)@(.*)\/(.*)$", settings.database_url
+            r"^postgresql://(.*):(.*)@(.*)\/(.*)$", dburl
         )
         # Per the `docs <https://docs.python.org/3/library/re.html#re.split>`_, the first and last split are empty because the pattern matches at the beginning and the end of the string.
         assert not empty1 and not empty2
@@ -314,7 +314,7 @@ def init_db(pytestconfig):
     for retry in range(100):
         try:
             copytree(
-                f"{settings.web2py_path}/tests/test_course_1",
+                f"{settings.runestone_path}/tests/test_course_1",
                 test_book_path,
             )
             break
@@ -328,11 +328,7 @@ def init_db(pytestconfig):
 
     # Build the test book to add in db fields needed.
     with pushd(test_book_path), MonkeyPatch().context() as m:
-        sync_dburl = settings.database_url.replace("+asyncpg", "").replace(
-            "+aiosqlite", ""
-        )
         m.setenv("WEB2PY_CONFIG", "test")
-        m.setenv("TEST_DBURL", sync_dburl)
 
         def run_subprocess(args: str, description: str):
             cp = subprocess.run(args, capture_output=True, text=True, shell=True)
@@ -499,9 +495,9 @@ async def test_user_1(create_test_user, test_course_1):
 # Create an instance of Selenium once per testing session.
 @pytest.fixture(scope="session")
 def selenium_driver_session(run_bookserver):
-    # Start a virtual display for Linux.
     is_linux = sys.platform.startswith("linux")
-    if is_linux:
+    # Start a virtual display for Linux if there's no display available.
+    if is_linux and "DISPLAY" not in os.environ:
         display = Display(visible=0, size=(1280, 1024))
         display.start()
     else:

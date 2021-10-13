@@ -442,7 +442,7 @@ async def create_initial_courses_users():
                 downloads_enabled=False,
                 courselevel="",
                 institution="",
-                new_server=False,
+                new_server=True,
             )
             await create_course(new_course)
         # make a user

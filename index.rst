@@ -33,7 +33,42 @@ These instructors enable you to install the BookServer, then author or edit book
 #.  To edit an exiting book, first clone it from the `RunestoneInteractive Github page <https://github.com/RunestoneInteractive>`_. Otherwise, create a new directory then execute ``runestone init`` at a terminal / command prompt.
 #.  `Author the book <https://runestone.academy/runestone/books/published/overview/index.html>`_; the `CodeChat System <https://codechat-system.readthedocs.io/en/latest/>`_ provides a GUI to make this easier, but a text editor plus running ``runestone build --all`` from the terminal / command prompt also works.
 #.  Deploy the book using ``runestone deploy``. TODO: this should automatically add the book to the courses table, and copy it to the correct `book path <book_path>`.
-#.  Execute ``bookserver`` from a terminal / command prompt to start the server. `Browse to the bookserver <http://127.0.0.1:8080/>`_ then view the book.
+#.  Execute ``bookserver`` from a terminal / command prompt to start the server. `Browse to the bookserver <http://127.0.0.1:8080/>`_ then view the book.  Running `bookserver` requires a few environment variables be set up, you can also start it by supplying key parameters on the command line:
+
+.. code-block:: bash
+
+    bookserver --gconfig gdev.conf.py \
+                --bks_config development \
+                --dburl sqlite+aiosqlite:////path/to/runestone_dev.db \
+                --reload
+
+This configuration is very simple and uses a sqlite database, suitable for experiments or development work.  The ``gdev.conf.py`` file has just a few lines that you can modify.  You can copy ``deployment/gunicorn.conf.py`` and edit it if you wish.
+
+.. code-block:: python
+
+    # ***********************************
+    # This file configures gunicorn to use Uvicorn to run FastAPI which runs the BookServer.
+    #
+    # See also the `gunicorn config docs <https://docs.gunicorn.org/en/stable/configure.html#configuration-file>`_.
+    #
+    # Imports
+    # =======
+    # These are listed in the order prescribed by `PEP 8`_.
+    #
+    # Standard library
+    # ----------------
+    import multiprocessing
+
+    # Configuration
+    # =============
+    # `wsgi_app <https://docs.gunicorn.org/en/stable/settings.html#wsgi-app>`_: A WSGI application path in pattern ``$(MODULE_NAME):$(VARIABLE_NAME)``.
+    wsgi_app = "bookserver.main:app"
+
+    # `workers <https://docs.gunicorn.org/en/stable/settings.html#workers>`_: The number of worker processes for handling requests. Pick this based on CPU count.
+    workers = multiprocessing.cpu_count() * 2 + 1
+
+    # `worker_class <https://docs.gunicorn.org/en/stable/settings.html#worker-class>`_: The type of workers to use. Use `uvicorn's worker class for gunicorn <https://www.uvicorn.org/deployment/#gunicorn>`_.
+    worker_class = "uvicorn.workers.UvicornWorker"
 
 License
 =======

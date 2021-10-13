@@ -21,3 +21,4 @@ exclude =
   _build/
   alembic/
   .tox/
+  .venv/

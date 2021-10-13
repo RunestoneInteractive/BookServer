@@ -204,3 +204,10 @@ class SelectQRequest(BaseModel):
     AB: Optional[str]
     toggleOptions: Optional[str]
     timedWrapper: Optional[str]
+
+
+class PeerMessage(BaseModel):
+    type: str
+    sender: str
+    message: str
+    broadcast: bool

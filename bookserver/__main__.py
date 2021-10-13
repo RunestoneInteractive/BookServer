@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from pkg_resources import require
 
 # Third-party imports
 # -------------------
@@ -31,7 +32,7 @@ import click
 @click.command()
 @click.option(
     "--web2py",
-    default=os.environ.get("WEB2PY_PATH", None),
+    default=os.environ.get("RUNESTONE_PATH", None),
     help="path to web2py install",
 )
 @click.option(
@@ -45,6 +46,7 @@ import click
     help="bookserver mode (test, development, production)",
 )
 @click.option("--dburl", default=None, help="Database URL to use regardless of mode")
+@click.option("--reload", is_flag=True, help="reload when code changes")
 @click.option(
     "--root", default=None, help="Set the root path for uvicorn when behind a proxy"
 )
@@ -52,6 +54,7 @@ import click
     "--bind", default="localhost:8080", help="Where to listen or socket to bind"
 )
 @click.option("--verbose", is_flag=True, help="Print out config information")
+@click.option("--version", is_flag=True, help="Print out version and exit")
 def run(
     web2py: str,
     gconfig: str,
@@ -59,23 +62,30 @@ def run(
     error_path: str,
     bks_config: str,
     dburl: str,
+    reload: bool,
     root: str,
     bind: str,
     verbose: bool,
+    version: bool,
 ):
     is_win = sys.platform == "win32"
 
-    if web2py and Path(web2py).exists() is False:
-        click.echo(f"Warning: web2py_path {web2py} does not exist")
-    else:
-        click.echo("Warning: web2py_path is not defined.")
+    if version:
+        vname = require("bookserver")[0].version
+        print("BookServer Version {}".format(vname))
+        sys.exit()
+
+    if web2py and not Path(web2py).exists():
+        click.echo(f"Warning: runestone_path {web2py} does not exist")
+    elif not web2py:
+        click.echo("Warning: runestone_path is not defined.")
 
     if verbose:
         click.echo(f"{web2py=}")
         click.echo(f"{sys.executable=}")
 
     # set of verify will upcase the names
-    set_or_verify_env("web2py_path", web2py)
+    set_or_verify_env("runestone_path", web2py)
     set_or_verify_env("root_path", root)
     set_or_verify_env("book_path", book_path)
     set_or_verify_env("error_path", error_path)
@@ -107,7 +117,8 @@ def run(
             # Where to serve or bind to socket for production
             f"--bind={bind}",
         ]
-
+        if reload:
+            args.append("--reload")
     # Suppress a traceback on a keyboard interrupt.
     try:
         return subprocess.run(args).returncode

@@ -72,8 +72,8 @@ async def startup():
     os.makedirs(settings.book_path, exist_ok=True)
     os.makedirs(settings.error_path, exist_ok=True)
     assert (
-        settings.web2py_path.exists()
-    ), f"web2py path {settings.web2py_path} does not exist."
+        settings.runestone_path.exists()
+    ), f"Runestone appplication in web2py path {settings.runestone_path} does not exist."
 
     await init_models()
     await create_initial_courses_users()
