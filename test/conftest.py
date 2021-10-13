@@ -287,9 +287,9 @@ def init_db(pytestconfig):
             os.unlink(path)
 
     elif settings.database_type == DatabaseType.PostgreSQL:
-        # Extract the components of the DBURL. The expected format is ``postgresql+asyncpg://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
+        # Extract the components of the DBURL. The expected format is ``postgresql://user:password@netloc/dbname``, a simplified form of the `connection URI <https://www.postgresql.org/docs/9.6/static/libpq-connect.html#LIBPQ-CONNSTRING>`_.
         (empty1, pguser, pgpassword, pgnetloc, dbname, empty2) = re.split(
-            r"^postgresql://(.*):(.*)@(.*)\/(.*)$", settings.database_url
+            r"^postgresql://(.*):(.*)@(.*)\/(.*)$", dburl
         )
         # Per the `docs <https://docs.python.org/3/library/re.html#re.split>`_, the first and last split are empty because the pattern matches at the beginning and the end of the string.
         assert not empty1 and not empty2
@@ -495,9 +495,9 @@ async def test_user_1(create_test_user, test_course_1):
 # Create an instance of Selenium once per testing session.
 @pytest.fixture(scope="session")
 def selenium_driver_session(run_bookserver):
-    # Start a virtual display for Linux.
     is_linux = sys.platform.startswith("linux")
-    if is_linux:
+    # Start a virtual display for Linux if there's no display available.
+    if is_linux and "DISPLAY" not in os.environ:
         display = Display(visible=0, size=(1280, 1024))
         display.start()
     else:
