@@ -497,9 +497,11 @@ class AssignmentQuestion(Base, IdMixin):
     __tablename__ = "assignment_questions"
 
     assignment_id = Column(
-        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    question_id = Column(ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
+    question_id = Column(
+        ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     points = Column(Integer, nullable=False)
     timed = Column(Web2PyBoolean)
     autograde = Column(String(512), nullable=False)
@@ -532,9 +534,9 @@ class QuestionGrade(Base, IdMixin):
         ),
     )
 
-    sid = Column(String(512), nullable=False)
-    course_name = Column(String(512), nullable=False)
-    div_id = Column(String(512), nullable=False)
+    sid = Column(String(512), nullable=False, index=True)
+    course_name = Column(String(512), nullable=False, index=True)
+    div_id = Column(String(512), nullable=False, index=True)
     # Manually-graded questions may be unscored (a NULL score).
     score = Column(Float(53))
     comment = Column(Text, nullable=False)
@@ -551,9 +553,11 @@ class Grade(Base, IdMixin):
         Index("user_assign_unique_idx", "auth_user", "assignment"),
     )
 
-    auth_user = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False)
+    auth_user = Column(
+        ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     assignment = Column(
-        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False, index=True
     )
     # If all questions in the assignment don't have a score, this won't either.
     score = Column(Float(53))
