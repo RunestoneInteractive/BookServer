@@ -19,19 +19,16 @@ from pkg_resources import require
 # -------------------
 import click
 
-#
 # Local application imports
 # -------------------------
 # None.
-#
-#
 
 
 # Code
 # ====
 @click.command()
 @click.option(
-    "--web2py",
+    "--runestone-path",
     default=os.environ.get("RUNESTONE_PATH", None),
     help="path to web2py install",
 )
@@ -56,7 +53,7 @@ import click
 @click.option("--verbose", is_flag=True, help="Print out config information")
 @click.option("--version", is_flag=True, help="Print out version and exit")
 def run(
-    web2py: str,
+    runestone_path: str,
     gconfig: str,
     book_path: str,
     error_path: str,
@@ -75,17 +72,17 @@ def run(
         print("BookServer Version {}".format(vname))
         sys.exit()
 
-    if web2py and not Path(web2py).exists():
-        click.echo(f"Warning: runestone_path {web2py} does not exist")
-    elif not web2py:
+    if runestone_path and not Path(runestone_path).exists():
+        click.echo(f"Warning: runestone_path {runestone_path} does not exist")
+    elif not runestone_path:
         click.echo("Warning: runestone_path is not defined.")
 
     if verbose:
-        click.echo(f"{web2py=}")
+        click.echo(f"{runestone_path=}")
         click.echo(f"{sys.executable=}")
 
     # set of verify will upcase the names
-    set_or_verify_env("runestone_path", web2py)
+    set_or_verify_env("runestone_path", runestone_path)
     set_or_verify_env("root_path", root)
     set_or_verify_env("book_path", book_path)
     set_or_verify_env("error_path", error_path)
