@@ -14,8 +14,9 @@
 # Standard library
 # ----------------
 from enum import Enum
-from pathlib import Path
 from functools import lru_cache
+import os
+from pathlib import Path
 
 # Third-party imports
 # -------------------
@@ -59,16 +60,19 @@ class Settings(BaseSettings):
         Path(pkg_resources.resource_filename("bookserver", "")).absolute()
     )
 
-    # _`book_path`: specify the directory to serve books from.
-    book_path: Path = Path.home() / "Runestone/books"
+    # The path to the Runestone application inside web2py.
+    runestone_path: Path = Path(
+        os.environ.get(
+            "RUNESTONE_PATH",
+            Path(_book_server_path).parents[1] / "web2py/applications/runestone",
+        )
+    ).resolve()
+
+    # _`book_path`: specify the directory to serve books from. For now, default to serving from the same place as the Runestone server, since the server uses some of these files.
+    book_path: Path = runestone_path / "books"
 
     # The path to store error logs.
     error_path: Path = Path.home() / "Runestone/errors"
-
-    # The path to the Runeestone application inside web2py.
-    runestone_path: Path = (
-        Path(_book_server_path).parents[1] / "web2py/applications/runestone"
-    )
 
     # Define the mode of operation for the webserver, taken from ``BookServerConfig```. This looks a bit odd, since the string value will be parsed by Pydantic into a Config.
     #
