@@ -30,6 +30,7 @@ uvicorn = {extras = ["standard"], version = "^0.14.0"}
 # See the `poetry docs <https://python-poetry.org/docs/dependency-specification/#using-environment-markers>`_.
 gunicorn = {version = "^20.1.0", markers = "sys.platform != 'win32'"}
 Jinja2 = "^3.0.1"
+Js2Py = "^0.71"
 aiofiles = "^0.6.0"
 alembic = "^1.4.3"
 python-dateutil = "^2.8.1"

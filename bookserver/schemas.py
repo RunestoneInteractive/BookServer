@@ -121,6 +121,8 @@ class LogItemIncoming(BaseModelNone):
     incorrect: Optional[int]
     skipped: Optional[int]
     time_taken: Optional[int]
+    # Used by dynamic problems
+    seed: Optional[int]
 
 
 class AssessmentRequest(BaseModelNone):
@@ -130,6 +132,8 @@ class AssessmentRequest(BaseModelNone):
     sid: Optional[str] = None
     # See `Field with dynamic default value <https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields>`_.
     deadline: datetime = Field(default_factory=datetime.utcnow)
+    # True if the response should use a new random seed.
+    new_seed: bool = False
 
     @validator("deadline")
     def str_to_datetime(cls, value: str) -> datetime:
@@ -145,6 +149,14 @@ class AssessmentRequest(BaseModelNone):
             # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
             raise ValueError(f"Bad Timezone - {value}")
         return deadline
+
+
+# The data required to create a new seed for a dynamic problem
+class SeedRequest(BaseModelNone):
+    course_name: str
+    div_id: str
+    event: str
+    sid: str
 
 
 class TimezoneRequest(BaseModelNone):

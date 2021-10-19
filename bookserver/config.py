@@ -56,9 +56,9 @@ class Settings(BaseSettings):
     google_ga: str = ""
 
     # Provide a path to the book server files. The leading underscore prevents environment variables from affecting this value. See the `docs <https://pydantic-docs.helpmanual.io/usage/models/#automatically-excluded-attributes>`_, which don't say this explicitly, but testing confirms it.
-    _book_server_path: str = str(
-        Path(pkg_resources.resource_filename("bookserver", "")).absolute()
-    )
+    _book_server_path: Path = Path(
+        pkg_resources.resource_filename("bookserver", "")
+    ).absolute()
 
     # The path to the Runestone application inside web2py.
     runestone_path: Path = Path(

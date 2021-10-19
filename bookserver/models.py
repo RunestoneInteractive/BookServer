@@ -222,7 +222,9 @@ class MchoiceAnswers(Base, CorrectAnswerMixin):
 class FitbAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "fitb_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512), nullable=False)
+    answer = Column(String(512))
+    # The random seed used for dynamic problems.
+    seed = Column(Integer)
     __table_args__ = (Index("idx_div_sid_course_fb", "sid", "div_id", "course_name"),)
 
 

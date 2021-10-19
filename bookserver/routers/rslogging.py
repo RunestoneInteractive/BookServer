@@ -12,6 +12,7 @@
 # ----------------
 import json
 from datetime import datetime
+from random import randrange
 import re
 from typing import Optional
 
@@ -32,6 +33,7 @@ from ..crud import (
     create_user_sub_chapter_progress_entry,
     EVENT2TABLE,
     fetch_last_page,
+    fetch_last_answer_table_entry,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
     fetch_user,
@@ -47,6 +49,7 @@ from ..models import (
     UseinfoValidation,
 )
 from ..schemas import (
+    AssessmentRequest,
     LastPageData,
     LastPageDataIncoming,
     LogItemIncoming,
@@ -126,10 +129,23 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
 
         valid_table = rcd.validator.from_orm(entry)  # type: ignore
         # Do server-side grading if needed.
-        if feedback := await is_server_feedback(entry.div_id, user.course_name):
+        feedback, base_course = await is_server_feedback(entry.div_id, user.course_name)
+        if feedback:
+            # Server-side graded problems which have a seed must use the previous entry's seed, not what comes from the client.
+            if "seed" in valid_table.__fields__:
+                ar = AssessmentRequest(
+                    course=entry.course_name,
+                    div_id=entry.div_id,
+                    event=entry.event,
+                    sid=entry.sid,
+                )
+                row, has_seed = await fetch_last_answer_table_entry(ar)
+                assert has_seed
+                # Timed exams don't restore answers, so they don't have a seed. In this case, create one. TODO: this means server-side dynamic problems don't work with timed exams.
+                valid_table.seed = row.seed if row else randrange(2 ** 32 - 1)
             # The grader should also be defined if there's feedback.
             assert rcd.grader
-            response_dict.update(await rcd.grader(valid_table, feedback))
+            response_dict.update(await rcd.grader(valid_table, feedback, base_course))
 
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
         rslogger.debug(ans_idx)

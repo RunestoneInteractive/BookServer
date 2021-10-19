@@ -135,7 +135,8 @@ def run_bookserver(pytestconfig, init_db):
     prefix_args = []
     # Pass pytest's log level to Celery; if not specified, it defaults to INFO.
     log_level = pytestconfig.getoption("log_cli_level") or "INFO"
-    if pytestconfig.getoption("server_debug"):
+    server_debug = pytestconfig.getoption("server_debug")
+    if server_debug:
         # Don't redirect stdio, so the developer can see and interact with it.
         kwargs = {}
         # TODO: these come from `SO <https://stackoverflow.com/a/19308462/16038919>`__ but are not tested.
@@ -243,6 +244,11 @@ def run_bookserver(pytestconfig, init_db):
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
     yield
 
+    # Allow the user to interact with the other open windows before closing them.
+    if server_debug:
+        import pdb
+
+        pdb.set_trace()
     shut_down()
 
 
@@ -550,6 +556,11 @@ class _SeleniumServerUtils(_SeleniumUtils):
 
     def get_book_url(self, url):
         return self.get(f"books/published/test_course_1/{url}")
+
+    def inject_random_values(self, value_array):
+        test_file = Path(__file__).parent / "rand.txt"
+        test_file.unlink(True)
+        test_file.write_text("\n".join([str(x) for x in value_array]), encoding="utf-8")
 
 
 # Present ``_SeleniumServerUtils`` as a fixture.
