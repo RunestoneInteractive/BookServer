@@ -5,10 +5,8 @@ Begin by reading the `dev_guide`.
 
 Introduction
 ============
-The bookserver is the student-facing web app for Runestone.
+The bookserver is the student-facing web app for Runestone. It was ported from the :ref:`Runestone server <runestone server docs>`. At this time, the bookserver contains all functions from the old web2py's ``models/ajax.py``, but doesn't (yet) provide student-facing admin pages. TODO: more discussion on the porting process.
 
-  - History: it was ported from web2py
-  - Design goals: modern, fast, well-architected
 
     - Use a modern, high-performance web framework (FastAPI). Compare to other options and explain why this.
     - async approach
@@ -49,5 +47,5 @@ Documentation generation
     :maxdepth: 1
 
     ../conf.py
-    ../codechat_config.json
+    ../codechat_config.yaml
     ../.readthedocs.yml

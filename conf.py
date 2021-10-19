@@ -319,6 +319,7 @@ html_sourcelink_suffix = ""
 
 # `Intersphinx <https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html>`_
 # =======================================================================================
+base_git_dir = "C:/Users/bjones/Documents/git"
 # `intersphinx_mapping <https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#confval-intersphinx_mapping>`_:
 # This config value contains the locations and names of other projects that should be linked to in this documentation.
 intersphinx_mapping = {
@@ -327,7 +328,14 @@ intersphinx_mapping = {
         (
             None,
             # An optional local file location -- useful when updating both Sphinx builds before the updates are pushed to the server.
-            "C:/Users/bjones/Documents/git/RunestoneComponents/build/RunestoneComponents/objects.inv",
+            f"{base_git_dir}/RunestoneComponents/build/RunestoneComponents/objects.inv",
+        ),
+    ),
+    "RunestoneServer": (
+        "https://runestoneserver.readthedocs.io/en/latest/",
+        (
+            None,
+            f"{base_git_dir}/web2py/applications/runestone/_build/objects.inv",
         ),
     )
 }
