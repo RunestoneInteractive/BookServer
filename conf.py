@@ -337,7 +337,7 @@ intersphinx_mapping = {
             None,
             f"{base_git_dir}/web2py/applications/runestone/_build/objects.inv",
         ),
-    )
+    ),
 }
 
 
