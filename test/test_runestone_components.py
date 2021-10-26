@@ -55,7 +55,10 @@ from bookserver.models import (
 async def get_answer(session, stmt, minimum_len):
     async def poll():
         while True:
-            ret = (await sess.execute(stmt)).scalars().all()
+            # Get the results ordered by ID, so we can index this based on order of insertion.
+            ret = (
+                (await sess.execute(stmt.order_by(stmt.froms[0].c.id))).scalars().all()
+            )
             if len(ret) >= minimum_len:
                 return ret
 
