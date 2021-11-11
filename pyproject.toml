@@ -44,15 +44,17 @@ redis = "^3.5.3"
 pyhumps = "^3.0.2"
 bleach = "^3.3.0"
 multi-await = "^1.0.1"
+# As of RunestoneComponets 13a6c117, the required urllib3 version is 1.26.6.
+urllib3 = "^1.26.6"
 
 # Development dependencies
 # ========================
 [tool.poetry.dev-dependencies]
-black = "^20.8b1"
+black = "^21.0b"
 console-ctrl = "^0.1.0"
 pytest = "^6.2.0"
 flake8 = "^3.8.4"
-CodeChat_Server = "^0.1.0"
+CodeChat_Server = "^0.2.0"
 sphinx-rtd-theme = "^0.5.2"
 mypy = "^0.812"
 coverage = "^5.3.1"
