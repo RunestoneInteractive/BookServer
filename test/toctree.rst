@@ -5,7 +5,7 @@ To run the tests, execute ``poetry run pytest`` from the parent of this subdirec
 
 --skipdbinit    Skip initialization of the test database. This makes the tests start much faster, at the risk of a corrupt database causing spurious test failures.
 --server_debug  Enable server debug mode. This runs the server in a separate terminal/console, which allow you to set breakpoints, stop the code, etc.
---log_cli_level LEVEL   Set the `pytest logging level <https://docs.pytest.org/en/6.2.x/logging.html#live-logs>`_. This level affects not just pytest, but the server and all tools run by the tests. Use ``--log_cli_level=INFO`` to provide complete output from the server; the `default logging level <default logging level>` is ``WARNING``.
+--log-cli-level LEVEL   Set the `pytest logging level <https://docs.pytest.org/en/6.2.x/logging.html#live-logs>`_. This level affects not just pytest, but the server and all tools run by the tests. Use ``--log-cli-level=INFO`` to provide complete output from the server; the `default logging level <default logging level>` is ``WARNING``.
 --k EXPRESSION   Only run tests which match the given substring expression. For example, ``-k test_foo`` only runs tests named ``test_foo``, ``test_foo_1``, etc. See the `pytest docs <https://docs.pytest.org/en/6.2.x/usage.html#specifying-tests-selecting-tests>`_ for more possibilities.
 
 Testing and debugging tips:

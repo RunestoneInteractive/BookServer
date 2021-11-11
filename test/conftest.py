@@ -133,7 +133,7 @@ def pytest_terminal_summary(terminalreporter):
 def run_bookserver(pytestconfig, init_db):
     # Start the bookserver and the scheduler.
     prefix_args = []
-    # Pass pytest's log level to Celery; if not specified, it defaults to INFO.
+    # Pass pytest's log level to Celery; if not specified, it defaults to INFO. Note that the command-line option uses dashes instead of underscores, while the config file uses underscripts (see the `docs <https://docs.pytest.org/en/6.2.x/logging.html#live-logs>`__).
     log_level = pytestconfig.getoption("log_cli_level") or "INFO"
     if pytestconfig.getoption("server_debug"):
         # Don't redirect stdio, so the developer can see and interact with it.
@@ -331,7 +331,10 @@ def init_db(pytestconfig):
         m.setenv("WEB2PY_CONFIG", "test")
 
         def run_subprocess(args: str, description: str):
-            cp = subprocess.run(args, capture_output=True, text=True, shell=True)
+            logger.info(f"Running {description}: {args}")
+            cp = subprocess.run(
+                args, capture_output=True, check=True, shell=True, text=True
+            )
             log_subprocess(cp.stdout, cp.stderr, description)
 
         run_subprocess(
