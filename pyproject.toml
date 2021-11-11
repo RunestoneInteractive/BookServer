@@ -45,7 +45,7 @@ pyhumps = "^3.0.2"
 bleach = "^3.3.0"
 multi-await = "^1.0.1"
 # As of RunestoneComponets 13a6c117, the required urllib3 version is 1.26.6.
-urllib3 = "1.26.6"
+urllib3 = "^1.26.6"
 
 # Development dependencies
 # ========================
