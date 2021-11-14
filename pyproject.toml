@@ -40,12 +40,10 @@ asyncpg = "^0.22.0"
 SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
 redis = "^3.5.3"
-# runestone = "^5.6.1" # comment out for now as unit testing fails the install due to version mismatch
+runestone = "^6.0.0.dev0"
 pyhumps = "^3.0.2"
 bleach = "^3.3.0"
 multi-await = "^1.0.1"
-# As of RunestoneComponets 13a6c117, the required urllib3 version is 1.26.6.
-urllib3 = "^1.26.6"
 
 # Development dependencies
 # ========================
