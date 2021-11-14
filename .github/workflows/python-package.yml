@@ -18,7 +18,6 @@ jobs:
     env:
       BOOK_SERVER_CONFIG: test
       TEST_DBURL: postgresql://postgres:foo@localhost/runestone
-      BOOK_PATH: ${{ github.workspace }}/../RunestoneServer/books
       RUNESTONE_PATH: ${{ github.workspace }}/../RunestoneServer
     strategy:
       matrix:
@@ -46,7 +45,7 @@ jobs:
 
         # Install and build the Runestone Components.
         mkdir ../RunestoneComponents
-        git clone -b bookserver https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
+        git clone -b peer_support https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
         pushd ../RunestoneComponents
         npm install
         npm run build

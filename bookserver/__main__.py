@@ -131,9 +131,9 @@ def set_or_verify_dburl(mode: str, value: str):
     """
     if mode == "production":
         if value:
-            os.environ["PROD_DBURL"] = value
+            os.environ["DBURL"] = value
         else:
-            click.echo(f"{os.environ['PROD_DBURL']=}")
+            click.echo(f"{os.environ['DBURL']=}")
     elif mode == "development":
         if value:
             os.environ["DEV_DBURL"] = value

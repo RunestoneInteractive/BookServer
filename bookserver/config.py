@@ -138,7 +138,7 @@ class Settings(BaseSettings):
     num_banners: int = 0
     serve_ad: bool = False
 
-    # This is the secret key used for generating the JWT token
+    # This is the secret key used for generating the JWT token.
     secret: str = "supersecret"
 
     # This is the private key web2py uses for hashing passwords.
