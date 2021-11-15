@@ -11,7 +11,7 @@
 name = "bookserver"
 version = "0.3.8"
 description = "A new Runestone Server Framework"
-authors = ["Brad Miller <bonelake@mac.com>"]
+authors = ["Brad Miller <bonelake@mac.com>", "Bryan A. Jones <bjones AT ece DOT msstate DOT edu"]
 license = "MIT"
 readme = "README.rst"
 documentation = "https://bookserver.readthedocs.io/en/latest/"
