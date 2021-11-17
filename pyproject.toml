@@ -11,7 +11,7 @@
 name = "bookserver"
 version = "0.3.8"
 description = "A new Runestone Server Framework"
-authors = ["Brad Miller <bonelake@mac.com>"]
+authors = ["Brad Miller <bonelake@mac.com>", "Bryan A. Jones <bjones AT ece DOT msstate DOT edu"]
 license = "MIT"
 readme = "README.rst"
 documentation = "https://bookserver.readthedocs.io/en/latest/"
@@ -40,12 +40,10 @@ asyncpg = "^0.22.0"
 SQLAlchemy = "^1.4.11"
 aiosqlite = "^0.17.0"
 redis = "^3.5.3"
-# runestone = "^5.6.1" # comment out for now as unit testing fails the install due to version mismatch
+runestone = "^6.0.0.dev0"
 pyhumps = "^3.0.2"
 bleach = "^3.3.0"
 multi-await = "^1.0.1"
-# As of RunestoneComponets 13a6c117, the required urllib3 version is 1.26.6.
-urllib3 = "^1.26.6"
 
 # Development dependencies
 # ========================
@@ -57,9 +55,9 @@ flake8 = "^3.8.4"
 CodeChat_Server = "^0.2.0"
 sphinx-rtd-theme = "^0.5.2"
 mypy = "^0.812"
-coverage = "^5.3.1"
+coverage = "< 5"
 tox = "^3.23.0"
-selenium = "^3.141.0"
+selenium = "^3.0.0"
 PyVirtualDisplay = "^2.1"
 polling2 = "^0.4.6"
 pytest-asyncio = "^0.15.1"
