@@ -263,7 +263,7 @@ class CodelensAnswers(Base, CorrectAnswerMixin):
     # See answer_. TODO: what is the format?
     answer = Column(String(512), nullable=False)
     # See source_.
-    source = Column(String(512), nullable=False)
+    source = Column(String(512), nullable=True)
     __table_args__ = (Index("idx_div_sid_course_cl", "sid", "div_id", "course_name"),)
 
 
@@ -278,7 +278,7 @@ class ShortanswerAnswers(Base, AnswerMixin):
 @register_answer_table
 class UnittestAnswers(Base, CorrectAnswerMixin):
     __tablename__ = "unittest_answers"
-    answer = Column(Text, nullable=False)
+    answer = Column(Text, nullable=True)
     passed = Column(Integer, nullable=False)
     failed = Column(Integer, nullable=False)
     __table_args__ = (Index("idx_div_sid_course_ut", "sid", "div_id", "course_name"),)
@@ -315,7 +315,7 @@ class Code(Base, IdMixin):
     course_id = Column(Integer, index=True, nullable=False)
     code = Column(Text, index=False, nullable=False)
     language = Column(Text, nullable=False)
-    emessage = Column(Text, nullable=False)
+    emessage = Column(Text, nullable=True)
     comment = Column(Text)
 
 
@@ -372,7 +372,7 @@ class AuthUser(Base, IdMixin):
     username = Column(String(512), index=True, nullable=False, unique=True)
     first_name = Column(String(512), nullable=False)
     last_name = Column(String(512), nullable=False)
-    email = Column(String(512), unique=True, nullable=False)
+    email = Column(String(512), unique=False, nullable=False)
     password = Column(String(512), nullable=False)
     created_on = Column(DateTime(), nullable=False)
     modified_on = Column(DateTime(), nullable=False)
