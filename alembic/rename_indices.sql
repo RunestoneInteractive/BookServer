@@ -38,14 +38,11 @@ alter index unittest_answers_div_id_idx rename to ix_unittest_answers_div_id;
 alter index unittest_answers_sid_idx rename to ix_unittest_answers_sid;
 alter index user_sub_chapter_progress_chapter_id_idx rename to ix_user_sub_chapter_progress_chapter_id;
 alter index user_sub_chapter_progress_user_id_idx rename to ix_user_sub_chapter_progress_sub_chapter_id;
-alter index chap_label_idx rename to ix_sub_chapters_sub_chapter_label;
 alter index code_course_id_idx rename to ix_code_course_id;
 alter index mchoice_answers_course_name_idx rename to ix_mchoice_answers_course_name;
 alter index parsons_answers_course_name_idx rename to ix_parsons_answers_course_name;
 alter index unittest_answers_course_name_idx rename to ix_unittest_answers_course_name;
-alter index user_sub_chapter_progress_course_name_idx rename to ix_user_sub_chapter_progress_course_name;
 alter index unique_user rename to ix_auth_user_username;
-drop index courses_course_name_idx ;
 
 
 -- Provide reasonable default values where those were lacking.
@@ -65,17 +62,33 @@ update course_instructor set paid='F' where paid is null;
 update questions set from_source='F' where from_source is null;
 update grades set manual_total='F' where manual_total is null;
 update sub_chapters set sub_chapter_num=999 where sub_chapter_num is null;
+update selected_questions set points = 0 where points is null;
+update sub_chapters set skipreading = 'F' where skipreading is null;
 
 -- Fix old JS producing NULL, probably when clicking on "check me" before providing an answer.
 update mchoice_answers set correct='F' where correct is null;
 update mchoice_answers set answer='' where answer is null;
 update fitb_answers set correct='F' where correct is null;
 update fitb_answers set answer='' where answer is null;
-
-
-
+delete from assignment_questions where autograde is null;
+delete from assignment_questions where which_to_grade is null;
+delete  from clickablearea_answers where course_name not in (select course_name from courses);
+delete  from codelens_answers where course_name not in (select course_name from courses);
+delete  from dragndrop_answers where course_name not in (select course_name from courses);
+delete  from fitb_answers where course_name not in (select course_name from courses);
+delete  from mchoice_answers where course_name not in (select course_name from courses);
+delete  from unittest_answers where course_name not in (select course_name from courses);
+delete  from parsons_answers where course_name not in (select course_name from courses);
+delete from timed_exam where course_name not in (select course_name from courses);
+delete from code where course_id is null;
+delete from dragndrop_answers where min_height is null;
+delete from dragndrop_answers where correct is null;
+delete from questions where subchapter is null;
+delete from useinfo where event is null or act is null or div_id is null or course_id is null;
+delete from useinfo where course_id not in (select course_name from courses);
+delete from user_state where course_name is null;
+delete from user_state where id in (select id from user_state except (select user_state.id from auth_user join user_state on auth_user.id = user_id ) );
 -- Delete junk from the database.
-delete from useinfo where div_id is null and course_id is null;
 delete from courses where base_course is null;
 
 commit;
