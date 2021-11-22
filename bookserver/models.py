@@ -565,6 +565,7 @@ class Grade(Base, IdMixin):
     # Not all grades will be reportable via LTI.
     lis_result_sourcedid = Column(String(1024))
     lis_outcome_url = Column(String(1024))
+    is_submit = Column(String(512))
 
 
 # Book Structure Tables
