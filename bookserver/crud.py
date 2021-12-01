@@ -409,6 +409,7 @@ async def create_initial_courses_users():
     ):
         rslogger.debug("Populating Courses")
         BASE_COURSES = [
+            "boguscourse",
             "ac1",
             "cppds",
             "cppforpython",
