@@ -204,7 +204,7 @@ class SelectQRequest(BaseModel):
     AB: Optional[str]
     toggleOptions: Optional[str]
     timedWrapper: Optional[str]
-
+    limitBaseCourse: Optional[bool]
 
 class PeerMessage(BaseModel):
     type: str

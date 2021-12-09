@@ -26,7 +26,7 @@ from pydantic import constr
 # -------------------------
 from ..applogger import rslogger
 from ..config import settings
-from ..crud import create_useinfo_entry, fetch_course, fetch_page_activity_counts
+from ..crud import create_useinfo_entry, fetch_course, fetch_page_activity_counts, fetch_all_course_attributes
 from ..models import UseinfoValidation
 from ..session import auth_manager, is_instructor
 
@@ -131,9 +131,24 @@ async def serve_page(
     # The template path comes from the base course's name.
     templates = Jinja2Templates(
         directory=safe_join(
-            settings.book_path, course_row.base_course, "build", course_row.base_course
+            settings.book_path, course_row.base_course, "published", course_row.base_course
         )
     )
+    course_attrs = await fetch_all_course_attributes(course_row.id)
+    rslogger.debug(f"HEY COURSE ATTRS: {course_attrs}")
+    # TODO set custom delimiters for PreTeXt books (https://stackoverflow.com/questions/33775085/is-it-possible-to-change-the-default-double-curly-braces-delimiter-in-polymer)
+    # Books built with lots of LaTeX math in them are troublesome as they tend to have many instances
+    # of `{{` and `}}` wich conflicts with the default Jinja2 start stop delimiters. Rather than
+    # escaping all of the latex math the PreTeXt built books use different delimiters for the templates
+    # templates.env is a reference to a Jinja2 Environment object
+    # try - templates.env.block_start_string = "@@@+"
+    # try - templates.env.block_end_string = "@@@-"
+
+    if course_attrs.get("markup_system", "RST") == "PreTeXt":
+        rslogger.debug(f"PRETEXT book found at path {pagepath}")
+        templates.env.variable_start_string = "~._="
+        templates.env.variable_end_string = "_.~"
+        templates.env.globals.update({"URL": URL})
 
     #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
@@ -155,14 +170,15 @@ async def serve_page(
         # _`root_path`: The server is mounted in a different location depending on how it's run (directly from gunicorn/uvicorn or under the ``/ns`` prefix using nginx). Tell the JS what prefix to use for Ajax requests. See also `setting root_path <setting root_path>` and the `FastAPI docs <https://fastapi.tiangolo.com/advanced/behind-a-proxy/>`_. This is then used in the ``eBookConfig`` of :doc:`runestone/common/project_template/_templates/plugin_layouts/sphinx_bootstrap/layout.html`.
         new_server_prefix=request.scope.get("root_path"),
         user_email=user.email if user else "",
-        downloads_enabled="false",
-        allow_pairs="false",
+        downloads_enabled= "true" if course_row.downloads_enabled else "false",
+        allow_pairs="true" if course_row.allow_pairs else "false",
         activity_info=json.dumps(activity_info),
         settings=settings,
         is_logged_in=logged_in,
         is_instructor="true" if user_is_instructor else "false",
-        enable_compare_me="true",
+        enable_compare_me="true" if course_attrs.get("enable_compare_me", False) else "false",
         readings=[],
+        **course_attrs
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
     try:
@@ -181,6 +197,11 @@ _os_alt_seps = list(
     sep for sep in [os.path.sep, os.path.altsep] if sep not in (None, "/")
 )
 
+def URL(*argv):
+    return "/".join(argv)
+
+def XML(arg):
+    return arg
 
 # This is copied verbatim from https://github.com/pallets/werkzeug/blob/master/werkzeug/security.py#L216.
 def safe_join(directory, *pathnames):

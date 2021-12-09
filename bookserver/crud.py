@@ -42,6 +42,7 @@ from .models import (
     Code,
     CodeValidator,
     Competency,
+    CourseAttribute,
     CourseInstructor,
     CourseInstructorValidator,
     Courses,
@@ -286,6 +287,24 @@ async def create_course(course_info: CoursesValidator) -> None:
     new_course = Courses(**course_info.dict())
     async with async_session.begin() as session:
         session.add(new_course)
+
+# course_attributes
+# -----------------
+
+async def fetch_all_course_attributes(course_id: int) -> dict:
+    attributes = query = select(CourseAttribute).where(
+        CourseAttribute.course_id == course_id)
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        return {row.attr: row.value for row in res.scalars().fetchall()}
+
+async def fetch_one_course_attribute():
+    raise NotImplementedError()
+
+async def create_course_attribute():
+    raise NotImplementedError()
+
 
 
 # auth_user
@@ -767,6 +786,10 @@ async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List
                 (Question.autograde == "unittest")
                 | Question.question_type.in_(auto_gradable_q)
             )
+        if request_data.limitBaseCourse:
+            where_clause = where_clause & (
+                Question.base_course == request_data.limitBaseCourse
+            )
         query = select(Question).where(where_clause)
 
         async with async_session() as session:
@@ -855,7 +878,7 @@ async def fetch_previous_selections(sid) -> List[str]:
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
-        return [row.selected_id for row in res.scalars().all()]
+        return [row.selected_id for row in res.scalars().fetchall()]
 
 
 async def fetch_timed_exam(
