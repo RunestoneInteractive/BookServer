@@ -20,7 +20,6 @@ dist
 # ignore sqllite db files
 *.db
 
-alembic/versions/*.py
 
 # Typical IDE settings folders
 .vscode
