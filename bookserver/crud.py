@@ -294,9 +294,7 @@ async def create_course(course_info: CoursesValidator) -> None:
 
 
 async def fetch_all_course_attributes(course_id: int) -> dict:
-    attributes = query = select(CourseAttribute).where(
-        CourseAttribute.course_id == course_id
-    )
+    query = select(CourseAttribute).where(CourseAttribute.course_id == course_id)
 
     async with async_session() as session:
         res = await session.execute(query)
