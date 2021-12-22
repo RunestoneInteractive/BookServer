@@ -8,9 +8,9 @@ name: BookServer Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -21,45 +21,45 @@ jobs:
       RUNESTONE_PATH: ${{ github.workspace }}/../RunestoneServer
     strategy:
       matrix:
-        python-version: ['3.8', '3.9']
+        python-version: ["3.8", "3.9"]
 
     steps:
-    - name: Check out bookserver from GitHub.
-      uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Start Redis
-      uses: supercharge/redis-github-action@1.2.0
-      with:
-        redis-version: 6
-    - name: Install pre-reqs
-      run: |
-        # Start PostgreSQL. It's pre-installed; using a Docker image means we need to also install a client locally, and it's easy for the versions of the two to get out of sync and cause very weird errors.
-        sudo systemctl start postgresql.service
-        # Wait until the database is ready.
-        pg_isready
-        # Set a password for the postgres user to match the password in the ``TEST_DBURL`` above.
-        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'foo';"
+      - name: Check out bookserver from GitHub.
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: 6
+      - name: Install pre-reqs
+        run: |
+          # Start PostgreSQL. It's pre-installed; using a Docker image means we need to also install a client locally, and it's easy for the versions of the two to get out of sync and cause very weird errors.
+          sudo systemctl start postgresql.service
+          # Wait until the database is ready.
+          pg_isready
+          # Set a password for the postgres user to match the password in the ``TEST_DBURL`` above.
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'foo';"
 
-        # Install and build the Runestone Components.
-        mkdir ../RunestoneComponents
-        git clone -b peer_support https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
-        pushd ../RunestoneComponents
-        npm install
-        npm run build
-        popd
+          # Install and build the Runestone Components.
+          mkdir ../RunestoneComponents
+          git clone https://github.com/RunestoneInteractive/RunestoneComponents.git ../RunestoneComponents
+          pushd ../RunestoneComponents
+          npm install
+          npm run build
+          popd
 
-        # Install the old server
-        git clone https://github.com/RunestoneInteractive/RunestoneServer.git ../RunestoneServer
+          # Install the old server
+          git clone https://github.com/RunestoneInteractive/RunestoneServer.git ../RunestoneServer
 
-        # Prep pip for bookserver installation.
-        pip install -U pip
-        pip install poetry
-    - name: Install bookserver
-      run: |
-        poetry install
-    - name: Run the Pre Commit Check Script
-      run: |
-        poetry run python ./pre_commit_check.py
+          # Prep pip for bookserver installation.
+          pip install -U pip
+          pip install poetry
+      - name: Install bookserver
+        run: |
+          poetry install
+      - name: Run the Pre Commit Check Script
+        run: |
+          poetry run python ./pre_commit_check.py
