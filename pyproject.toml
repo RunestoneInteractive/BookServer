@@ -23,7 +23,7 @@ include = ["deployment/*"]
 aioredis = "^2.0.0"
 async-timeout = "^3.0.0"
 celery = {extras = ["redis"], version = "^5.1.2"}
-python = "^3.7"
+python = "^3.9.0"
 fastapi = "^0.68.0"
 # Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.
 uvicorn = {extras = ["standard"], version = "^0.14.0"}
@@ -52,9 +52,9 @@ black = "^21.0b"
 console-ctrl = "^0.1.0"
 pytest = "^6.2.0"
 flake8 = "^3.8.4"
-CodeChat_Server = "^0.2.0"
+#CodeChat_Server = "^0.2.0"
 sphinx-rtd-theme = "^0.5.2"
-mypy = "^0.812"
+mypy = "> 0.812"
 coverage = "< 5"
 tox = "^3.23.0"
 selenium = "^3.0.0"
