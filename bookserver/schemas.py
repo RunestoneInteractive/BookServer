@@ -206,6 +206,7 @@ class SelectQRequest(BaseModel):
     timedWrapper: Optional[str]
     limitBaseCourse: Optional[bool]
 
+
 class PeerMessage(BaseModel):
     type: str
     sender: str
