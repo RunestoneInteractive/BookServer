@@ -133,6 +133,11 @@ class Settings(BaseSettings):
     # Select normal mode or a high-stakes assessment mode (for administering a examination). In this mode, answers to supported question types are not shown.
     is_exam: bool = False
 
+    # This module provides "/auth/login" but it is super basic
+    # For now, logins are meant to be handled by the parallel runestone server.
+    # For production usage set the LOGIN_URL to /runestone/default/user
+    login_url: str = "/auth/login"
+
     # Configure ads. TODO: Link to the place in the Runestone Components where this is used.
     adsenseid: str = ""
     num_banners: int = 0

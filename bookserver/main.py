@@ -137,7 +137,7 @@ def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     Redirect the user to the login page if not logged in
     """
     rslogger.debug("User is not logged in, redirecting")
-    return RedirectResponse(url="/auth/login")
+    return RedirectResponse(url=f"{settings.login_url}")
 
 
 # See:  https://fastapi.tiangolo.com/tutorial/handling-errors/#use-the-requestvalidationerror-body

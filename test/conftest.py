@@ -227,7 +227,7 @@ def run_bookserver(pytestconfig, init_db):
         for echo_thread in echo_threads:
             echo_thread.join()
 
-    logger.info("Waiting for the webserver to come up...")
+    logger.info(f"Waiting for the webserver to come up... at {bookserver_address}")
     for tries in range(10):
         try:
             urlopen(bookserver_address, timeout=1)
@@ -237,7 +237,7 @@ def run_bookserver(pytestconfig, init_db):
         time.sleep(1)
     else:
         shut_down()
-        assert False, "Server not up."
+        assert False, f"Server {bookserver_address} not up."
     logger.info("done.")
 
     # After this comes the `teardown code <https://docs.pytest.org/en/latest/fixture.html#fixture-finalization-executing-teardown-code>`_.
