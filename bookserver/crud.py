@@ -476,7 +476,7 @@ async def create_initial_courses_users():
                 password="xxx",
                 email="testuser1@example.com",
                 course_name="overview",
-                course_id=12,
+                course_id=BASE_COURSES.index("overview") + 1,
                 donated=True,
                 active=True,
                 accept_tcp=True,
