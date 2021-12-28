@@ -108,8 +108,8 @@ async def serve_page(
     request: Request,
     course_name: constr(max_length=512),  # type: ignore
     pagepath: constr(max_length=512),  # type: ignore
-    user=Depends(auth_manager),
 ):
+    user = request.state.user
     rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
     # Since these values are going to be read by javascript we
@@ -121,8 +121,9 @@ async def serve_page(
         logged_in = "false"
         activity_info = {}
         user_is_instructor = False
+        settings.serve_ad = True
 
-    course_row = await fetch_course(user.course_name)
+    course_row = await fetch_course(course_name)
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
     rslogger.debug(f"Base course = {course_row.base_course}")
@@ -166,15 +167,15 @@ async def serve_page(
             act="view",
             div_id=pagepath,
             course_id=course_name,
-            sid=user.username,
+            sid=user.username if user else "Anonymous",
             timestamp=datetime.utcnow(),
         )
     )
     context = dict(
         request=request,
-        course_name=user.course_name,
+        course_name=course_name,
         base_course=course_row.base_course,
-        user_id=user.username,
+        user_id=user.username if user else "",
         # _`root_path`: The server is mounted in a different location depending on how it's run (directly from gunicorn/uvicorn or under the ``/ns`` prefix using nginx). Tell the JS what prefix to use for Ajax requests. See also `setting root_path <setting root_path>` and the `FastAPI docs <https://fastapi.tiangolo.com/advanced/behind-a-proxy/>`_. This is then used in the ``eBookConfig`` of :doc:`runestone/common/project_template/_templates/plugin_layouts/sphinx_bootstrap/layout.html`.
         new_server_prefix=request.scope.get("root_path"),
         user_email=user.email if user else "",
