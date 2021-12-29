@@ -17,7 +17,7 @@ import posixpath
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
 from pydantic import constr
@@ -99,6 +99,9 @@ async def get_static(course: str, filepath: str):
 # Basic page renderer
 # ===================
 # To see the output of this endpoint, see http://localhost:8080/books/published/overview/index.html.
+# the course_name in the uri is the actual course name, not the base course, as was previously
+# the case. This should help eliminate the accidental work in the base course problem, and allow
+# teachers to share links to their course with the students.
 @router.api_route(
     "/published/{course_name:str}/{pagepath:path}",
     methods=["GET", "POST"],
@@ -124,8 +127,19 @@ async def serve_page(
         settings.serve_ad = True
 
     course_row = await fetch_course(course_name)
+    # check for some error conditions
     if not course_row:
         raise HTTPException(status_code=404, detail=f"Course {course_name} not found")
+    else:
+        # The course requires a login but the user is not logged in
+        if course_row.login_required and not user:
+            return RedirectResponse(url=f"{settings.login_url}")
+        
+        # The user is logged in, but their "current course" is not this one.
+        # Send them to the courses page so they can properly switch courses.
+        if user and user.course_name != course_name:
+            return RedirectResponse(url=f"/runestone/default/courses")
+
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
     subchapter = os.path.basename(os.path.splitext(pagepath)[0])
