@@ -142,6 +142,8 @@ class Settings(BaseSettings):
     adsenseid: str = ""
     num_banners: int = 0
     serve_ad: bool = False
+    academy_mode: bool = True
+    lti_only_mode: bool = False
 
     # This is the secret key used for generating the JWT token.
     secret: str = "supersecret"

@@ -120,11 +120,12 @@ async def serve_page(
     if user:
         logged_in = "true"
         user_is_instructor = await is_instructor(request)
+        serve_ad = False
     else:
         logged_in = "false"
         activity_info = {}
         user_is_instructor = False
-        settings.serve_ad = True
+        serve_ad = True
 
     course_row = await fetch_course(course_name)
     # check for some error conditions
@@ -134,7 +135,7 @@ async def serve_page(
         # The course requires a login but the user is not logged in
         if course_row.login_required and not user:
             return RedirectResponse(url=f"{settings.login_url}")
-        
+
         # The user is logged in, but their "current course" is not this one.
         # Send them to the courses page so they can properly switch courses.
         if user and user.course_name != course_name:
@@ -169,8 +170,10 @@ async def serve_page(
 
     if course_attrs.get("markup_system", "RST") == "PreTeXt":
         rslogger.debug(f"PRETEXT book found at path {pagepath}")
-        templates.env.variable_start_string = "~._="
+        templates.env.variable_start_string = "~._"
         templates.env.variable_end_string = "_.~"
+        templates.env.comment_start_string = "@@#"
+        templates.env.comment_end_string = "#@@"
         templates.env.globals.update({"URL": URL})
 
     #   TODO: provide the template google_ga as well as ad servings stuff
@@ -198,6 +201,7 @@ async def serve_page(
         activity_info=json.dumps(activity_info),
         settings=settings,
         is_logged_in=logged_in,
+        serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
         enable_compare_me="true"
         if course_attrs.get("enable_compare_me", False)
