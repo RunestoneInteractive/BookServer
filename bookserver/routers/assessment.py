@@ -376,7 +376,21 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
         return make_json_response(
             detail=f"<p>No Questions found for proficiency: {prof}</p>"
         )
-    sid = request.state.user.username
+
+    if request.state.user:
+        sid = request.state.user.username
+    else:
+        if questionlist:
+            q = random.choice(questionlist)
+            qres = await fetch_question(q)
+            if qres:
+                return make_json_response(detail=qres.htmlsrc)
+            else:
+                return make_json_response(
+                    detail=f"<p>Question {q} is not in the database.</p>"
+                )
+        else:
+            return make_json_response(detail=f"<p>No Questions available</p>")
 
     rslogger.debug(f"is_ab is {is_ab}")
     if is_ab:
