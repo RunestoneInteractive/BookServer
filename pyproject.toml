@@ -9,7 +9,7 @@
 # ================
 [tool.poetry]
 name = "bookserver"
-version = "1.0.4"
+version = "1.0.5"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>", "Bryan A. Jones <bjones AT ece DOT msstate DOT edu"]
 license = "MIT"
