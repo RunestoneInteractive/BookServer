@@ -176,6 +176,10 @@ async def serve_page(
         templates.env.comment_end_string = "#@@"
         templates.env.globals.update({"URL": URL})
 
+    # enable compare me can be set per course if its not set provide a default of true
+    if "enable_compare_me" not in course_attrs:
+        course_attrs["enable_compare_me"] = "true"
+
     #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
     await create_useinfo_entry(
@@ -203,9 +207,6 @@ async def serve_page(
         is_logged_in=logged_in,
         serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
-        enable_compare_me="true"
-        if course_attrs.get("enable_compare_me", False)
-        else "false",
         readings=[],
         **course_attrs,
     )
