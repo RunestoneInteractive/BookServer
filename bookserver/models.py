@@ -392,10 +392,14 @@ BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
 class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
     @validator("username")
     def username_clear_of_css_characters(cls, v):
-        if re.search(r"""[!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ]""", v):
-            raise ValueError("username must not contain special characters")
+        if re.search(r"""[!"#$%&'()*+,./@:;<=>?[\]^`{|}~ ]""", v):
+            pass
+            # raise ValueError("username must not contain special characters")
         return v
 
+    # TODO: restore the special character vaalidation after aging out legacy usernames
+    # with special characters.  These *are* valid usernames because we allowed them to
+    # be registered.  And we cannot take away someone's username in the middle of the course.
     ## So far the recommendation from Pydantic is to do async validation
     ## outside the validator proper as validators are not async
     ## @validator("username")
