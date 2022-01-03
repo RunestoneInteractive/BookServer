@@ -31,6 +31,7 @@ from ..crud import (
     fetch_course,
     fetch_page_activity_counts,
     fetch_all_course_attributes,
+    fetch_subchapters,
 )
 from ..models import UseinfoValidation
 from ..session import auth_manager, is_instructor
@@ -198,6 +199,7 @@ async def serve_page(
             timestamp=datetime.utcnow(),
         )
     )
+    subchapter_list = await fetch_subchaptoc(course_row.base_course, chapter)
     context = dict(
         request=request,
         course_name=course_name,
@@ -211,6 +213,7 @@ async def serve_page(
         activity_info=json.dumps(activity_info),
         settings=settings,
         is_logged_in=logged_in,
+        subchapter_list=subchapter_list,
         serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
         readings=[],
@@ -261,3 +264,15 @@ def safe_join(directory, *pathnames):
             return None
         parts.append(filename)
     return posixpath.join(*parts)
+
+
+async def fetch_subchaptoc(course: str, chap: str):
+    res = await fetch_subchapters(course, chap)
+    toclist = []
+    for row in res:
+        rslogger.debug(f"row = {row}")
+        sc_url = "{}.html".format(row[0])
+        title = row[1]
+        toclist.append(dict(subchap_uri=sc_url, title=title))
+
+    return toclist

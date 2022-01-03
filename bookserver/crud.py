@@ -899,3 +899,24 @@ async def fetch_timed_exam(
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
         return TimedExamValidator.from_orm(res.scalars().first())
+
+
+async def fetch_subchapters(course, chap):
+    """
+    Fetch all subchapters for a given chapter
+    """
+
+    query = (
+        select(SubChapter.sub_chapter_label, SubChapter.sub_chapter_name)
+        .where(
+            (Chapter.id == SubChapter.chapter_id)
+            & (Chapter.course_id == course)
+            & (Chapter.chapter_label == chap)
+        )
+        .order_by(SubChapter.sub_chapter_num)
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        return res
