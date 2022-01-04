@@ -905,7 +905,9 @@ async def fetch_subchapters(course, chap):
     """
     Fetch all subchapters for a given chapter
     """
-
+    # Note: we are joining two tables so this query will not result in an defined in schemas.py
+    # instead it will simply produce a bunch of tuples with the columns in the order given in the
+    # select statement.
     query = (
         select(SubChapter.sub_chapter_label, SubChapter.sub_chapter_name)
         .where(
@@ -919,4 +921,5 @@ async def fetch_subchapters(course, chap):
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
+        # **Note** with this kind of query you do NOT want to call ``.scalars()`` on the result
         return res
