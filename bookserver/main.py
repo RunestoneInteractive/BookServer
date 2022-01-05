@@ -26,7 +26,6 @@ from typing import Optional
 # -------------------------
 from .applogger import rslogger
 from .config import settings
-from .crud import create_initial_courses_users
 from .db import init_models, term_models
 from .internal.feedback import init_graders
 from .routers import assessment
@@ -76,7 +75,6 @@ async def startup():
     ), f"Runestone appplication in web2py path {settings.runestone_path} does not exist."
 
     await init_models()
-    await create_initial_courses_users()
     init_graders()
 
 

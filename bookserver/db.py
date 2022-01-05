@@ -48,6 +48,7 @@ Base = declarative_base()
 
 async def init_models():
     async with engine.begin() as conn:
+        # Never, ever drop tables in a production environment!
         if (
             settings.book_server_config
             in [BookServerConfig.development, BookServerConfig.test]
