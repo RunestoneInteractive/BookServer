@@ -530,7 +530,7 @@ async def update_sub_chapter_progress(user_data: schemas.LastPageData):
     ud["status"] = ud.pop("completion_flag")
     ud["chapter_id"] = ud.pop("last_page_chapter")
     ud["sub_chapter_id"] = ud.pop("last_page_subchapter")
-    if ud["status"] == 1:
+    if ud["status"] > -1:
         ud["end_date"] = datetime.datetime.utcnow()
 
     stmt = (
