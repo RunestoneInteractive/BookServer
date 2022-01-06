@@ -82,39 +82,47 @@ async def return_static_asset(course, kind, filepath):
     else:
         raise HTTPException(404)
 
+
 # Runestone academy supported several additional static folders:
 # _static|_images|images|_downloads|generated|external
 # There must be a better solution than duplicating this code X times
 # there is probabaly some fancy decorator trick but this is quick and easy.
 # TODO: **Routes for draft (instructor-only) books.**
 
+
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
     return await return_static_asset(course, "_images", filepath)
+
 
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
     return await return_static_asset(course, "_static", filepath)
 
-#PreTeXt books put images in images not _images -- oh for regexes in routes!
+
+# PreTeXt books put images in images not _images -- oh for regexes in routes!
 @router.get("/published/{course:str}/images/{filepath:path}")
 async def get_ptximages(course: str, filepath: str):
     return await return_static_asset(course, "images", filepath)
 
-#Umich book uses the _downloads folder and ``:download:`` role
+
+# Umich book uses the _downloads folder and ``:download:`` role
 @router.get("/published/{course:str}/_downloads/{filepath:path}")
 async def get_downloads(course: str, filepath: str):
     return await return_static_asset(course, "_downloads", filepath)
+
 
 # PreTeXt
 @router.get("/published/{course:str}/_downloads/{filepath:path}")
 async def get_generated(course: str, filepath: str):
     return await return_static_asset(course, "generated", filepath)
 
+
 # PreTeXt
 @router.get("/published/{course:str}/_downloads/{filepath:path}")
 async def get_external(course: str, filepath: str):
     return await return_static_asset(course, "external", filepath)
+
 
 # Basic page renderer
 # ===================
