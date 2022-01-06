@@ -552,7 +552,7 @@ class _SeleniumServerUtils(_SeleniumUtils):
         self.user = None
 
     def get_book_url(self, url):
-        return self.get(f"books/published/test_course_1/{url}")
+        return self.get(f"books/published/test_child_course_1/{url}")
 
 
 # Present ``_SeleniumServerUtils`` as a fixture.
