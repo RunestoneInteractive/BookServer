@@ -390,7 +390,7 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
                     detail=f"<p>Question {q} is not in the database.</p>"
                 )
         else:
-            return make_json_response(detail=f"<p>No Questions available</p>")
+            return make_json_response(detail="<p>No Questions available</p>")
 
     rslogger.debug(f"is_ab is {is_ab}")
     if is_ab:
