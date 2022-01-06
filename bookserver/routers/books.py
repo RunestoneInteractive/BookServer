@@ -62,13 +62,16 @@ router = APIRouter(
 # seems to only get you the ``next`` part of the path ``/pre/vious/next/the/rest``.
 #
 
-
+# TODO: make published/draft configurable
 async def return_static_asset(course, kind, filepath):
+    # Get the course row so we can use the base_course
+    # We would like to serve book pages with the actual course name in the URL
+    # instead of the base course.  This is a necessary step.
     course_row = await fetch_course(course)
     filepath = safe_join(
         settings.book_path,
         course_row.base_course,
-        "build",
+        "published",
         course_row.base_course,
         kind,
         filepath,
@@ -79,23 +82,39 @@ async def return_static_asset(course, kind, filepath):
     else:
         raise HTTPException(404)
 
+# Runestone academy supported several additional static folders:
+# _static|_images|images|_downloads|generated|external
+# There must be a better solution than duplicating this code X times
+# there is probabaly some fancy decorator trick but this is quick and easy.
+# TODO: **Routes for draft (instructor-only) books.**
 
-# Todo: **Routes for draft (instructor-only) books.**
 @router.get("/published/{course:str}/_images/{filepath:path}")
 async def get_image(course: str, filepath: str):
-    # Get the course row so we can use the base_course
-    # We would like to serve book pages with the actual course name in the URL
-    # instead of the base course.  This is a necessary step.
     return await return_static_asset(course, "_images", filepath)
-
 
 @router.get("/published/{course:str}/_static/{filepath:path}")
 async def get_static(course: str, filepath: str):
-    # Get the course row so we can use the base_course
-    # We would like to serve book pages with the actual course name in the URL
-    # instead of the base course.  This is a necessary step.
     return await return_static_asset(course, "_static", filepath)
 
+#PreTeXt books put images in images not _images -- oh for regexes in routes!
+@router.get("/published/{course:str}/images/{filepath:path}")
+async def get_ptximages(course: str, filepath: str):
+    return await return_static_asset(course, "images", filepath)
+
+#Umich book uses the _downloads folder and ``:download:`` role
+@router.get("/published/{course:str}/_downloads/{filepath:path}")
+async def get_downloads(course: str, filepath: str):
+    return await return_static_asset(course, "_downloads", filepath)
+
+# PreTeXt
+@router.get("/published/{course:str}/_downloads/{filepath:path}")
+async def get_generated(course: str, filepath: str):
+    return await return_static_asset(course, "generated", filepath)
+
+# PreTeXt
+@router.get("/published/{course:str}/_downloads/{filepath:path}")
+async def get_external(course: str, filepath: str):
+    return await return_static_asset(course, "external", filepath)
 
 # Basic page renderer
 # ===================
@@ -153,7 +172,7 @@ async def serve_page(
     subchapter = os.path.basename(os.path.splitext(pagepath)[0])
     if user:
         activity_info = await fetch_page_activity_counts(
-            chapter, subchapter, course_row.base_course, user.username, course_name
+            chapter, subchapter, course_row.base_course, course_name, user.username
         )
 
     # The template path comes from the base course's name.
@@ -200,6 +219,8 @@ async def serve_page(
         )
     )
     subchapter_list = await fetch_subchaptoc(course_row.base_course, chapter)
+    # TODO: restore the contributed questions list ``questions`` for books (only fopp) that
+    # show the contributed questions list on an Exercises page.
     context = dict(
         request=request,
         course_name=course_name,
