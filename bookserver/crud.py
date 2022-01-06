@@ -152,8 +152,11 @@ async def fetch_page_activity_counts(
     async with async_session() as session:
         sid_counts = await session.execute(query)
 
+    # doing a call to scalars() on a single column join query like this reduces
+    # the row to just the string.  So each row is just a string representing a unique
+    # div_id the user has interacted with on this page.
     for row in sid_counts.scalars():
-        div_counts[row.div_id] = 1
+        div_counts[row] = 1
 
     return div_counts
 
@@ -527,6 +530,9 @@ async def update_sub_chapter_progress(user_data: schemas.LastPageData):
     ud["status"] = ud.pop("completion_flag")
     ud["chapter_id"] = ud.pop("last_page_chapter")
     ud["sub_chapter_id"] = ud.pop("last_page_subchapter")
+    if ud["status"] == 1:
+        ud["end_date"] = datetime.datetime.utcnow()
+
     stmt = (
         update(UserSubChapterProgress)
         .where(
