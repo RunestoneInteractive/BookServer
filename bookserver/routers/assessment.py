@@ -230,11 +230,11 @@ async def getaggregateresults(request: Request, div_id: str, course_name: str):
 
     returnDict = dict(answerDict=rdata, misc=miscdata)
 
-    # if instructor:
+    ## if instructor:
     # There is little value to doing this now when the instructor
     # Dashboard provides more and better detail
-    #     resultList = _getStudentResults(question)
-    #     returnDict["reslist"] = resultList
+    ##     resultList = _getStudentResults(question)
+    ##     returnDict["reslist"] = resultList
 
     return make_json_response(detail=returnDict)
 

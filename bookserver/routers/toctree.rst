@@ -21,4 +21,5 @@ detail of ``None``.
     assessment.py
     auth.py
     books.py
+    discuss.py
     rslogging.py

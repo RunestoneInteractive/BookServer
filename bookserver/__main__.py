@@ -106,10 +106,8 @@ def run(
             "-m",
             # See the `gunicorn command-line docs <https://docs.gunicorn.org/en/latest/run.html#commonly-used-arguments>`_.
             "gunicorn",
-            # `-c <https://docs.gunicorn.org/en/stable/settings.html#config>`_: The Gunicorn config file. Use `deployment/gunicorn.conf.py`.
+            # `-c <https://docs.gunicorn.org/en/stable/settings.html#config>`_: The Gunicorn config file.
             "--config",
-            # Provide an absolute path to the Gunicorn config file.
-            # Path(__file__).parents[1] / "deployment/gunicorn.conf.py",
             f"{gconfig}",
             # Where to serve or bind to socket for production
             f"--bind={bind}",
