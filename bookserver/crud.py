@@ -257,7 +257,7 @@ async def fetch_last_poll_response(sid: str, course_name: str, poll_id: str) -> 
     )
     async with async_session() as session:
         res = await session.execute(query)
-        return res.first()
+        return res.scalars().first()
 
 
 # Courses

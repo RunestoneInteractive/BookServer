@@ -86,7 +86,11 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     # The middleware will set the user if they are logged in.
     if request.state.user:
         user = request.state.user
-        entry.sid = user.username
+        # if entry.sid is there use that (likely for partner or group work)
+        if not entry.sid:
+            entry.sid = user.username
+        else:
+            rslogger.info(f"user {user.username} is submitting work for {entry.sid}")
     else:
         return make_json_response(status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
