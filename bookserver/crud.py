@@ -13,9 +13,11 @@
 # Standard library
 # ----------------
 import datetime
+import hashlib
 import json
 from collections import namedtuple
 from typing import Dict, List, Optional
+import traceback
 
 # Third-party imports
 # -------------------
@@ -23,6 +25,7 @@ from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
 from sqlalchemy import and_, distinct, func, update
 from sqlalchemy.sql import select, text
+from starlette.requests import Request
 
 from . import schemas
 
@@ -54,6 +57,7 @@ from .models import (
     SubChapter,
     TimedExam,
     TimedExamValidator,
+    TraceBack,
     Useinfo,
     UseinfoValidation,
     UserChapterProgress,
@@ -310,6 +314,18 @@ async def fetch_one_course_attribute():
 
 async def create_course_attribute():
     raise NotImplementedError()
+
+
+async def get_course_origin(base_course):
+    query = select(CourseAttribute).where(
+        (CourseAttribute.course_id == base_course)
+        & (CourseAttribute.attr == "markup_system")
+    )
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        ca = res.scalars().first()
+        return ca.value
 
 
 # auth_user
@@ -929,3 +945,18 @@ async def fetch_subchapters(course, chap):
         rslogger.debug(f"{res=}")
         # **Note** with this kind of query you do NOT want to call ``.scalars()`` on the result
         return res
+
+
+async def create_traceback(exc: Exception, request: Request, host: str):
+    async with async_session.begin() as session:
+        tbtext = "".join(traceback.format_tb(exc.__traceback__))
+        new_entry = TraceBack(
+            traceback=tbtext,
+            timestamp=datetime.datetime.utcnow(),
+            err_message=str(exc),
+            path=request.url.path,
+            query_string=str(request.query_params),
+            hash=hashlib.md5(tbtext.encode("utf8")).hexdigest(),
+            hostname=host,
+        )
+        session.add(new_entry)
