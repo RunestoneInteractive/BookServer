@@ -11,7 +11,7 @@
 # Standard library
 # ----------------
 from datetime import datetime, timedelta
-from dateutil.parser import parse
+from dateutil.parser import isoparse
 from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 
 # Third-party imports
@@ -131,20 +131,31 @@ class AssessmentRequest(BaseModelNone):
     # See `Field with dynamic default value <https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields>`_.
     deadline: datetime = Field(default_factory=datetime.utcnow)
 
-    @validator("deadline")
-    def str_to_datetime(cls, value: str) -> datetime:
-        # TODO: this code probably doesn't work.
-        try:
-            deadline = parse(canonicalize_tz(value))
-            # TODO: session isn't defined. Here's a temporary fix
-            # tzoff = session.timezoneoffset if session.timezoneoffset else 0
-            tzoff = 0
-            deadline = deadline + timedelta(hours=float(tzoff))
-            deadline = deadline.replace(tzinfo=None)
-        except Exception:
-            # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
-            raise ValueError(f"Bad Timezone - {value}")
-        return deadline
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
+
+    @validator('deadline', pre=True)
+    def time_validate(cls, v):
+        #return datetime.fromisoformat(v)
+        return isoparse(v)
+
+
+    # @validator("deadline")
+    # def str_to_datetime(cls, value: str) -> datetime:
+    #     # TODO: this code probably doesn't work.
+    #     try:
+    #         deadline = parse(canonicalize_tz(value))
+    #         # TODO: session isn't defined. Here's a temporary fix
+    #         # tzoff = session.timezoneoffset if session.timezoneoffset else 0
+    #         tzoff = 0
+    #         deadline = deadline + timedelta(hours=float(tzoff))
+    #         deadline = deadline.replace(tzinfo=None)
+    #     except Exception:
+    #         # TODO: can this enclose just the parse code? Or can an error be raised in other cases?
+    #         raise ValueError(f"Bad Timezone - {value}")
+    #     return deadline
 
 
 class TimezoneRequest(BaseModelNone):
