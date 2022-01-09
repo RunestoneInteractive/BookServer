@@ -113,13 +113,13 @@ async def get_downloads(course: str, filepath: str):
 
 
 # PreTeXt
-@router.get("/published/{course:str}/_downloads/{filepath:path}")
+@router.get("/published/{course:str}/generated/{filepath:path}")
 async def get_generated(course: str, filepath: str):
     return await return_static_asset(course, "generated", filepath)
 
 
 # PreTeXt
-@router.get("/published/{course:str}/_downloads/{filepath:path}")
+@router.get("/published/{course:str}/external/{filepath:path}")
 async def get_external(course: str, filepath: str):
     return await return_static_asset(course, "external", filepath)
 
