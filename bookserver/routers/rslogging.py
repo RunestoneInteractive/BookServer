@@ -19,6 +19,7 @@ from typing import Optional
 # Third-party imports
 # -------------------
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 
 # Local application imports
 # -------------------------
@@ -146,13 +147,19 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
 
 @router.post("/set_tz_offset")
 def set_tz_offset(
-    response: Response, tzreq: TimezoneRequest, RS_info: Optional[str] = Cookie(None)
+    tzreq: TimezoneRequest,
+    RS_info: Optional[str] = Cookie(None),
+    response_class=JSONResponse,
 ):
     if RS_info:
         values = json.loads(RS_info)
     else:
         values = {}
     values["tz_offset"] = tzreq.timezoneoffset
+    response = JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=json.dumps({"detail": "success"})
+        )
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
     # returning make_json_response here eliminates the cookie
