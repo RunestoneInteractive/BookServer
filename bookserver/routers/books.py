@@ -113,13 +113,13 @@ async def get_downloads(course: str, filepath: str):
 
 
 # PreTeXt
-@router.get("/published/{course:str}/_downloads/{filepath:path}")
+@router.get("/published/{course:str}/generated/{filepath:path}")
 async def get_generated(course: str, filepath: str):
     return await return_static_asset(course, "generated", filepath)
 
 
 # PreTeXt
-@router.get("/published/{course:str}/_downloads/{filepath:path}")
+@router.get("/published/{course:str}/external/{filepath:path}")
 async def get_external(course: str, filepath: str):
     return await return_static_asset(course, "external", filepath)
 
@@ -256,6 +256,13 @@ async def serve_page(
             status_code=404,
             detail=f"Page {pagepath} not found in base course {course_row.base_course}.",
         )
+
+
+@router.get("/crashtest")
+async def crashme():
+    a = 10
+    b = 11
+    c = a / (11 - 11)
 
 
 # Utilities

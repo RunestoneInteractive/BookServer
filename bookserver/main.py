@@ -9,10 +9,11 @@
 #
 # Standard library
 # ----------------
+import datetime
 import json
 import os
 import traceback
-import datetime
+import socket
 
 # Third-party imports
 # -------------------
@@ -26,6 +27,7 @@ from typing import Optional
 # -------------------------
 from .applogger import rslogger
 from .config import settings
+from .crud create_traceback
 from .db import init_models, term_models
 from .internal.feedback import init_graders
 from .routers import assessment
@@ -156,7 +158,7 @@ def level2_validation_handler(request: Request, exc: ValidationError):
 
 
 @app.exception_handler(Exception)
-def generic_error_handler(request: Request, exc: Exception):
+async def generic_error_handler(request: Request, exc: Exception):
     """
     Most validation errors are caught immediately, but we do some
     secondary validation when populating our xxx_answers tables
@@ -168,6 +170,12 @@ def generic_error_handler(request: Request, exc: Exception):
     with open(f"{settings.error_path}/{date}_traceback.txt", "w") as f:
         traceback.print_tb(exc.__traceback__, file=f)
         f.write(f"Error Message: \n{str(exc)}")
+
+    # alternatively lets write the traceback info to the database!
+    # TODO: get local variable information
+    # find a way to get the request body without throwing an error on await request.json()
+    #
+    await create_traceback(exc, request, socket.gethostname())
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

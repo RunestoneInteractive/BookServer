@@ -155,8 +155,9 @@ def set_tz_offset(
     values["tz_offset"] = tzreq.timezoneoffset
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
-
-    return make_json_response()
+    # returning make_json_response here eliminates the cookie
+    # See https://github.com/tiangolo/fastapi/issues/2452
+    return response
 
 
 # runlog endpoint

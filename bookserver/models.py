@@ -715,3 +715,18 @@ class Payment(Base, IdMixin):
         ForeignKey("user_courses.id", ondelete="CASCADE"), nullable=False
     )
     charge_id = Column(String(255), nullable=False)
+
+
+# Tracking Errors in a multi server configuration
+#
+class TraceBack(Base, IdMixin):
+    __tablename__ = "traceback"
+
+    traceback = Column(Text, nullable=False)
+    timestamp = Column(DateTime)
+    err_message = Column(String(512))
+    path = Column(String(256))
+    query_string = Column(String(512))
+    post_body = Column(String(1024))
+    hash = Column(String(128))
+    hostname = Column(String(128))
