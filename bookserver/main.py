@@ -93,6 +93,7 @@ async def shutdown():
 @app.middleware("http")
 async def get_session_object(request: Request, call_next):
     tz_cookie = request.cookies.get("RS_info")
+    rslogger.debug(f"In timezone middleware cookie is {tz_cookie}")
     if tz_cookie:
         vals = json.loads(tz_cookie)
         request.state.tz_offset = vals["tz_offset"]
