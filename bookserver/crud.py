@@ -32,7 +32,7 @@ from . import schemas
 # Local application imports
 # -------------------------
 from .applogger import rslogger
-from .config import BookServerConfig, settings
+from .config import settings
 from .db import async_session
 from .internal.utils import http_422error_detail
 from .models import (
@@ -436,76 +436,66 @@ async def is_server_feedback(div_id, course):
 
 # Development and Testing Utils
 # -----------------------------
-# This function is useful for development.  It recreates the database
-# and populates it with the common base courses and creates a test user
-#
+# This function populates the database with the common base courses and creates a test user.
 async def create_initial_courses_users():
-    # never ever drop tables in a production environment
-    rslogger.debug(f"HELLO {settings.book_server_config} - {settings.drop_tables}")
-    if (
-        settings.book_server_config
-        in [BookServerConfig.development, BookServerConfig.test]
-        and settings.drop_tables == "Yes"
-    ):
-        rslogger.debug("Populating Courses")
-        BASE_COURSES = [
-            "boguscourse",
-            "ac1",
-            "cppds",
-            "cppforpython",
-            "csawesome",
-            "csjava",
-            "fopp",
-            "httlads",
-            "java4python",
-            "JS4Python",
-            "learnwebgl2",
-            "MasteringDatabases",
-            "overview",
-            "py4e-int",
-            "pythonds",
-            "pythonds3",
-            "StudentCSP",
-            "TeacherCSP",
-            "thinkcpp",
-            "thinkcspy",
-            "webfundamentals",
-            "test_course_1",
-        ]
+    BASE_COURSES = [
+        "boguscourse",
+        "ac1",
+        "cppds",
+        "cppforpython",
+        "csawesome",
+        "csjava",
+        "fopp",
+        "httlads",
+        "java4python",
+        "JS4Python",
+        "learnwebgl2",
+        "MasteringDatabases",
+        "overview",
+        "py4e-int",
+        "pythonds",
+        "pythonds3",
+        "StudentCSP",
+        "TeacherCSP",
+        "thinkcpp",
+        "thinkcspy",
+        "webfundamentals",
+        "test_course_1",
+    ]
 
-        for c in BASE_COURSES:
-            new_course = CoursesValidator(
-                course_name=c,
-                base_course=c,
-                term_start_date=datetime.date(2000, 1, 1),
-                login_required=False,
-                allow_pairs=False,
-                downloads_enabled=False,
-                courselevel="",
-                institution="",
-                new_server=True,
-            )
-            await create_course(new_course)
-        # make a user
-        await create_user(
-            AuthUserValidator(
-                username="testuser1",
-                first_name="test",
-                last_name="user",
-                password="xxx",
-                email="testuser1@example.com",
-                course_name="overview",
-                course_id=BASE_COURSES.index("overview") + 1,
-                donated=True,
-                active=True,
-                accept_tcp=True,
-                created_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
-                modified_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
-                registration_key="",
-                registration_id="",
-                reset_password_key="",
-            )
+    for c in BASE_COURSES:
+        new_course = CoursesValidator(
+            course_name=c,
+            base_course=c,
+            term_start_date=datetime.date(2000, 1, 1),
+            login_required=False,
+            allow_pairs=False,
+            downloads_enabled=False,
+            courselevel="",
+            institution="",
+            new_server=True,
         )
+        await create_course(new_course)
+    # Make a user. TODO: should we not do this for production?
+    await create_user(
+        AuthUserValidator(
+            username="testuser1",
+            first_name="test",
+            last_name="user",
+            password="xxx",
+            email="testuser1@example.com",
+            course_name="overview",
+            course_id=BASE_COURSES.index("overview") + 1,
+            donated=True,
+            active=True,
+            accept_tcp=True,
+            created_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+            modified_on=datetime.datetime(2020, 1, 1, 0, 0, 0),
+            registration_key="",
+            registration_id="",
+            reset_password_key="",
+        )
+    )
 
 
 # User Progress

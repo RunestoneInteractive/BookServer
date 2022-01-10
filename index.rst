@@ -33,7 +33,7 @@ These instructors enable you to install the BookServer, then author or edit book
 #.  To edit an exiting book, first clone it from the `RunestoneInteractive Github page <https://github.com/RunestoneInteractive>`_. Otherwise, create a new directory then execute ``runestone init`` at a terminal / command prompt.
 #.  `Author the book <https://runestone.academy/runestone/books/published/overview/index.html>`_; the `CodeChat System <https://codechat-system.readthedocs.io/en/latest/>`_ provides a GUI to make this easier, but a text editor plus running ``runestone build --all`` from the terminal / command prompt also works.
 #.  Deploy the book using ``runestone deploy``. TODO: this should automatically add the book to the courses table, and copy it to the correct `book path <book_path>`.
-#.  Execute ``bookserver`` from a terminal / command prompt to start the server. `Browse to the bookserver <http://127.0.0.1:8080/>`_ then view the book.  Running `bookserver` requires a few environment variables be set up, you can also start it by supplying key parameters on the command line:
+#.  Execute ``bookserver`` from a terminal / command prompt to start the server. `Browse to the bookserver <http://127.0.0.1:8080/>`_ then view the book.  Running ``bookserver`` requires a few environment variables be set up, you can also start it by supplying key parameters on the command line:
 
 .. code-block:: bash
 

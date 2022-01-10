@@ -332,9 +332,14 @@ def init_db(pytestconfig):
 
         def run_subprocess(args: str, description: str):
             logger.info(f"Running {description}: {args}")
-            cp = subprocess.run(
-                args, capture_output=True, check=True, shell=True, text=True
-            )
+            try:
+                cp = subprocess.run(
+                    args, capture_output=True, check=True, shell=True, text=True
+                )
+            except subprocess.CalledProcessError as e:
+                # Report errors before raising the exception.
+                log_subprocess(e.stdout, e.stderr, description)
+                raise
             log_subprocess(cp.stdout, cp.stderr, description)
 
         run_subprocess(
@@ -552,7 +557,7 @@ class _SeleniumServerUtils(_SeleniumUtils):
         self.user = None
 
     def get_book_url(self, url):
-        return self.get(f"books/published/test_course_1/{url}")
+        return self.get(f"books/published/test_child_course_1/{url}")
 
 
 # Present ``_SeleniumServerUtils`` as a fixture.

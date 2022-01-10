@@ -16,7 +16,7 @@ import posixpath
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
@@ -34,7 +34,7 @@ from ..crud import (
     fetch_subchapters,
 )
 from ..models import UseinfoValidation
-from ..session import auth_manager, is_instructor
+from ..session import is_instructor
 
 # .. _APIRouter config:
 #
@@ -173,7 +173,7 @@ async def serve_page(
             rslogger.debug(
                 f"Course mismatch: course name: {user.course_name} does not match requested course: {course_name} redirecting"
             )
-            return RedirectResponse(url=f"/runestone/default/courses")
+            return RedirectResponse(url="/runestone/default/courses")
 
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
@@ -196,7 +196,7 @@ async def serve_page(
     rslogger.debug(f"HEY COURSE ATTRS: {course_attrs}")
     # TODO set custom delimiters for PreTeXt books (https://stackoverflow.com/questions/33775085/is-it-possible-to-change-the-default-double-curly-braces-delimiter-in-polymer)
     # Books built with lots of LaTeX math in them are troublesome as they tend to have many instances
-    # of `{{` and `}}` wich conflicts with the default Jinja2 start stop delimiters. Rather than
+    # of ``{{`` and ``}}`` which conflicts with the default Jinja2 start stop delimiters. Rather than
     # escaping all of the latex math the PreTeXt built books use different delimiters for the templates
     # templates.env is a reference to a Jinja2 Environment object
     # try - templates.env.block_start_string = "@@@+"

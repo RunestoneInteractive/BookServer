@@ -23,7 +23,6 @@ Web application
 
     ../bookserver/toctree
     ../alembic/toctree
-    ../deployment/toctree
 
 
 Development support

@@ -230,11 +230,11 @@ async def getaggregateresults(request: Request, div_id: str, course_name: str):
 
     returnDict = dict(answerDict=rdata, misc=miscdata)
 
-    # if instructor:
+    ## if instructor:
     # There is little value to doing this now when the instructor
     # Dashboard provides more and better detail
-    #     resultList = _getStudentResults(question)
-    #     returnDict["reslist"] = resultList
+    ##     resultList = _getStudentResults(question)
+    ##     returnDict["reslist"] = resultList
 
     return make_json_response(detail=returnDict)
 
@@ -390,7 +390,7 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
                     detail=f"<p>Question {q} is not in the database.</p>"
                 )
         else:
-            return make_json_response(detail=f"<p>No Questions available</p>")
+            return make_json_response(detail="<p>No Questions available</p>")
 
     rslogger.debug(f"is_ab is {is_ab}")
     if is_ab:

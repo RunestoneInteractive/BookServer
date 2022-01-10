@@ -9,4 +9,5 @@ Database migration using Alembic
 
     ../alembic.ini
     env.py
+    rename_indices.sql
     versions/*.py
