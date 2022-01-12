@@ -290,9 +290,9 @@ UnittestAnswersValidation = sqlalchemy_to_pydantic(UnittestAnswers)
 @register_answer_table
 class LpAnswers(Base, AnswerMixin):
     __tablename__ = "lp_answers"
-    # See answer_. A JSON string; see RunestoneComponents for details. TODO: The length seems too short to me. Migrate this to use a ``Text`` field type instead.
-    answer = Column(String(512), nullable=False)
-    # A grade between 0 and 100. None means it the student hasn't submitted an answer yet. This was added before the ``percent`` field most other question types now have; it servers the same role, but stores the answer as a percentage. (The ``percent`` field in other questions stores values between 0 and 1.)
+    # See answer_. A JSON string; see RunestoneComponents for details.
+    answer = Column(Text, nullable=False)
+    # A grade between 0 and 100. None means the student hasn't submitted an answer yet. This was added before the ``percent`` field most other question types now have; it serves the same role, but stores the answer as a percentage. (The ``percent`` field in other questions stores values between 0 and 1.)
     correct = Column(Float())
     __table_args__ = (Index("idx_div_sid_course_lp", "sid", "div_id", "course_name"),)
 
