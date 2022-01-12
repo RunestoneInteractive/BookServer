@@ -30,7 +30,7 @@ from .crud import fetch_instructor_courses, fetch_user
 from .applogger import rslogger
 
 
-auth_manager = LoginManager(settings.secret, "/auth/validate", use_cookie=True)
+auth_manager = LoginManager(settings.jwt_secret, "/auth/validate", use_cookie=True)
 auth_manager.cookie_name = "access_token"
 
 

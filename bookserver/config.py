@@ -146,7 +146,7 @@ class Settings(BaseSettings):
     lti_only_mode: bool = False
 
     # This is the secret key used for generating the JWT token.
-    secret: str = "supersecret"
+    jwt_secret: str = "supersecret"
 
     # This is the private key web2py uses for hashing passwords.
     @property
