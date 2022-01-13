@@ -136,11 +136,10 @@ class AssessmentRequest(BaseModelNone):
             datetime: lambda v: v.isoformat(),
         }
 
-    @validator('deadline', pre=True)
+    @validator("deadline", pre=True)
     def time_validate(cls, v):
-        #return datetime.fromisoformat(v)
+        # return datetime.fromisoformat(v)
         return isoparse(v)
-
 
     # @validator("deadline")
     # def str_to_datetime(cls, value: str) -> datetime:
