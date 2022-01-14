@@ -10,7 +10,7 @@
 #
 # Standard library
 # ----------------
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.parser import isoparse
 from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 
@@ -21,7 +21,7 @@ from humps import camelize  # type: ignore
 
 # Local application imports
 # -------------------------
-from .internal.utils import canonicalize_tz
+# None.
 
 
 # Schema generation
