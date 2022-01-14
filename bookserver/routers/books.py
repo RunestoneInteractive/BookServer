@@ -261,8 +261,8 @@ async def serve_page(
 @router.get("/crashtest")
 async def crashme():
     a = 10
-    b = 11
-    c = a / (11 - 11)
+    b = 11  # noqa
+    c = a / (11 - 11)  # noqa
 
 
 # Utilities
