@@ -95,9 +95,12 @@ async def get_session_object(request: Request, call_next):
     tz_cookie = request.cookies.get("RS_info")
     rslogger.debug(f"In timezone middleware cookie is {tz_cookie}")
     if tz_cookie:
-        vals = json.loads(tz_cookie)
-        request.state.tz_offset = vals["tz_offset"]
-        rslogger.info(f"Timzone offset: {request.state.tz_offset}")
+        try:
+            vals = json.loads(tz_cookie)
+            request.state.tz_offset = vals["tz_offset"]
+            rslogger.info(f"Timzone offset: {request.state.tz_offset}")
+        except Exception as e:
+            rslogger.error(f"Failed to parse cookie data {tz_cookie} error was {e}")
     response = await call_next(request)
     return response
 
