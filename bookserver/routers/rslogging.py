@@ -215,7 +215,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
         await create_code_entry(entry)
 
         if data.partner:
-            if await same_class(request.state.username, data.partner):
+            if await same_class(request.state.user.username, data.partner):
                 comchar = COMMENT_MAP.get(data.language, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
