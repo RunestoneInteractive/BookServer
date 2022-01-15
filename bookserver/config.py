@@ -146,7 +146,7 @@ class Settings(BaseSettings):
     lti_only_mode: bool = False
 
     # This is the secret key used for generating the JWT token.
-    secret: str = "supersecret"
+    jwt_secret: str = "supersecret"
 
     # This is the private key web2py uses for hashing passwords.
     @property
@@ -159,8 +159,10 @@ class Settings(BaseSettings):
                 with open(key_file, encoding="utf-8") as f:
                     return f.read().strip()
             else:
-                rslogger.error("No Key file is found will default to settings.secret")
-                return self.secret
+                rslogger.error(
+                    "No Key file is found will default to settings.jwt_secret"
+                )
+                return self.jwt_secret
 
         return read_key()
 

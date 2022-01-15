@@ -10,7 +10,7 @@
 #
 # Standard library
 # ----------------
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.parser import isoparse
 from typing import Container, Optional, Type, Dict, Tuple, Any, Union
 
@@ -21,7 +21,7 @@ from humps import camelize  # type: ignore
 
 # Local application imports
 # -------------------------
-from .internal.utils import canonicalize_tz
+# None.
 
 
 # Schema generation
@@ -136,11 +136,10 @@ class AssessmentRequest(BaseModelNone):
             datetime: lambda v: v.isoformat(),
         }
 
-    @validator('deadline', pre=True)
+    @validator("deadline", pre=True)
     def time_validate(cls, v):
-        #return datetime.fromisoformat(v)
+        # return datetime.fromisoformat(v)
         return isoparse(v)
-
 
     # @validator("deadline")
     # def str_to_datetime(cls, value: str) -> datetime:

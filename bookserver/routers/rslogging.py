@@ -157,9 +157,8 @@ def set_tz_offset(
         values = {}
     values["tz_offset"] = tzreq.timezoneoffset
     response = JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=json.dumps({"detail": "success"})
-        )
+        status_code=status.HTTP_200_OK, content=json.dumps({"detail": "success"})
+    )
     response.set_cookie(key="RS_info", value=str(json.dumps(values)))
     rslogger.debug("setting timezone offset in session %s hours" % tzreq.timezoneoffset)
     # returning make_json_response here eliminates the cookie
