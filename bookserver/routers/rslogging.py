@@ -103,6 +103,10 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
     # This will validate the fields.  If a field does not validate
     # an error will be raised and a 422 response code will be returned
     # to the caller of the API.
+    # for the useinfo table act is limited to 512 characters, but some short answers can be
+    # longer than 512.  It is fine to limit it in the useinfo table, the full answer will be
+    # stored in the answers table.
+    useinfo_dict["act"] = useinfo_dict["act"][:512]
     useinfo_entry = UseinfoValidation(**useinfo_dict)
     rslogger.debug(useinfo_entry)
     idx = await create_useinfo_entry(useinfo_entry)
@@ -214,7 +218,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
         await create_code_entry(entry)
 
         if data.partner:
-            if await same_class(request.state.user.username, data.partner):
+            if await same_class(request.state.user, data.partner):
                 comchar = COMMENT_MAP.get(data.language, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
