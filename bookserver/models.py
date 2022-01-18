@@ -271,7 +271,7 @@ class CodelensAnswers(Base, CorrectAnswerMixin):
 class ShortanswerAnswers(Base, AnswerMixin):
     __tablename__ = "shortanswer_answers"
     # See answer_. TODO: what is the format?
-    answer = Column(String(512), nullable=False)
+    answer = Column(Text, nullable=False)
     __table_args__ = (Index("idx_div_sid_course_sa", "sid", "div_id", "course_name"),)
 
 

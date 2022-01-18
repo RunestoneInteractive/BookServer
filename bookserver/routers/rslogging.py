@@ -239,8 +239,10 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 
 
 async def same_class(user1: AuthUserValidator, user2: str) -> bool:
-    u2 = await fetch_user(user2)
-    return user1.course_id == u2.course_id
+    if user1:
+        u2 = await fetch_user(user2)
+        return user1.course_id == u2.course_id
+    return False
 
 
 # completion tables
