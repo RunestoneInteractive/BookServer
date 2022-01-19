@@ -241,7 +241,8 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
 async def same_class(user1: AuthUserValidator, user2: str) -> bool:
     if user1:
         u2 = await fetch_user(user2)
-        return user1.course_id == u2.course_id
+        if u2:
+            return user1.course_id == u2.course_id
     return False
 
 
@@ -262,9 +263,10 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         lpd = request_data.dict()
         rslogger.debug(f"{lpd=}")
 
-        # last_page_url is going to be .../runestone/books/published/course/chapter/subchapter.html
+        # last_page_url is going to be .../ns/books/published/course/chapter/subchapter.html
         # We will treat the second to last element as the chapter and the final element
         # minus the .html as the subchapter
+        # TODO: PreTeXt books will nothave this url format!
         lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
         lpd["last_page_subchapter"] = ".".join(
             request_data.last_page_url.split("/")[-1].split(".")[:-1]
