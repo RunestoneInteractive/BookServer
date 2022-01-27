@@ -267,10 +267,15 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         # We will treat the second to last element as the chapter and the final element
         # minus the .html as the subchapter
         # TODO: PreTeXt books will nothave this url format!
-        lpd["last_page_chapter"] = request_data.last_page_url.split("/")[-2]
-        lpd["last_page_subchapter"] = ".".join(
-            request_data.last_page_url.split("/")[-1].split(".")[:-1]
-        )
+        parts = request_data.last_page_url.split("/")
+        if len(parts) < 2:
+            rslogger.error(f"Unparseable page: {request_data.last_page_url}")
+            return make_json_response(
+                status=status.HTTP_422,
+                detail=f"Unparseable page: {request_data.last_page_url}",
+            )
+        lpd["last_page_chapter"] = parts[-2]
+        lpd["last_page_subchapter"] = ".".join(parts[-1].split(".")[:-1])
         lpd["last_page_accessed_on"] = datetime.utcnow()
         lpd["user_id"] = request.state.user.id
 
