@@ -72,7 +72,7 @@ class Web2PyBoolean(types.TypeDecorator):
         elif not value:
             return "F"
         else:
-            assert False
+            assert False, f"{value} is not T or F"
 
     def process_result_value(self, value, dialect):
         if value == "T":
@@ -82,7 +82,7 @@ class Web2PyBoolean(types.TypeDecorator):
         elif value is None:
             return None
         else:
-            assert False
+            assert False, f"{value} is not T or F"
 
     def copy(self, **kw):
         return Web2PyBoolean(self.impl.length)
