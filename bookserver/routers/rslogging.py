@@ -271,7 +271,7 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         if len(parts) < 2:
             rslogger.error(f"Unparseable page: {request_data.last_page_url}")
             return make_json_response(
-                status=status.HTTP_422,
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Unparseable page: {request_data.last_page_url}",
             )
         lpd["last_page_chapter"] = parts[-2]
