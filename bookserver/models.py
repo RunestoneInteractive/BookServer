@@ -631,7 +631,9 @@ UserChapterProgressValidator = sqlalchemy_to_pydantic(UserChapterProgress)
 class UserState(Base, IdMixin):
     __tablename__ = "user_state"
 
-    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id = Column(
+        ForeignKey("auth_user.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     course_name = Column(String(512), index=True, nullable=False)
     last_page_url = Column(String(512))
     last_page_hash = Column(String(512))
