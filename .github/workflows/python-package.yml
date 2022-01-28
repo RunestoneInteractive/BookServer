@@ -69,4 +69,4 @@ jobs:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}
             channel: "#builds"
-              if: always()
+        if: always()
