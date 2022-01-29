@@ -19,6 +19,7 @@ jobs:
       BOOK_SERVER_CONFIG: test
       TEST_DBURL: postgresql://postgres:foo@localhost/runestone
       RUNESTONE_PATH: ${{ github.workspace }}/../RunestoneServer
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
     strategy:
       matrix:
         python-version: ["3.8", "3.9"]
