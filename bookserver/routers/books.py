@@ -165,7 +165,7 @@ async def serve_page(
             rslogger.debug(
                 f"Course not found: {course_name} not in database redirect to login"
             )
-            return RedirectResponse(url=f"/runestone/default/accessIssue")
+            return RedirectResponse(url="/runestone/default/accessIssue")
 
         # The user is logged in, but their "current course" is not this one.
         # Send them to the courses page so they can properly switch courses.
