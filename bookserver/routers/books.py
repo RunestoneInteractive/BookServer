@@ -165,7 +165,7 @@ async def serve_page(
             rslogger.debug(
                 f"Course not found: {course_name} not in database redirect to login"
             )
-            return RedirectResponse(url=f"{settings.login_url}")
+            return RedirectResponse(url=f"/runestone/default/accessIssue")
 
         # The user is logged in, but their "current course" is not this one.
         # Send them to the courses page so they can properly switch courses.
@@ -173,7 +173,7 @@ async def serve_page(
             rslogger.debug(
                 f"Course mismatch: course name: {user.course_name} does not match requested course: {course_name} redirecting"
             )
-            return RedirectResponse(url="/runestone/default/courses")
+            return RedirectResponse(url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}")
 
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
