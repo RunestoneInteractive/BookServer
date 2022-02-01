@@ -173,7 +173,9 @@ async def serve_page(
             rslogger.debug(
                 f"Course mismatch: course name: {user.course_name} does not match requested course: {course_name} redirecting"
             )
-            return RedirectResponse(url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}")
+            return RedirectResponse(
+                url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}"
+            )
 
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
