@@ -48,7 +48,7 @@ multi-await = "^1.0.1"
 # Development dependencies
 # ========================
 [tool.poetry.dev-dependencies]
-black = "^21.0b"
+black = "~= 22.0"
 console-ctrl = "^0.1.0"
 pytest = "^6.2.0"
 flake8 = "^3.8.4"
