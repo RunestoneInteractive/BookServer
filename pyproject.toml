@@ -95,6 +95,8 @@ env = [
 ]
 # The _`default logging level` of INFO produces a LOT of output. Use a higher level of ``WARNING`` to reduce the noise.
 log_cli_level = 30
+# All async tests use the `pytest-asyncio framework <https://github.com/pytest-dev/pytest-asyncio#modes>`_.
+asyncio_mode = "auto"
 
 
 [tool.mypy]

@@ -42,6 +42,7 @@ import coverage
 from fastapi.testclient import TestClient
 from _pytest.monkeypatch import MonkeyPatch
 import pytest
+import pytest_asyncio
 from pyvirtualdisplay import Display
 
 # Since ``selenium_driver`` is a parameter to a function (which is a fixture), flake8 sees it as unused. However, pytest understands this as a request for the ``selenium_driver`` fixture and needs it.
@@ -356,7 +357,7 @@ def init_db(pytestconfig):
 # bookserver_session
 # ------------------
 # This fixture provides access to a clean instance of the Runestone database. by returning a bookserver ``async_session``.
-@pytest.fixture
+@pytest_asyncio.fixture
 async def bookserver_session(init_db):
     # Get a list of (almost) all tables in the database. Note that these queries exclude specific tables, which the ``runestone build`` populates and which  should not be modified otherwise. One method to identify these tables which should not be truncated is to run ``pg_dump --data-only $TEST_DBURL > out.sql`` on a clean database, then inspect the output to see which tables have data. It also excludes all the scheduler tables, since truncating these tables makes the process take a lot longer.
     keep_tables = """
@@ -440,7 +441,7 @@ def create_test_course(bookserver_session):
     return _create_test_course
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_course_1(create_test_course):
     return await create_test_course(
         course_name="test_child_course_1",
@@ -476,7 +477,7 @@ def create_test_user(bookserver_session):
 
 
 # Provide a way to get a prebuilt test user.
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user_1(create_test_user, test_course_1):
     return await create_test_user(
         username="test_user_1",
