@@ -14,7 +14,6 @@
 #
 # Standard library
 # ----------------
-from bookserver.models import AuthUserValidator
 from datetime import timedelta
 from typing import Optional
 
@@ -34,6 +33,7 @@ from ..session import load_user, auth_manager
 from ..applogger import rslogger
 from ..config import settings
 from ..crud import create_user
+from ..models import AuthUserValidator
 
 # Routing
 # =======
