@@ -3,7 +3,7 @@
 # ********************************
 #
 # See https://python-poetry.org/docs/dependency-specification/ to get an understanding of
-# how poetry does specifies dependencies.
+# how poetry specifies dependencies.
 #
 # Project metadata
 # ================
@@ -26,48 +26,48 @@ celery = {extras = ["redis"], version = "^5.1.2"}
 python = "^3.8.0"
 fastapi = "^0.68.0"
 # Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.
-uvicorn = {extras = ["standard"], version = "^0.14.0"}
+uvicorn = {extras = ["standard"], version = "^0.17.0"}
 # See the `poetry docs <https://python-poetry.org/docs/dependency-specification/#using-environment-markers>`_.
-gunicorn = {version = "^20.1.0", markers = "sys.platform != 'win32'"}
-Jinja2 = "^3.0.1"
-aiofiles = "^0.6.0"
-alembic = "^1.4.3"
-python-dateutil = "^2.8.1"
-fastapi-login = "1.6.3"
+gunicorn = {version = "^20.0.0", markers = "sys.platform != 'win32'"}
+Jinja2 = "^3.0.0"
+aiofiles = "^0.8.0"
+alembic = "^1.0.0"
+python-dateutil = "^2.0.0"
+fastapi-login = "^1.7.0"
 pydal = ">=20210215.1"
 python-multipart = "^0.0.5"
-asyncpg = "^0.22.0"
-SQLAlchemy = "^1.4.11"
+asyncpg = "^0.25.0"
+SQLAlchemy = "^1.0.0"
 aiosqlite = "^0.17.0"
-redis = "^3.5.3"
+redis = "^4.0.0"
 runestone = "^6.0.0"
-pyhumps = "^3.0.2"
-bleach = "^3.3.0"
-multi-await = "^1.0.1"
+pyhumps = "^3.0.0"
+bleach = "^4.0.0"
+multi-await = "^1.0.0"
 
 # Development dependencies
 # ========================
 [tool.poetry.dev-dependencies]
 black = "~= 22.0"
 console-ctrl = "^0.1.0"
-pytest = "^6.2.0"
-flake8 = "^3.8.4"
-sphinx-rtd-theme = "^0.5.2"
+pytest = "^6.0.0"
+flake8 = "^4.0.0"
+sphinx-rtd-theme = "^1.0.0"
 # Needed for the ``--install-types --non-interactive`` flags -- see the `mypy release notes <https://mypy-lang.blogspot.com/2021/06/mypy-0910-released.html>`_.
 mypy = "> 0.910"
-coverage = "< 5"
-tox = "^3.23.0"
+coverage = "^6.0.0"
+tox = "^3.0.0"
 selenium = "^3.0.0"
-PyVirtualDisplay = "^2.1"
-polling2 = "^0.4.6"
-pytest-asyncio = "^0.15.1"
+PyVirtualDisplay = "^2.0"
+polling2 = "^0.5.0"
+pytest-asyncio = "^0.17.0"
 # See https://python-poetry.org/docs/dependency-specification/#path-dependencies. After some testing, Poetry v.1.1.6 allows both ``runestone`` to be specified in the dependencies as a PyPI package and here in the dev dependencies as a local install, and will prefer the local install here. The local install is necessary, since the tests aren't in the PyPI Runestone Components package.
 runestone = { path = "../RunestoneComponents", develop = true }
-pytest-env = "^0.6.2"
+pytest-env = "^0.6.0"
 # This is a Runestone Components dependency that's needed when testing PostgreSQL.
-psycopg2-binary = "^2.9.1"
+psycopg2-binary = "^2.0.0"
 # This is used by VSCode for Python refactoring
-rope = "^0.19.0"
+rope = "^0.21.0"
 
 # Scripts
 # =======
