@@ -17,11 +17,10 @@ import socket
 
 # Third-party imports
 # -------------------
-from fastapi import FastAPI, Request, Depends, Cookie, status
+from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic.error_wrappers import ValidationError
-from typing import Optional
 
 # Local application imports
 # -------------------------
@@ -103,21 +102,6 @@ async def get_session_object(request: Request, call_next):
             rslogger.error(f"Failed to parse cookie data {tz_cookie} error was {e}")
     response = await call_next(request)
     return response
-
-
-@app.get("/protected")
-async def protected_route(request: Request, access_token: Optional[str] = Cookie(None)):
-
-    rslogger.debug(access_token)
-    res = await auth_manager.get_current_user(access_token)
-    rslogger.debug(res)
-    return {"user": res}
-
-
-@app.get("/protected2")
-async def protected_route2(request: Request, user=Depends(auth_manager)):
-    rslogger.debug("here")
-    return {"user": user}
 
 
 @app.get("/")
