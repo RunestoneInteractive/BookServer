@@ -137,7 +137,10 @@ async def fetch_page_activity_counts(
         (Question.subchapter == subchapter)
         & (Question.chapter == chapter)
         & (Question.from_source == True)  # noqa: E712
-        & ((Question.optional == False) | (Question.optional == None))
+        & (
+            (Question.optional == False)  # noqa: E712
+            | (Question.optional == None)  # noqa: E711
+        )
         & (Question.base_course == base_course)
     )
 
