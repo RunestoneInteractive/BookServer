@@ -35,7 +35,7 @@ auth_manager = LoginManager(settings.jwt_secret, "/auth/validate", use_cookie=Tr
 auth_manager.cookie_name = "access_token"
 
 
-@auth_manager.user_loader
+@auth_manager.user_loader()  # type: ignore
 async def _load_user(user_id: str) -> AuthUserValidator:
     """
     fetch a user object from the database. This is designed to work with the
