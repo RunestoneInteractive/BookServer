@@ -249,7 +249,10 @@ async def getpollresults(request: Request, course: str, div_id: str):
 
     for row in result:
         rslogger.debug(row)
-        val = int(row[0])
+        if ":" in row[0]:
+            val = int(row[0].split(":")[0])
+        else:
+            val = int(row[0])
         opt_counts[val] = row[1]
 
     opt_num = max(opt_counts.keys()) if opt_counts else 0
@@ -270,12 +273,23 @@ async def getpollresults(request: Request, course: str, div_id: str):
             request.state.user.username, course, div_id
         )
     if user_res:
-        my_vote = int(user_res)
+        if ":" in user_res:
+            my_vote = int(user_res.split(":")[0])
+            my_comment = user_res.split(":")[1]
+        else:
+            my_vote = int(user_res)
+            my_comment = ""
     else:
         my_vote = -1
 
     return make_json_response(
-        detail=dict(total=total, opt_counts=opt_counts, div_id=div_id, my_vote=my_vote)
+        detail=dict(
+            total=total,
+            opt_counts=opt_counts,
+            div_id=div_id,
+            my_vote=my_vote,
+            my_comment=my_comment,
+        )
     )
 
 
