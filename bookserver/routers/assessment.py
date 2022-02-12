@@ -15,22 +15,21 @@
 #
 # Standard library
 # ----------------
-import random
 import datetime
+import random
 from typing import Optional, Dict, Any
-
-# import pdb
 
 # Third-party imports
 # -------------------
+from bleach import clean
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
-from bleach import clean
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
 from ..crud import (
+    EVENT2TABLE,
     count_useinfo_for,
     create_selected_question,
     create_user_experiment_entry,
@@ -48,9 +47,11 @@ from ..crud import (
     fetch_top10_fitb,
     fetch_user_experiment,
     fetch_viewed_questions,
+    is_server_feedback,
     update_selected_question,
 )
 from ..internal.utils import make_json_response
+from ..models import runestone_component_dict
 from ..schemas import AssessmentRequest, SelectQRequest
 from ..session import is_instructor
 
@@ -70,38 +71,42 @@ async def get_assessment_results(
     request_data: AssessmentRequest,
     request: Request,
 ):
-    if not request.state.user:
+    user = request.state.user
+    if not user:
         return make_json_response(
             status=status.HTTP_401_UNAUTHORIZED, detail="not logged in"
         )
     # if the user is not logged in an HTTP 401 will be returned.
     # Otherwise if the user is an instructor then use the provided
-    # sid (it could be any student in the class) If none is provided then
+    # sid (it could be any student in the class). If none is provided then
     # use the user objects username
     if await is_instructor(request):
         if not request_data.sid:
-            request_data.sid = request.state.user.username
+            request_data.sid = user.username
     else:
         if request_data.sid:
             # someone is attempting to spoof the api
             return make_json_response(
                 status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
             )
-        request_data.sid = request.state.user.username
+        request_data.sid = user.username
 
     row = await fetch_last_answer_table_entry(request_data)
     # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
     if not row or row.id is None:  # type: ignore
         return make_json_response(detail="no data")
+    ret = row.dict()
 
-    # :index:`todo``: **port the serverside grading** code::
-    #
-    #   do_server_feedback, feedback = is_server_feedback(div_id, course)
-    #   if do_server_feedback:
-    #       correct, res_update = fitb_feedback(rows.answer, feedback)
-    #       res.update(res_update)
-    rslogger.debug(f"Returning {row}")
-    return make_json_response(detail=row)
+    # Do server-side grading if needed, which restores the answer and feedback.
+    if feedback := await is_server_feedback(request_data.div_id, request_data.course):
+        rcd = runestone_component_dict[EVENT2TABLE[request_data.event]]
+        # The grader should also be defined if there's feedback.
+        assert rcd.grader
+        # Use the grader to add server-side feedback to the returned dict.
+        ret.update(await rcd.grader(row, feedback, user.is_exam_mode))
+
+    rslogger.debug(f"Returning {ret}")
+    return make_json_response(detail=ret)
 
 
 # Define a simple model for the gethist request.
