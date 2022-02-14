@@ -158,6 +158,28 @@ async def serve_page(
         user_is_instructor = False
         serve_ad = True
 
+    # Implement restricted access for exams. TODO: make this more general by:
+    #
+    # - Using scopes to load attributes from the CourseAttributes table: probably ``scopes: <JSON data>``. The JSON data would be a dict of ``scope_string: [regex_string, redirect_string]``. If the provided regex matches, then the associated redirect fires?
+    if user and user.is_exam_mode:
+        # Don't allow access outside the current exam when in exam mode.
+        if not pagepath.startswith("exams/current"):
+            return RedirectResponse(
+                url=request.url_for(
+                    "serve_page",
+                    course_name=course_name,
+                    pagepath="exams/current/toctree.html",
+                )
+            )
+    else:
+        # Don't allow access to current exams when not in exam mode.
+        if pagepath.startswith("exams/current"):
+            return RedirectResponse(
+                url=request.url_for(
+                    "serve_page", course_name=course_name, pagepath="exams/toctree.html"
+                )
+            )
+
     course_row = await fetch_course(course_name)
     # check for some error conditions
     if not course_row:
