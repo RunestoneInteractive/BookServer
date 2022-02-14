@@ -138,7 +138,9 @@ async def log_book_event(entry: LogItemIncoming, request: Request):
         if feedback := await is_server_feedback(entry.div_id, user.course_name):
             # The grader should also be defined if there's feedback.
             assert rcd.grader
-            response_dict.update(await rcd.grader(valid_table, feedback))
+            response_dict.update(
+                await rcd.grader(valid_table, feedback, user.is_exam_mode)
+            )
 
         ans_idx = await create_answer_table_entry(valid_table, entry.event)
         rslogger.debug(ans_idx)

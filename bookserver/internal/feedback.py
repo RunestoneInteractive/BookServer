@@ -50,6 +50,8 @@ async def fitb_feedback(
     fitb_validator: Any,
     # The feedback to use when grading this question, taken from the ``feedback`` field of the ``fitb_answers`` table.
     feedback: Dict[Any, Any],
+    # True if in exam mode, meaning don't show if the answer is correct or not.
+    is_exam_mode: bool,
 ) -> Dict[str, Any]:
     # Grade based on this feedback. The new format is JSON; the old is
     # comma-separated.
@@ -117,25 +119,26 @@ async def fitb_feedback(
     fitb_validator.percent = percent
 
     # Return grading results to the client for a non-exam scenario.
-    if settings.is_exam:
-        return dict(
+    return (
+        dict(
             correct=True,
             displayFeed=["Response recorded."] * len(answer),
             isCorrectArray=[True] * len(answer),
             percent=1,
         )
-    else:
-        return dict(
+        if is_exam_mode
+        else dict(
             correct=correct,
             displayFeed=displayFeed,
             isCorrectArray=isCorrectArray,
             percent=percent,
         )
+    )
 
 
 # lp feedback
 # ===========
-async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any]):
+async def lp_feedback(lp_validator: Any, feedback: Dict[Any, Any], is_exam_mode: bool):
     # Begin by reformatting the answer for storage in the database. Do this now, so the code will be stored correctly even if the function returns early due to an error.
     try:
         code_snippets = json.loads(lp_validator.answer)
