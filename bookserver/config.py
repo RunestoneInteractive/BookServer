@@ -130,9 +130,6 @@ class Settings(BaseSettings):
     # The docker-compose.yml file will set the REDIS_URI environment variable
     redis_uri = "redis://localhost:6379/0"
 
-    # Select normal mode or a high-stakes assessment mode (for administering a examination). In this mode, answers to supported question types are not shown.
-    is_exam: bool = False
-
     # This module provides "/auth/login" but it is super basic
     # For now, logins are meant to be handled by the parallel runestone server.
     # For production usage set the LOGIN_URL to /runestone/default/user
