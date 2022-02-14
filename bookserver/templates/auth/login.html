@@ -10,14 +10,57 @@ See `login`. TODO: more docs.
   </head>
   <body>
     <h1>Login</h1>
-    <form action="/auth/validate" method="post">
-      <label for="loginuser">Username</label>
-      <input type="text" name="username" id="loginuser" />
+    <form
+      action="{{ request.root_path }}/auth/validate{{ post_suffix }}"
+      method="post"
+    >
+      <div>
+        <label>
+          Username
+          <input
+            type="text"
+            name="username"
+            autocomplete="username"
+            autofocus
+          />
+        </label>
+      </div>
 
-      <label for="loginpw">Password</label>
-      <input type="password" name="password" id="loginpw" />
+      <div>
+        <label>
+          Password
+          <input
+            type="password"
+            name="password"
+            autocomplete="current-password"
+          />
+        </label>
+      </div>
 
-      <input type="submit" id="login_button" />
+      {% if has_auth_code %}
+      <div>
+        <label>
+          Authorization code
+          <input type="password" name="auth_code" />
+        </label>
+      </div>
+      {% endif %}
+
+      <div>
+        <input type="submit" />
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onclick="location.href='/user/request_reset_password'"
+        >
+          Lost password
+        </button>
+        <button type="button" onclick="location.href='/user/retrieve_username'">
+          Forgot username
+        </button>
+      </div>
     </form>
   </body>
 </html>

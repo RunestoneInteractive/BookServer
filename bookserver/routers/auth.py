@@ -20,19 +20,19 @@ from typing import Optional
 #
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Depends, Request, Response  # noqa F401
+from fastapi import APIRouter, Depends, Form, Request, Response  # noqa F401
 from fastapi_login.exceptions import InvalidCredentialsException
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from pydal.validators import CRYPT
 
 # Local application imports
 # -------------------------
-from ..session import load_user, auth_manager
+from ..session import auth_manager
 from ..applogger import rslogger
 from ..config import settings
-from ..crud import create_user
+from ..crud import create_user, fetch_user
 from ..models import AuthUserValidator
 
 # Routing
@@ -54,34 +54,62 @@ templates = Jinja2Templates(
 # -----
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        "login.html", dict(request=request, has_auth_code=False, post_suffix="")
+    )
+
+
+@router.get("/login_exam", response_class=HTMLResponse)
+def login_form_exam(request: Request):
+    return templates.TemplateResponse(
+        "login.html", dict(request=request, has_auth_code=True, post_suffix="_exam")
+    )
 
 
 @router.post("/validate")
 async def login(
+    request: Request,
     data: OAuth2PasswordRequestForm = Depends(),
 ):  # , response_class=RedirectResponse
     # ideally we would put back the response_class parameter but its
     # just a hint to the doc system and right now causing the docs
     # to crash.  Added to an issue for FastAPI on github.
     # ):
+    return await _login_core(data.username, data.password, request, timedelta(days=31))
+
+
+@router.post("/validate_exam")
+async def login_exam(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    auth_code: str = Form(...),
+):
+    if auth_code != "jit_test":
+        raise InvalidCredentialsException
+
+    return await _login_core(
+        username, password, request, timedelta(hours=2), {"is_exam_mode"}
+    )
+
+
+async def _login_core(
+    username: str,
+    password: str,
+    request: Request,
+    expires: timedelta,
+    scopes: Optional[set] = None,
+):
     """
-    This is called as the result of a login form being submitted.
+    This is (indirectly) called as the result of a login form being submitted.
     If authentication is successful an access token is created and stored
     in a session cookie.  This session cookie is used for all protected routes.
     The ``auth_manager`` is provided by `../session.py` which also explains how
     to setup a protected route.
     """
-    username = data.username
-    password = data.password
-
-    rslogger.debug(f"username = {username}")
-    user = await load_user(username)
-    rslogger.debug(user)
-    # um = UserManagerWeb2Py()
+    user = await fetch_user(username)
     if not user:
-        # raise InvalidCredentialsException
-        return RedirectResponse("/auth/login")
+        raise InvalidCredentialsException
     else:
         rslogger.debug(f"Got a user {user.username} check password")
         # The password in the web2py database is formatted as follows:
@@ -97,9 +125,11 @@ async def login(
             raise InvalidCredentialsException
 
     access_token = auth_manager.create_access_token(
-        data={"sub": user.username}, expires=timedelta(hours=12)
+        data={"sub": user.username}, expires=expires, scopes=scopes
     )
-    redirect_to = f"/books/published/{user.course_name}/index.html"
+    redirect_to = (
+        f"{request['root_path']}/books/published/{user.course_name}/index.html"
+    )
     rslogger.debug(f"Sending user to {redirect_to}")
     response = RedirectResponse(redirect_to)
     # *Important* We need to set the cookie here for the redirect in order for
@@ -111,9 +141,9 @@ async def login(
 
 # To log out, simply delete the cookie containing auth information.
 @router.get("/logout")
-async def logout(response_class: RedirectResponse):
+async def logout(request: Request, response_class: RedirectResponse):
     # Send the user to the login page after the logout.
-    response = RedirectResponse("/auth/login")
+    response = RedirectResponse(request.url_for("login_form"))
     response.delete_cookie(auth_manager.cookie_name)
     return response
 
