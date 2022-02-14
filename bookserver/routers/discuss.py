@@ -207,9 +207,13 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                     # because **every** connection runs this same loop
                     # we only want to send a non-broadcast message if
                     # it is to ourself.
-                    partner = await r.hget("partnerdb", data["from"])
-                    if partner:
-                        partner = partner.decode("utf8")
+                    # check to see
+                    mess_from = data["from"]
+                    partner_list = await r.hget(
+                        f"partnerdb_{data['course_name']}", data["from"]
+                    )
+                    if partner_list:
+                        partner_list = json.loads(partner_list)
                     else:
                         try:
                             mess = {
@@ -230,8 +234,8 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                         rslogger.error(
                             f"{os.getpid()}: Failed to find a partner for {data['from']}"
                         )
-                    if partner == username:
-                        await manager.send_personal_message(partner, data)
+                    if username in partner_list:
+                        await manager.send_personal_message(username, data)
                         # log the message
                         # todo - we should not log messages that are 'control' messages
                         # These individual control messages update partner and answer
@@ -239,7 +243,7 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                             await create_useinfo_entry(
                                 UseinfoValidation(
                                     event="sendmessage",
-                                    act=f"to:{partner}:{data['message']}",
+                                    act=f"to:{data['from']}:{data['message']}",
                                     div_id=data["div_id"],
                                     course_id=data["course_name"],
                                     sid=data["from"],
@@ -247,7 +251,9 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                                 )
                             )
                     else:
-                        rslogger.debug(f"{os.getpid()}: {partner=} is not {username}")
+                        rslogger.debug(
+                            f"{os.getpid()}: {data['from']=} is not {username}"
+                        )
 
             if wsres is not None:
                 rslogger.debug(
