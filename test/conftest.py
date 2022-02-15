@@ -545,9 +545,9 @@ class _SeleniumServerUtils(_SeleniumUtils):
     ):
 
         self.get("auth/login")
-        self.driver.find_element_by_id("loginuser").send_keys(test_user.username)
-        self.driver.find_element_by_id("loginpw").send_keys(test_user.password)
-        self.driver.find_element_by_id("login_button").click()
+        self.driver.find_element_by_id("input-username").send_keys(test_user.username)
+        self.driver.find_element_by_id("input-password").send_keys(test_user.password)
+        self.driver.find_element_by_id("form-submit").click()
         self.user = test_user
 
     def logout(self):

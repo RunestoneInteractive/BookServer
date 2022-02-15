@@ -16,7 +16,7 @@
 # Standard library
 # ----------------
 import inspect
-from typing import Any, Awaitable, Callable, cast, Dict
+from typing import Any, Dict
 
 # Third-party imports
 # -------------------
@@ -97,7 +97,7 @@ auth_manager.cookie_name = "access_token"
 
 
 @auth_manager.user_loader()  # type: ignore
-async def _load_user(user_id: str, payload: Dict[str, str]) -> AuthUserValidator:
+async def load_user(user_id: str, payload: Dict[str, Any]) -> AuthUserValidator:
     """
     fetch a user object from the database. This is designed to work with the
     original web2py auth_user schema but make it easier to migrate to a new
@@ -105,14 +105,8 @@ async def _load_user(user_id: str, payload: Dict[str, str]) -> AuthUserValidator
     """
     rslogger.debug(f"Going to fetch {user_id}")
     res = await fetch_user(user_id)
-    res.jwt_payload = payload
+    res._jwt_payload = payload
     return res
-
-
-# The ``user_loader`` decorator doesn't propagate type hints. Fix this manually.
-load_user = cast(
-    Callable[[str, Dict[str, str]], Awaitable[AuthUserValidator]], _load_user
-)
 
 
 async def is_instructor(request: Request) -> bool:
