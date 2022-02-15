@@ -28,7 +28,7 @@
 # Standard library
 # ----------------
 import re
-from typing import Dict, Type
+from typing import Any, Dict, Type
 
 # Third-party imports
 # -------------------
@@ -390,6 +390,14 @@ BaseAuthUserValidator = sqlalchemy_to_pydantic(AuthUser)
 
 
 class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
+    # Add a field not in the DB which stores the payload of the JWT.
+    jwt_payload: Dict[str, Any] = {}
+
+    # Provide a convenient way to determine if the current user is in exam mode or not -- this is set in the JWT created by the login endpoint.
+    @property
+    def is_exam_mode(self):
+        return "is_exam_mode" in self.jwt_payload.get("scopes", {})
+
     @validator("username")
     def username_clear_of_css_characters(cls, v):
         if re.search(r"""[!"#$%&'()*+,./@:;<=>?[\]^`{|}~ ]""", v):
@@ -397,7 +405,7 @@ class AuthUserValidator(BaseAuthUserValidator):  # type: ignore
             # raise ValueError("username must not contain special characters")
         return v
 
-    # TODO: restore the special character vaalidation after aging out legacy usernames
+    # TODO: restore the special character validation after aging out legacy usernames
     # with special characters.  These *are* valid usernames because we allowed them to
     # be registered.  And we cannot take away someone's username in the middle of the course.
     ## So far the recommendation from Pydantic is to do async validation
