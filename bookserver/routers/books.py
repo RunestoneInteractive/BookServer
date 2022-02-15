@@ -165,19 +165,19 @@ async def serve_page(
         # Don't allow access outside the current exam when in exam mode.
         if not pagepath.startswith("exams/current"):
             return RedirectResponse(
-                url=request.url_for(
+                url="https" + request.url_for(
                     "serve_page",
                     course_name=course_name,
                     pagepath="exams/current/toctree.html",
-                )
+                )[4:]
             )
     else:
         # Don't allow access to current exams when not in exam mode.
         if pagepath.startswith("exams/current"):
             return RedirectResponse(
-                url=request.url_for(
+                url="https" + request.url_for(
                     "serve_page", course_name=course_name, pagepath="exams/toctree.html"
-                )
+                )[4:]
             )
 
     course_row = await fetch_course(course_name)
