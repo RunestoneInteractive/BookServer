@@ -222,6 +222,7 @@ async def runlog(request: Request, response: Response, data: LogRunIncoming):
                 comchar = COMMENT_MAP.get(data.language, "#")
                 newcode = f"{comchar} This code was shared by {data.sid}\n\n{data.code}"
                 entry.code = newcode
+                entry.sid = data.partner
                 await create_code_entry(entry)
             else:
                 return make_json_response(
