@@ -206,11 +206,11 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                 else:
                     # because **every** connection runs this same loop
                     # we only want to send a non-broadcast message if
-                    # it is to ourself.
+                    # it is to **ourself**. So the to in the message should be username
                     # check to see
                     mess_from = data["from"]
                     partner_list = await r.hget(
-                        f"partnerdb_{data['course_name']}", data["from"]
+                        f"partnerdb_{data['course_name']}", mess_from
                     )
                     if partner_list:
                         partner_list = json.loads(partner_list)
@@ -218,21 +218,21 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                         try:
                             mess = {
                                 "type": "text",
-                                "from": data["from"],
+                                "from": mess_from,
                                 "message": "Could not find a partner for you",
                                 "time": time.time(),
                                 "broadcast": False,
                                 "course_name": data["course_name"],
                                 "div_id": data["div_id"],
                             }
-                            await manager.send_personal_message(data["from"], mess)
+                            await manager.send_personal_message(mess_from, mess)
                         except KeyError:
                             rslogger.error(
                                 f"Not enough data to construct a message: {data}"
                             )
 
                         rslogger.error(
-                            f"{os.getpid()}: Failed to find a partner for {data['from']}"
+                            f"{os.getpid()}: Failed to find a partner for {mess_from}"
                         )
                     if username in partner_list:
                         await manager.send_personal_message(username, data)
@@ -243,17 +243,15 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                             await create_useinfo_entry(
                                 UseinfoValidation(
                                     event="sendmessage",
-                                    act=f"to:{data['from']}:{data['message']}",
+                                    act=f"to:{username}:{data['message']}",
                                     div_id=data["div_id"],
                                     course_id=data["course_name"],
-                                    sid=data["from"],
+                                    sid=mess_from,
                                     timestamp=datetime.utcnow(),
                                 )
                             )
                     else:
-                        rslogger.debug(
-                            f"{os.getpid()}: {data['from']=} is not {username}"
-                        )
+                        rslogger.debug(f"{os.getpid()}: {mess_from=} is not {username}")
 
             if wsres is not None:
                 rslogger.debug(
