@@ -34,6 +34,7 @@ from ..applogger import rslogger
 from ..config import settings
 from ..crud import create_user, fetch_user
 from ..models import AuthUserValidator
+from ..internal.utils import url_for
 
 # Routing
 # =======
@@ -143,7 +144,7 @@ async def _login_core(
 @router.get("/logout")
 async def logout(request: Request, response_class: RedirectResponse):
     # Send the user to the login page after the logout.
-    response = RedirectResponse(request.url_for("login_form"))
+    response = RedirectResponse(url_for(request, "login_form"))
     response.delete_cookie(auth_manager.cookie_name)
     return response
 
