@@ -162,9 +162,7 @@ async def serve_page(
     else:
         # The course requires a login but the user is not logged in
         if course_row.login_required and not user:
-            rslogger.debug(
-                f"Course not found: {course_name} not in database redirect to login"
-            )
+            rslogger.debug(f"User not logged in: {course_name} redirect to login")
             return RedirectResponse(url="/runestone/default/accessIssue")
 
         # The user is logged in, but their "current course" is not this one.
