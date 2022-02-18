@@ -234,7 +234,12 @@ async def websocket_endpoint(websocket: WebSocket, uname: str):
                         rslogger.error(
                             f"{os.getpid()}: Failed to find a partner for {mess_from}"
                         )
-                    if username in partner_list:
+                    if (
+                        data["message"] == "enableChat"
+                        and data.get("to", None) == username
+                    ):
+                        await manager.send_personal_message(username, data)
+                    elif data["message"] != "enableChat" and username in partner_list:
                         await manager.send_personal_message(username, data)
                         # log the message
                         # todo - we should not log messages that are 'control' messages
