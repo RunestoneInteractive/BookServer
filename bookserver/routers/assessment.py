@@ -272,6 +272,7 @@ async def getpollresults(request: Request, course: str, div_id: str):
         user_res = await fetch_last_poll_response(
             request.state.user.username, course, div_id
         )
+    my_comment = ""
     if user_res:
         if ":" in user_res:
             my_vote = int(user_res.split(":")[0])
