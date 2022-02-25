@@ -68,6 +68,9 @@ async def return_static_asset(course, kind, filepath):
     # We would like to serve book pages with the actual course name in the URL
     # instead of the base course.  This is a necessary step.
     course_row = await fetch_course(course)
+    if not course_row:
+        raise HTTPException(404)
+
     filepath = safe_join(
         settings.book_path,
         course_row.base_course,
