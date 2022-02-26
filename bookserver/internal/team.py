@@ -18,8 +18,7 @@ import urllib.parse
 # Third-party imports
 # -------------------
 from gluon import current
-from gluon.html import XML, URL, UL, A, DIV, TABLE, THEAD, TBODY, TR
-from gluon.http import redirect
+from gluon.html import XML, UL, A, DIV, TABLE, THEAD, TBODY, TR
 
 # Local application imports
 # -------------------------
@@ -327,20 +326,17 @@ def team_report(
     subchapter_name,
     # The course name.
     course_name,
+    # The string "true" if the current user is an instructor; otherwise, the string "false".
+    is_instructor_str,
     # True to write out a table of contents.
     write_toc=True,
 ):
 
-    auth_user = current.auth.user
-    if not auth_user or not current.verifyInstructorStatus(
-        auth_user.course_name, auth_user
-    ):
-        current.session.flash = "You must be an instructor to access this page."
-        # See https://stackoverflow.com/questions/4500592/web2py-redirect-to-previous-page.
-        redirect(current.request.env.http_referer or URL(c="default"))
+    if is_instructor_str != "true":
+        return {}, {}, None, "You must be an instructor to access this page."
 
-    db = current.db
     team, team_member = _load_teams(course_name)
+    # TODO
     grades = questions_to_grades(
         course_name,
         (db.questions.chapter == current.request.args[-2])
@@ -380,18 +376,14 @@ def team_report(
         )
 
     # Write a TOC
-    if write_toc:
-        current.response.write(
-            UL(
-                *[
-                    A(team_name, _href="#" + urllib.parse.quote(team_name))
-                    for team_name, team_data in team_data_dict.items()
-                ]
-            ),
-            escape=False,
-        )
+    toc_str = UL(
+        *[
+            A(team_name, _href="#" + urllib.parse.quote(team_name))
+            for team_name, team_data in team_data_dict.items()
+        ]
+    ) if write_toc else ""
 
-    return eval_data_dict, team_data_dict, grades
+    return eval_data_dict, team_data_dict, grades, toc_str
 
 
 # Utilities
