@@ -783,8 +783,8 @@ async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List
         questionlist = request_data.questions.split(",")
         questionlist = [q.strip() for q in questionlist]
     elif request_data.proficiency:
-        prof = request_data.proficiency
-
+        prof = request_data.proficiency.strip()
+        rslogger.debug(prof)
         where_clause = (Competency.competency == prof) & (
             Competency.question == Question.id
         )
@@ -807,12 +807,14 @@ async def fetch_matching_questions(request_data: schemas.SelectQRequest) -> List
             where_clause = where_clause & (
                 Question.base_course == request_data.limitBaseCourse
             )
-        query = select(Question).where(where_clause)
+        query = select(Question.name).where(where_clause)
 
         async with async_session() as session:
             res = await session.execute(query)
             rslogger.debug(f"{res=}")
-            questionlist = [q.name for q in res]
+            questionlist = []
+            for row in res:
+                questionlist.append(row[0])
 
     return questionlist
 
