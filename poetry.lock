@@ -1017,7 +1017,7 @@ dev = ["build", "pytest", "pytest-timeout"]
 
 [[package]]
 name = "runestone"
-version = "6.0.12"
+version = "6.0.13"
 description = "Sphinx extensions for writing interactive documents."
 category = "main"
 optional = false
