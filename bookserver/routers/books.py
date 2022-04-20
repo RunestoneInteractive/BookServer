@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import os.path
 import posixpath
+from typing import Optional
 
 # Third-party imports
 # -------------------
@@ -142,9 +143,15 @@ async def serve_page(
     request: Request,
     course_name: constr(max_length=512),  # type: ignore
     pagepath: constr(max_length=512),  # type: ignore
+    mode: Optional[str] = None,
 ):
-    user = request.state.user
-    rslogger.debug(f"user = {user}, course name = {course_name}")
+    if mode and mode == "browsing":
+        use_services = False
+        user = None
+    else:
+        use_services = True
+        user = request.state.user
+        rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
     # Since these values are going to be read by javascript we
     # need to use lowercase true and false.
@@ -248,6 +255,7 @@ async def serve_page(
         subchapter_list=subchapter_list,
         serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
+        use_services="true" if use_services else "false",
         readings=[],
         **course_attrs,
     )
