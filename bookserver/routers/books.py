@@ -17,7 +17,7 @@ from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Cookie, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
@@ -143,6 +143,7 @@ async def serve_page(
     request: Request,
     course_name: constr(max_length=512),  # type: ignore
     pagepath: constr(max_length=512),  # type: ignore
+    RS_info: Optional[str] = Cookie(None),
     mode: Optional[str] = None,
 ):
     if mode and mode == "browsing":
@@ -224,6 +225,12 @@ async def serve_page(
     if "enable_compare_me" not in course_attrs:
         course_attrs["enable_compare_me"] = "true"
 
+    reading_list = []
+    if RS_info:
+        values = json.loads(RS_info)
+        if "readings" in values:
+            reading_list = values["readings"]
+
     #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
     await create_useinfo_entry(
@@ -256,7 +263,7 @@ async def serve_page(
         serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
         use_services="true" if use_services else "false",
-        readings=[],
+        readings=reading_list,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
