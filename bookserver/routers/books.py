@@ -179,9 +179,14 @@ async def serve_page(
         # The user is logged in, but their "current course" is not this one.
         # Send them to the courses page so they can properly switch courses.
         if user and user.course_name != course_name:
+            user_course_row = await fetch_course(user.course_name)
             rslogger.debug(
                 f"Course mismatch: course name: {user.course_name} does not match requested course: {course_name} redirecting"
             )
+            if user_course_row.base_course == course_name:
+                return RedirectResponse(
+                    url=f"/ns/books/published/{user.course_name}/{pagepath}"
+                )
             return RedirectResponse(
                 url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}"
             )
