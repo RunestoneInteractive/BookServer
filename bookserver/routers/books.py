@@ -13,10 +13,11 @@ from datetime import datetime
 import json
 import os.path
 import posixpath
+from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Cookie, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
@@ -68,6 +69,9 @@ async def return_static_asset(course, kind, filepath):
     # We would like to serve book pages with the actual course name in the URL
     # instead of the base course.  This is a necessary step.
     course_row = await fetch_course(course)
+    if not course_row:
+        raise HTTPException(404)
+
     filepath = safe_join(
         settings.book_path,
         course_row.base_course,
@@ -139,9 +143,16 @@ async def serve_page(
     request: Request,
     course_name: constr(max_length=512),  # type: ignore
     pagepath: constr(max_length=512),  # type: ignore
+    RS_info: Optional[str] = Cookie(None),
+    mode: Optional[str] = None,
 ):
-    user = request.state.user
-    rslogger.debug(f"user = {user}, course name = {course_name}")
+    if mode and mode == "browsing":
+        use_services = False
+        user = None
+    else:
+        use_services = True
+        user = request.state.user
+        rslogger.debug(f"user = {user}, course name = {course_name}")
     # Make sure this course exists, and look up its base course.
     # Since these values are going to be read by javascript we
     # need to use lowercase true and false.
@@ -168,9 +179,14 @@ async def serve_page(
         # The user is logged in, but their "current course" is not this one.
         # Send them to the courses page so they can properly switch courses.
         if user and user.course_name != course_name:
+            user_course_row = await fetch_course(user.course_name)
             rslogger.debug(
                 f"Course mismatch: course name: {user.course_name} does not match requested course: {course_name} redirecting"
             )
+            if user_course_row.base_course == course_name:
+                return RedirectResponse(
+                    url=f"/ns/books/published/{user.course_name}/{pagepath}"
+                )
             return RedirectResponse(
                 url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}"
             )
@@ -214,6 +230,12 @@ async def serve_page(
     if "enable_compare_me" not in course_attrs:
         course_attrs["enable_compare_me"] = "true"
 
+    reading_list = []
+    if RS_info:
+        values = json.loads(RS_info)
+        if "readings" in values:
+            reading_list = values["readings"]
+
     #   TODO: provide the template google_ga as well as ad servings stuff
     #   settings.google_ga
     await create_useinfo_entry(
@@ -245,7 +267,8 @@ async def serve_page(
         subchapter_list=subchapter_list,
         serve_ad=serve_ad,
         is_instructor="true" if user_is_instructor else "false",
-        readings=[],
+        use_services="true" if use_services else "false",
+        readings=reading_list,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.

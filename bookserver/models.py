@@ -535,6 +535,7 @@ class QuestionGrade(Base, IdMixin):
             "div_id",
             "course_name",
             "sid",
+            unique=True,
         ),
     )
 
