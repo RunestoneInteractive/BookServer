@@ -736,3 +736,13 @@ class TraceBack(Base, IdMixin):
     post_body = Column(String(1024))
     hash = Column(String(128))
     hostname = Column(String(128))
+
+
+class Library(Base, IdMixin):
+    __tablename__ = "library"
+    title = Column(String(512), nullable=False)
+    subtitle = Column(String(512))
+    description = Column(Text)
+    authors = Column(Text)
+    shelf_section = Column(String(512))
+    basecourse = Column(Integer, ForeignKey("courses.course_name"))
