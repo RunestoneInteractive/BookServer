@@ -124,14 +124,16 @@ def run(
 def set_or_verify_dburl(mode: str, value: str):
     """
     if bookserver is given a --dburl parameter then set the environment
-    variable for appropriate mode.  The environment variable value will be
-    inheritend by all subprocesses
+    variable for appropriate mode. The environment variable value will be
+    inherited by all subprocesses.
     """
     if mode == "production":
         if value:
             os.environ["DBURL"] = value
         else:
-            click.echo(f"{os.environ['DBURL']=}")
+            click.echo(
+                "Using the value from the existing environment variable DBURL (which is omitted for security reasons)."
+            )
     elif mode == "development":
         if value:
             os.environ["DEV_DBURL"] = value
