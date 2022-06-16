@@ -417,8 +417,8 @@ async def get_question_source(request: Request, request_data: SelectQRequest):
     rslogger.debug(f"is_ab is {is_ab}")
     if is_ab:
 
-        res = await fetch_user_experiment(sid, is_ab)
-        if not res:
+        res = await fetch_user_experiment(sid, is_ab)  # returns an int or None
+        if res is None:
             exp_group = random.randrange(2)
             await create_user_experiment_entry(sid, is_ab, exp_group)
             rslogger.debug(f"added {sid} to {is_ab} group {exp_group}")
