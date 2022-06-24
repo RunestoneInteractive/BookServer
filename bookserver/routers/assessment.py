@@ -30,6 +30,7 @@ from pydantic import BaseModel
 from ..applogger import rslogger
 from ..crud import (
     EVENT2TABLE,
+    count_matching_questions,
     count_useinfo_for,
     create_selected_question,
     create_user_experiment_entry,
@@ -45,6 +46,7 @@ from ..crud import (
     fetch_selected_question,
     fetch_timed_exam,
     fetch_top10_fitb,
+    fetch_user,
     fetch_user_experiment,
     fetch_viewed_questions,
     is_server_feedback,
@@ -534,12 +536,19 @@ async def htmlsrc(
     current assignment_questions set.
     """
     assignment_id = assignmentId
-    studentId = sid
+    studentId = sid or request.state.user.username
     htmlsrc = ""
-    if assignment_id:
+    count = await count_matching_questions(acid)
+    rslogger.debug(f"we have an sid of {studentId} and {count=}")
+    if count > 1 and assignment_id:
         rslogger.debug(f"assignment_id = {assignment_id}")
         # todo fix up for assignment
         res = await fetch_question(acid)
+    elif count > 1 and studentId:
+        rslogger.debug("Fetching by base course")
+        student = await fetch_user(studentId)
+        bc = await fetch_course(student.course_name)
+        res = await fetch_question(acid, basecourse=bc.base_course)
     else:
         res = await fetch_question(acid)
     if res and (res.htmlsrc or res.question_type == "selectquestion"):

@@ -738,7 +738,7 @@ async def update_selected_question(sid: str, selector_id: str, selected_id: str)
 
 
 async def fetch_question(
-    name: str, basecourse: Optional[str] = None
+    name: str, basecourse: Optional[str] = None, assignment: Optional[str] = None
 ) -> QuestionValidator:
     """
     Fetch a single matching question row from the database that matches
@@ -761,6 +761,15 @@ async def fetch_question(
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
         return QuestionValidator.from_orm(res.scalars().first())
+
+
+async def count_matching_questions(name: str) -> int:
+
+    query = select(func.count(Question.name)).where(Question.name == name)
+
+    async with async_session() as session:
+        res = await session.execute(query)
+        return res.scalars().first()
 
 
 auto_gradable_q = [
