@@ -225,8 +225,7 @@ def sim_run_mdb(
             shell=True,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            # TODO / BUG: need to gather anything sent to stdout in case of an error.
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
             env=sim_env,
         )
         s = get_sim_setup_str_mdb(mcu_name)
@@ -254,22 +253,21 @@ def sim_run_mdb(
     po.stdin.flush()
 
     # Wait for it to finish by watching stdout.
-    #
-    # TODO: this approach is fairly broken. It should:
-    #
-    # - Collect data from stdout and stderr in separate threads. If the simulation doesn't finish successfully, then report stdout and stderr along with all simout data; otherwise, just return simout data.
-    time_left = 10
-    while time_left > 0:
-        # TODO: if the process terminated, exit earlu.
+    end_time = time.time() + 15
+    output = []
+    while time.time() < end_time:
+        if po.poll() is None:
+            output.append(po.communicate()[0])
+            break
         line = po.stdout.readline()
         if not line:
-            # TODO: this is a poor way of keeping time; it assumes that the readline above doesn't block.
             time.sleep(0.1)
-            time_left -= 0.1
             continue
+        output.append(line)
         if line == ">/*Simulation finished.*/\n":
+            output = []
             break
 
     # Read then return the result, starting from the beginning of the file.
     _tls.simout_file.seek(0)
-    return _tls.simout_file.read()
+    return "".join(output) + _tls.simout_file.read()
