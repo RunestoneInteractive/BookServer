@@ -51,7 +51,7 @@ multi-await = "^1.0.0"
 [tool.poetry.dev-dependencies]
 black = "~= 22.0"
 console-ctrl = "^0.1.0"
-pytest = "^6.0.0"
+pytest = "^7.0.0"
 flake8 = "^4.0.0"
 sphinx-rtd-theme = "^1.0.0"
 # Needed for the ``--install-types --non-interactive`` flags -- see the `mypy release notes <https://mypy-lang.blogspot.com/2021/06/mypy-0910-released.html>`_.
@@ -59,7 +59,7 @@ mypy = "> 0.910"
 coverage = "^6.0.0"
 tox = "^3.0.0"
 selenium = "^3.0.0"
-PyVirtualDisplay = "^2.0"
+PyVirtualDisplay = "^3.0"
 polling2 = "^0.5.0"
 pytest-asyncio = "^0.17.0"
 # See https://python-poetry.org/docs/dependency-specification/#path-dependencies. After some testing, Poetry v.1.1.6 allows both ``runestone`` to be specified in the dependencies as a PyPI package and here in the dev dependencies as a local install, and will prefer the local install here. The local install is necessary, since the tests aren't in the PyPI Runestone Components package.
