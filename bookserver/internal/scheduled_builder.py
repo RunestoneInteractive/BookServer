@@ -232,7 +232,7 @@ def runguard(
             f"--filesize={filesize_kb}",
             f"--nproc={num_processes}",
         ]
-        + (["--no_core"] if no_core_dumps else [])
+        + (["--no-core"] if no_core_dumps else [])
         + args
     )
 
@@ -248,7 +248,7 @@ def python_builder(
     )
 
     return report_subprocess(
-        runguard([sys.executable, run_file_name], cwd), "Run", cwd, []
+        runguard([sys.executable, run_file_name], cwd, memsize_kb=20000), "Run", cwd, []
     )
 
 
