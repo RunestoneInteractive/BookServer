@@ -413,7 +413,9 @@ class CourseInstructor(Base, IdMixin):
     __tablename__ = "course_instructor"
     __table_args__ = (Index("c_i_idx", "course", "instructor"),)
 
-    course = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    course = Column(
+        Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    )
     instructor = Column(Integer, ForeignKey("auth_user.id"), nullable=False)
     verified = Column(Web2PyBoolean)
     paid = Column(Web2PyBoolean)
