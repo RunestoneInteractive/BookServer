@@ -56,7 +56,7 @@ def get_sim_str_sim30(
         )
 
     return (
-        # In SIM30, type ? to get help.
+        # In SIM30, type ? to get help. See also :alink:`the manual <asmguide#page=218>`.
         #
         # .. _supported devices:
         #
@@ -111,7 +111,7 @@ def get_sim_setup_str_mdb(
 ):
 
     return (
-        # See `the MDB manual <http://ww1.microchip.com/downloads/en/DeviceDoc/50002102D.pdf>`_ for more information.
+        # See :alink:`the MDB manual <http://ww1.microchip.com/downloads/en/DeviceDoc/50002102D.pdf>` for more information.
         #
         # Select the device to simulate.
         "device {}\n"
@@ -146,7 +146,7 @@ def get_sim_run_str_mdb(
         "{}"
         # Run the program. Wait a time in ms for it to finish.
         "run\n"
-        "wait 6000\n"
+        "wait 12000\n"
         # In case the wait time expired before encountering a breakpoint, halt the simulation.
         "halt\n"
         # Remove all breakpoints.
@@ -169,13 +169,13 @@ def get_verification_code():
 
 
 # Returns True if a simulation produced the correct answer.
-def check_sim_out(out_str, verification_code):
-    sl = out_str.splitlines()
+def check_sim_out(out_list, verification_code):
+    # Gracefully handle an empty list.
+    sl = out_list[-1].splitlines() if out_list else []
+    # Get lines, with fallback if they don't exist.
     second_to_last_line = sl[-2] if len(sl) >= 2 else ""
     last_line = sl[-1] if len(sl) >= 1 else ""
-    return (second_to_last_line == "Correct.") and (
-        last_line == "{}".format(verification_code)
-    )
+    return (second_to_last_line == "Correct.") and (last_line == str(verification_code))
 
 
 # Run MDB
@@ -183,9 +183,9 @@ def check_sim_out(out_str, verification_code):
 # This function runs a simulation, verifying that the simulation results
 # are correct, using the newer MDB simulator.
 #
-# Inputs: path_to_elf_binary
+# Outputs: string read from the sim_output_file.
 #
-# Outputs: sim_output_file
+# TODO: Need a test strategy, and unit tests for this.
 def sim_run_mdb(
     # A path to the MDB script.
     mdb_path,
@@ -211,23 +211,22 @@ def sim_run_mdb(
             _tls.simout_path, "w+", encoding="utf-8", errors="backslashreplace"
         )
 
+        # Java, by default, doesn't free memory until it gets low, making it a memory hog. The `Java command-line flags <https://docs.oracle.com/en/java/javase/13/docs/specs/man/java.html>`_ ``-Xms750M -Xmx750M`` specify a heap size of 750 MB. However, these options must go before the ``--jar`` option when invoking ``java``, meaning they require hand edits to ``mdb.bat/sh``; they can't be passed as paramters (which are placed after ``--jar`` by ``mdb.bat/sh``). Therefore, use the `JAVA_TOOL_OPTIONS <https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/envvars002.html>`_ env var to pass these parameters.
+        sim_env = os.environ.copy()
+        sim_env["JAVA_TOOL_OPTIONS"] = "-Xms750M -Xmx750M"
         # Start the simulator.
         po = subprocess.Popen(
             [
                 mdb_path,
-                # These options must go before the ``--jar`` option, meaning they require hand edits to ``mdb.bat/sh``; they can't be passed as paramters (which are placed after ```--jar`` by ``mdb.bat/sh``.)
-                #
                 # Per a conversation with Microchip's support team, this disables the start-up check for new language packs, which takes several seconds to complete.
                 ##"-Dpackslib.workonline=false",
-                # Java, by default, doesn't free memory until it gets low, making this a memory hog. On Windows, it starts up at around 400 MB. This seems to keep it below 600 MB.
-                ##"-Xmx750M",
             ],
             text=True,
             shell=True,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            env=os.environ,
+            stderr=subprocess.STDOUT,
+            env=sim_env,
         )
         s = get_sim_setup_str_mdb(mcu_name)
         po.stdin.write(s)
@@ -241,6 +240,8 @@ def sim_run_mdb(
             simout_file.close()
             tempdir.cleanup()
 
+            # TODO: Need to kill the process as well, in case it's stuck.
+
         atexit.register(on_exit)
 
     # Delete any previous simulation results.
@@ -252,35 +253,21 @@ def sim_run_mdb(
     po.stdin.flush()
 
     # Wait for it to finish by watching stdout.
-    time_left = 10
-    while time_left > 0:
+    end_time = time.time() + 15
+    output = []
+    while time.time() < end_time:
+        if po.poll() is None:
+            output.append(po.communicate()[0])
+            break
         line = po.stdout.readline()
         if not line:
             time.sleep(0.1)
-            time_left -= 0.1
             continue
+        output.append(line)
         if line == ">/*Simulation finished.*/\n":
+            output = []
             break
 
     # Read then return the result, starting from the beginning of the file.
     _tls.simout_file.seek(0)
-    return _tls.simout_file.read()
-
-
-# Celery config
-# =============
-# Provide the `Celery configuration <https://docs.celeryproject.org/en/latest/userguide/application.html#configuration>`_.
-celery_config = dict(
-    # Use `Redis with Celery <http://docs.celeryproject.org/en/latest/getting-started/brokers/redis.html#configuration>`_.
-    broker_url=os.environ.get("REDIS_URI", "redis://localhost:6379/0"),
-    result_backend=os.environ.get("REDIS_URI", "redis://localhost:6379/0"),
-    # Given that tasks time out in 60 seconds, expire them after that. See `result_expires <https://docs.celeryproject.org/en/latest/userguide/configuration.html#result-expires>`_.
-    result_expires=120,
-    # This follows the `Redis caveats <http://docs.celeryproject.org/en/latest/getting-started/brokers/redis.html#redis-caveats>`_.
-    broker_transport_options={
-        # 1 hour.
-        "visibility_timeout": 3600,
-        "fanout_prefix": True,
-        "fanout_patterns": True,
-    },
-)
+    return "".join(output) + _tls.simout_file.read()
