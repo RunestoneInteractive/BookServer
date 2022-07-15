@@ -536,7 +536,12 @@ async def htmlsrc(
     current assignment_questions set.
     """
     assignment_id = assignmentId
-    studentId = sid or request.state.user.username
+    if sid:
+        studentId = sid
+    elif request.state.user:
+        studentId = request.state.user.username
+    else:
+        studentId = None
     htmlsrc = ""
     count = await count_matching_questions(acid)
     rslogger.debug(f"we have an sid of {studentId} and {count=}")
