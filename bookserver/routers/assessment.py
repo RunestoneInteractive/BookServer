@@ -105,7 +105,7 @@ async def get_assessment_results(
         # The grader should also be defined if there's feedback.
         assert rcd.grader
         # Use the grader to add server-side feedback to the returned dict.
-        ret.update(await rcd.grader(row, feedback)
+        ret.update(await rcd.grader(row, feedback))
 
     rslogger.debug(f"Returning {ret}")
     return make_json_response(detail=ret)
