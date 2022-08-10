@@ -497,6 +497,7 @@ class Assignment(Base, IdMixin):
     is_peer = Column(Web2PyBoolean, default=False)
     current_index = Column(Integer, default=0)
     enforce_due = Column(Web2PyBoolean)
+    peer_async_visible = Column(Web2PyBoolean, default=False)
 
 
 class AssignmentQuestion(Base, IdMixin):
