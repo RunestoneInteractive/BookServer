@@ -11,6 +11,7 @@
 # ----------------
 from datetime import datetime
 import json
+import os
 import os.path
 import posixpath
 from typing import Optional
@@ -248,6 +249,11 @@ async def serve_page(
             timestamp=datetime.utcnow(),
         )
     )
+    if "LOAD_BALANCER_HOST" in os.environ:
+        canonical_host = os.environ["LOAD_BALANCER_HOST"]
+    else:
+        canonical_host = os.environ.get("RUNESTONE_HOST", "localhost")
+
     subchapter_list = await fetch_subchaptoc(course_row.base_course, chapter)
     # TODO: restore the contributed questions list ``questions`` for books (only fopp) that
     # show the contributed questions list on an Exercises page.
@@ -269,6 +275,8 @@ async def serve_page(
         is_instructor="true" if user_is_instructor else "false",
         use_services="true" if use_services else "false",
         readings=reading_list,
+        pagepath=pagepath,
+        canonical_host=canonical_host,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
