@@ -746,3 +746,7 @@ class Library(Base, IdMixin):
     authors = Column(Text)
     shelf_section = Column(String(512))
     basecourse = Column(String(512), ForeignKey("courses.course_name"))
+    build_system = Column(String(20))
+    for_classes = Column(Web2PyBoolean)
+    is_visible = Column(Web2PyBoolean)
+    github_url = Column(String(512))
