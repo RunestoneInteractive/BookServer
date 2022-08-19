@@ -31,6 +31,7 @@ from ..config import settings
 from ..crud import (
     create_useinfo_entry,
     fetch_course,
+    fetch_library_books,
     fetch_page_activity_counts,
     fetch_all_course_attributes,
     fetch_subchapters,
@@ -294,6 +295,27 @@ async def crashme():
     a = 10
     b = 11  # noqa
     c = a / (11 - 11)  # noqa
+
+
+# The Library Page
+# ================
+
+
+@router.api_route("/index", methods=["GET", "POST"])
+async def library(request: Request, response_class=HTMLResponse):
+    books = await fetch_library_books()
+
+    sections = set()
+    for book in books:
+        if book.shelf_section not in sections:
+            sections.add(book.shelf_section)
+
+    templates = Jinja2Templates(
+        directory=f"{settings._book_server_path}/templates{router.prefix}"
+    )
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "book_list": books, "sections": sections}
+    )
 
 
 # Utilities

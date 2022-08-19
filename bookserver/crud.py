@@ -50,6 +50,8 @@ from .models import (
     CourseInstructorValidator,
     Courses,
     CoursesValidator,
+    Library,
+    LibraryValidator,
     Question,
     QuestionValidator,
     SelectedQuestion,
@@ -964,3 +966,20 @@ async def create_traceback(exc: Exception, request: Request, host: str):
             hostname=host,
         )
         session.add(new_entry)
+
+
+async def fetch_library_books():
+    query = (
+        select(Library)
+        .where(Library.is_visible == True)
+        .order_by(Library.shelf_section, Library.title)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        book_list = [LibraryValidator.from_orm(x) for x in res.scalars().fetchall()]
+        return book_list
+
+
+async def create_library_book():
+    ...

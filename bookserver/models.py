@@ -748,5 +748,8 @@ class Library(Base, IdMixin):
     basecourse = Column(String(512), ForeignKey("courses.course_name"))
     build_system = Column(String(20))
     for_classes = Column(Web2PyBoolean)
-    is_visible = Column(Web2PyBoolean)
+    is_visible = Column(Web2PyBoolean, default="T")
     github_url = Column(String(512))
+
+
+LibraryValidator = sqlalchemy_to_pydantic(Library)
