@@ -131,7 +131,7 @@ async def get_external(course: str, filepath: str):
 
 # Jupyterlite
 @router.get("/published/{course:str}/lite/{filepath:path}")
-async def get_external(course: str, filepath: str):
+async def get_jlite(course: str, filepath: str):
 
     rslogger.debug(f"Getting {filepath} but adding index.html")
     if filepath[-1] == "/":
