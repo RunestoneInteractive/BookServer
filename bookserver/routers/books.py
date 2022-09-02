@@ -129,6 +129,16 @@ async def get_external(course: str, filepath: str):
     return await return_static_asset(course, "external", filepath)
 
 
+# Jupyterlite
+@router.get("/published/{course:str}/lite/{filepath:path}")
+async def get_external(course: str, filepath: str):
+
+    rslogger.debug(f"Getting {filepath} but adding index.html")
+    if filepath[-1] == "/":
+        filepath += "index.html"
+    return await return_static_asset(course, "lite", filepath)
+
+
 # Basic page renderer
 # ===================
 # To see the output of this endpoint, see http://localhost:8080/books/published/overview/index.html.
