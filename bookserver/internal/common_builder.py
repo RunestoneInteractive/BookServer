@@ -175,7 +175,9 @@ def check_sim_out(out_list, verification_code):
     # Get lines, with fallback if they don't exist.
     second_to_last_line = sl[-2] if len(sl) >= 2 else ""
     last_line = sl[-1] if len(sl) >= 1 else ""
-    return (second_to_last_line == "Correct.") and (last_line == str(verification_code))
+    return (second_to_last_line == "Correct.") and (
+        last_line.strip() == str(verification_code)
+    )
 
 
 # Run MDB
