@@ -751,6 +751,8 @@ class Library(Base, IdMixin):
     is_visible = Column(Web2PyBoolean, default="T")
     github_url = Column(String(512))
     main_page = Column(String(512), default="index.html")
+    last_build = Column(DateTime)
+    github_url = Column(String(255))
 
 
 LibraryValidator = sqlalchemy_to_pydantic(Library)
