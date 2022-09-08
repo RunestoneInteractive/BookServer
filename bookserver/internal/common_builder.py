@@ -194,7 +194,6 @@ def sim_run_mdb(
     # A path to the binary (typically in .elf format) to simulate.
     sim_binary_path,
 ):
-
     # Get or create an instance of the simulator.
     po = _tls.__dict__.get("po")
     if (
@@ -211,7 +210,7 @@ def sim_run_mdb(
             _tls.simout_path, "w+", encoding="utf-8", errors="backslashreplace"
         )
 
-        # Java, by default, doesn't free memory until it gets low, making it a memory hog. The `Java command-line flags <https://docs.oracle.com/en/java/javase/13/docs/specs/man/java.html>`_ ``-Xms750M -Xmx750M`` specify a heap size of 750 MB. However, these options must go before the ``--jar`` option when invoking ``java``, meaning they require hand edits to ``mdb.bat/sh``; they can't be passed as paramters (which are placed after ``--jar`` by ``mdb.bat/sh``). Therefore, use the `JAVA_TOOL_OPTIONS <https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/envvars002.html>`_ env var to pass these parameters.
+        # Java, by default, doesn't free memory until it gets low, making it a memory hog. The `Java command-line flags <https://docs.oracle.com/en/java/javase/13/docs/specs/man/java.html>`_ ``-Xms750M -Xmx750M`` specify a heap size of 750 MB. However, these options must go before the ``--jar`` option when invoking ``java``, meaning they require hand edits to ``mdb.bat/sh``; they can't be passed as parameters (which are placed after ``--jar`` by ``mdb.bat/sh``). Therefore, use the `JAVA_TOOL_OPTIONS <https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/envvars002.html>`_ env var to pass these parameters.
         sim_env = os.environ.copy()
         sim_env["JAVA_TOOL_OPTIONS"] = "-Xms750M -Xmx750M"
         # Start the simulator.
@@ -256,7 +255,8 @@ def sim_run_mdb(
     end_time = time.time() + 15
     output = []
     while time.time() < end_time:
-        if po.poll() is None:
+        # If the process terminates (a not-``None`` return value), read the last output then exit the loop.
+        if po.poll() is not None:
             output.append(po.communicate()[0])
             break
         line = po.stdout.readline()
