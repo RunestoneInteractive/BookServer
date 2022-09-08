@@ -20,6 +20,7 @@ import socket
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic.error_wrappers import ValidationError
 
 # Local application imports
@@ -62,6 +63,14 @@ app.include_router(books.router)
 app.include_router(assessment.router)
 app.include_router(auth.router)
 app.include_router(discuss.router)
+
+# We can mount various "apps" with mount.  Anything that gets to this server with /staticAssets
+# will serve staticfiles - StaticFiles class implements the same interface as a FastAPI app.
+# See `FastAPI static files <https://fastapi.tiangolo.com/tutorial/static-files/>`_
+# maybe we could use this inside the books router but I'm not sure...
+# There is so much monkey business with nginx routing of various things with /static/ in the
+# path that it is clearer to mount this at something NOT called static
+app.mount("/staticAssets", StaticFiles(directory="static"), name="static")
 
 
 # Defined here

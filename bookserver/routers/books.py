@@ -132,7 +132,7 @@ async def get_external(course: str, filepath: str):
 
 # Jupyterlite
 @router.get("/published/{course:str}/lite/{filepath:path}")
-async def get_external(course: str, filepath: str):
+async def get_jlite(course: str, filepath: str):
 
     rslogger.debug(f"Getting {filepath} but adding index.html")
     if filepath[-1] == "/":
@@ -158,6 +158,7 @@ async def serve_page(
     RS_info: Optional[str] = Cookie(None),
     mode: Optional[str] = None,
 ):
+
     if mode and mode == "browsing":
         use_services = False
         user = None
@@ -320,11 +321,22 @@ async def library(request: Request, response_class=HTMLResponse):
         if book.shelf_section not in sections:
             sections.add(book.shelf_section)
 
+    user = request.state.user
+    if user:
+        course = user.course_name
+    else:
+        course = ""
     templates = Jinja2Templates(
         directory=f"{settings._book_server_path}/templates{router.prefix}"
     )
     return templates.TemplateResponse(
-        "index.html", {"request": request, "book_list": books, "sections": sections}
+        "index.html",
+        {
+            "request": request,
+            "book_list": books,
+            "sections": sections,
+            "course": course,
+        },
     )
 
 

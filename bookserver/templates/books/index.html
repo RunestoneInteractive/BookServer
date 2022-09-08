@@ -1,8 +1,16 @@
 
+{% extends "_base.html" %} 
+{% block css %}
 
+<link
+    href="/ns/staticAssets/index.css"	  
+    rel="stylesheet"
+    media="screen"
+/>
+{% endblock %}
 
-<div class="container">
-    <div class="col-md-8 col-md-offset-2">
+{% block content %}
+    <div class="col-md-12">
         <h2>Runestone Academy Library of Books</h2>
         <p>
             The books on Runestone.Academy are all free and open source textbooks. We
@@ -45,7 +53,6 @@
                 {% endif %}
             {% endfor %}
         {% endfor %}
-        <script src="../static/js/books.js"></script>
 
         <h3>License Information</h3>
         <p>
@@ -58,4 +65,10 @@
             each book.
         </p>
     </div>
-</div>
+
+
+{% endblock %}
+
+{% block js %}
+<script src="/ns/staticAssets/books.js"></script>
+{% endblock %}

@@ -971,7 +971,7 @@ async def create_traceback(exc: Exception, request: Request, host: str):
 async def fetch_library_books():
     query = (
         select(Library)
-        .where(Library.is_visible == True)
+        .where(Library.is_visible == True)  # noqa: E712
         .order_by(Library.shelf_section, Library.title)
     )
     async with async_session() as session:
