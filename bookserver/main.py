@@ -12,6 +12,7 @@
 import datetime
 import json
 import os
+import pkg_resources
 import traceback
 import socket
 
@@ -70,7 +71,9 @@ app.include_router(discuss.router)
 # maybe we could use this inside the books router but I'm not sure...
 # There is so much monkey business with nginx routing of various things with /static/ in the
 # path that it is clearer to mount this at something NOT called static
-app.mount("/staticAssets", StaticFiles(directory="static"), name="static")
+# WARNING this works in a dev build but does not work in production.  Need to supply a path to a folder containing the static files.  I imagine the same is true for the templates!  The build script should use  pkg_resources to find the files and copy them.
+staticdir = pkg_resources.resource_filename("bookserver", "staticAssets")
+app.mount("/staticAssets", StaticFiles(directory=staticdir), name="static")
 
 
 # Defined here
