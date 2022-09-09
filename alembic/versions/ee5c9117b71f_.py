@@ -30,6 +30,13 @@ def upgrade():
         sa.Column("authors", sa.Text(), nullable=True),
         sa.Column("shelf_section", sa.String(length=512), nullable=True),
         sa.Column("basecourse", sa.String(length=512), nullable=True),
+        sa.Column("build_system", sa.String(length=20)),
+        sa.Column("for_classes", bookserver.models.Web2PyBoolean()),
+        sa.Column("is_visible", bookserver.models.Web2PyBoolean(), default="T"),
+        sa.Column("github_url", sa.String(length=512)),
+        sa.Column("main_page", sa.String(length=512), default="index.html"),
+        sa.Column("last_build", sa.DateTime()),
+        sa.Column("github_url", sa.String(length=255)),
         sa.ForeignKeyConstraint(
             ["basecourse"],
             ["courses.course_name"],
