@@ -736,3 +736,23 @@ class TraceBack(Base, IdMixin):
     post_body = Column(String(1024))
     hash = Column(String(128))
     hostname = Column(String(128))
+
+
+class Library(Base, IdMixin):
+    __tablename__ = "library"
+    title = Column(String(512), nullable=False)
+    subtitle = Column(String(512))
+    description = Column(Text)
+    authors = Column(Text)
+    shelf_section = Column(String(512))
+    basecourse = Column(String(512), ForeignKey("courses.course_name"))
+    build_system = Column(String(20))
+    for_classes = Column(Web2PyBoolean)
+    is_visible = Column(Web2PyBoolean, default="T")
+    github_url = Column(String(512))
+    main_page = Column(String(512), default="index.html")
+    last_build = Column(DateTime)
+    github_url = Column(String(255))
+
+
+LibraryValidator = sqlalchemy_to_pydantic(Library)

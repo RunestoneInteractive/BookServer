@@ -31,6 +31,7 @@ from ..config import settings
 from ..crud import (
     create_useinfo_entry,
     fetch_course,
+    fetch_library_books,
     fetch_page_activity_counts,
     fetch_all_course_attributes,
     fetch_subchapters,
@@ -157,6 +158,7 @@ async def serve_page(
     RS_info: Optional[str] = Cookie(None),
     mode: Optional[str] = None,
 ):
+
     if mode and mode == "browsing":
         use_services = False
         user = None
@@ -304,6 +306,44 @@ async def crashme():
     a = 10
     b = 11  # noqa
     c = a / (11 - 11)  # noqa
+
+
+# The Library Page
+# ================
+
+
+@router.api_route("/index", methods=["GET", "POST"])
+async def library(request: Request, response_class=HTMLResponse):
+    books = await fetch_library_books()
+
+    sections = set()
+    for book in books:
+        if book.shelf_section not in sections:
+            sections.add(book.shelf_section)
+
+    user = request.state.user
+    if user:
+        course = user.course_name
+        username = user.username
+        instructor_status = is_instructor(request)
+    else:
+        course = ""
+        username = ""
+        instructor_status = False
+    templates = Jinja2Templates(
+        directory=f"{settings._book_server_path}/templates{router.prefix}"
+    )
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "book_list": books,
+            "sections": sections,
+            "course": course,
+            "user": username,
+            "is_instructor": instructor_status,
+        },
+    )
 
 
 # Utilities
