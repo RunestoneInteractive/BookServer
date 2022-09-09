@@ -49,21 +49,27 @@
                   <i class="material-icons">account_circle</i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                  <a class="dropdown-item" href="#">Assignments</a>
-                  <a class="dropdown-item" href="#">Practice</a>
-                  <a class="dropdown-item" href="#">Peer Instruction (Instructor)</a>
-                  <a class="dropdown-item" href="#">Peer Instruction (Student)</a>
-                  <a class="dropdown-item" href="#">Proogress Page</a>
+                  {% if user %}
+                  <span class="dropdown-item">logged in: {{user}}</span>
                   <div class="dropdown-divider"></div>
-                  <a class="dropdown-item" href="#">Change Course</a>
+                  {% endif %}
+                  <a class="dropdown-item" href="/runestone/assignments/chooseAssignment">Assignments</a>
+                  <a class="dropdown-item" href="/runestone/assignments/practice">Practice</a>
+                  <a class="dropdown-item" href="/runestone/peer/student.html">Peer Instruction (Student)</a>
+                  <a class="dropdown-item" href="/runestone/dashboard/studentreport">Proogress Page</a>
                   <div class="dropdown-divider"></div>
-                  <a class="dropdown-item" href="#">Instructor's Page</a>
-                  <a class="dropdown-item" href="#">Author Tools</a>
-                  <a class="dropdown-item" href="#">Editorial Page</a>
+                  <a class="dropdown-item" href="/runestone/default/courses">Change Course</a>
                   <div class="dropdown-divider"></div>
-                  <a class="dropdown-item" href="#">Edit Profile</a>
-                  <a class="dropdown-item" href="#">Change Password</a>
-                  <a class="dropdown-item" href="#">Log Out</a>
+                  {% if is_instructor %}
+                  <a class="dropdown-item" href="/runestone/admin/index">Instructor's Page</a>
+                  <a class="dropdown-item" href="/runestone/peer/instructor.html">Peer Instruction (Instructor)</a>
+                  <a class="dropdown-item" href="https://author.runestone.academy'">Author Tools</a>
+                  <a class="dropdown-item" href="/runestone/admin/manage_exercises">Editorial Page</a>
+                  <div class="dropdown-divider"></div>
+                  {% endif %}
+                  <a class="dropdown-item" href="/runestone/default/user/profile">Edit Profile</a>
+                  <a class="dropdown-item" href="/runestone/default/user/change_password">Change Password</a>
+                  <a class="dropdown-item" href="/runestone/default/user/logout">Log Out</a>
                 </div>
               </li>
           </div>
@@ -72,11 +78,11 @@
                     <i class="material-icons">help</i>
                   </a>
                   <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="#">FAQ</a>
-                    <a class="dropdown-item" href="#">Instructors Guide</a>
+                    <a class="dropdown-item" href="https://blog.runestone.academy/pages/faq.html">FAQ</a>
+                    <a class="dropdown-item" href="/ns/books/published/instructorguide/frontmatter-1.html?mode=browsing">Instructors Guide</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">About Runestone</a>
-                    <a class="dropdown-item" href="#">Report a Problem</a>
+                    <a class="dropdown-item" href="https://blog.runestone.academy/pages/about.html">About Runestone</a>
+                    <a class="dropdown-item" href="/runestone/default/reportabug">Report a Problem</a>
                   </div>
                 </li>
             </div>

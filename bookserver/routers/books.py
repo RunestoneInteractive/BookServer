@@ -324,8 +324,12 @@ async def library(request: Request, response_class=HTMLResponse):
     user = request.state.user
     if user:
         course = user.course_name
+        username = user.username
+        instructor_status = is_instructor(request)
     else:
         course = ""
+        username = ""
+        instructor_status = False
     templates = Jinja2Templates(
         directory=f"{settings._book_server_path}/templates{router.prefix}"
     )
@@ -336,6 +340,8 @@ async def library(request: Request, response_class=HTMLResponse):
             "book_list": books,
             "sections": sections,
             "course": course,
+            "user": username,
+            "is_instructor": instructor_status,
         },
     )
 
