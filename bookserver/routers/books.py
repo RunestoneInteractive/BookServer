@@ -325,7 +325,7 @@ async def library(request: Request, response_class=HTMLResponse):
     if user:
         course = user.course_name
         username = user.username
-        instructor_status = is_instructor(request)
+        instructor_status = await is_instructor(request)
     else:
         course = ""
         username = ""
