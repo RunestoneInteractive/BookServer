@@ -42,5 +42,5 @@ args:
     # The output directory.
     -   _build
 
-# ``html_ext``: optional; defaults to ``.html``. The extension used by this renderer when generating HTML files.
+# ``html_ext``: optional; defaults to ``.html``. The extension used by this renderer when generating HTML files
 #html_ext: .html
