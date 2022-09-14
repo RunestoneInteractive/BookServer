@@ -9,7 +9,7 @@
 #
 # Standard library
 # ----------------
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import os.path
@@ -203,6 +203,7 @@ async def serve_page(
             return RedirectResponse(
                 url=f"/runestone/default/courses?requested_course={course_name}&current_course={user.course_name}"
             )
+    # proceed with the knowledge that course_row is defined after this point.
 
     rslogger.debug(f"Base course = {course_row.base_course}")
     chapter = os.path.split(os.path.split(pagepath)[0])[1]
@@ -222,6 +223,7 @@ async def serve_page(
         )
     )
     course_attrs = await fetch_all_course_attributes(course_row.id)
+    # course_attrs will always return a dictionary, even if an empty one.
     rslogger.debug(f"HEY COURSE ATTRS: {course_attrs}")
     # TODO set custom delimiters for PreTeXt books (https://stackoverflow.com/questions/33775085/is-it-possible-to-change-the-default-double-curly-braces-delimiter-in-polymer)
     # Books built with lots of LaTeX math in them are troublesome as they tend to have many instances
@@ -269,6 +271,31 @@ async def serve_page(
     subchapter_list = await fetch_subchaptoc(course_row.base_course, chapter)
     # TODO: restore the contributed questions list ``questions`` for books (only fopp) that
     # show the contributed questions list on an Exercises page.
+
+    # Determine if we should ask for support
+    # Trying to do banner ads after the 2nd week of the term
+    # but not to high school students or if the instructor has donated for the course
+    now = datetime.utcnow().date()
+    week2 = timedelta(weeks=2)
+    if (
+        now >= (course_row.term_start_date + week2)
+        and course_row.base_course != "csawesome"
+        and course_row.base_course != "mobilecsp"
+        and course_row.courselevel != "high"
+        and "supporter" not in course_attrs
+    ):
+        show_rs_banner = True
+    elif course.course_name == course.base_course and random.random() <= 0.3:
+        # Show banners to base course users 30% of the time.
+        show_rs_banner = True
+    else:
+        show_rs_banner = False
+    rslogger.debug(f"Before user check rs_banner is {show_rs_banner}")
+
+    if user and user.donated:
+        show_rs_banner = False
+    rslogger.debug(f"After user check rs_banner is {show_rs_banner}")
+
     context = dict(
         request=request,
         course_name=course_name,
@@ -289,6 +316,7 @@ async def serve_page(
         readings=reading_list,
         pagepath=pagepath,
         canonical_host=canonical_host,
+        show_rs_banner=show_rs_banner,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
