@@ -14,6 +14,7 @@ import json
 import os
 import os.path
 import posixpath
+import random
 from typing import Optional
 
 # Third-party imports
@@ -285,7 +286,7 @@ async def serve_page(
         and "supporter" not in course_attrs
     ):
         show_rs_banner = True
-    elif course.course_name == course.base_course and random.random() <= 0.3:
+    elif course_row.course_name == course_row.base_course and random.random() <= 0.3:
         # Show banners to base course users 30% of the time.
         show_rs_banner = True
     else:
