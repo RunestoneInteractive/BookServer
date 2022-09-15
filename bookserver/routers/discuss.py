@@ -102,7 +102,7 @@ class ConnectionManager:
                 f"{os.getpid()}: {to} is not connected here {self.active_connections}"
             )
 
-    async def broadcast(self, message: str):
+    async def broadcast(self, message: str) -> None:
         rslogger.debug(f"{os.getpid()}: {self.active_connections=} {message=}")
         to_remove = []
         for key, connection in self.active_connections.items():
