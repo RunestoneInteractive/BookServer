@@ -180,7 +180,7 @@ class LogRunIncoming(BaseModelNone):
 # ---------------------------
 class LastPageDataIncoming(BaseModelNone):
     last_page_url: str  # = Field(None, alias="lastPageUrl") is the manual way
-    course_id: str = Field(None, alias="course")
+    course_id: str = Field(alias="course")
     completion_flag: int
     last_page_scroll_location: int
     # todo: this should really be an int
@@ -192,7 +192,7 @@ class LastPageDataIncoming(BaseModelNone):
 
 class LastPageData(BaseModelNone):
     last_page_url: str
-    course_name: str = Field(None, alias="course_id")
+    course_name: str = Field(alias="course_id")
     completion_flag: int
     last_page_scroll_location: int
     last_page_chapter: str

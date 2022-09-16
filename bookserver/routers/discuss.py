@@ -107,13 +107,11 @@ class ConnectionManager:
         to_remove = []
         for key, connection in self.active_connections.items():
             rslogger.debug(f"{os.getpid()}: sending to {connection}")
-            res = None
             try:
-                res = await connection.send_json(message)
+                await connection.send_json(message)
             except Exception as e:
                 rslogger.debug(f"{os.getpid()}: Failed to send {e}")
                 to_remove.append(key)
-            rslogger.debug(f"{os.getpid()}: result of send = {res}")
         for key in to_remove:
             del self.active_connections[key]
 
