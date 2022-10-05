@@ -359,7 +359,7 @@ class Courses(Base, IdMixin):
     institution = Column(String, nullable=False)
     # This is (hopefully) a temporary field to indicate that this book
     # should be served by the new bookserver
-    new_server = Column(Web2PyBoolean, default=False)
+    new_server = Column(Web2PyBoolean, default=True)
 
 
 CoursesValidator = sqlalchemy_to_pydantic(Courses)
@@ -462,7 +462,7 @@ class Question(Base, IdMixin):
     topic = Column(String(512))
     feedback = Column(Text)
     from_source = Column(Web2PyBoolean, nullable=False)
-    review_flag = Column(Web2PyBoolean)
+    review_flag = Column(Web2PyBoolean, default=False)
     qnumber = Column(String(512))
     optional = Column(Web2PyBoolean)
     description = Column(Text)
