@@ -31,6 +31,7 @@ from ..applogger import rslogger
 from ..config import settings
 from ..crud import (
     create_useinfo_entry,
+    fetch_chapter_for_subchapter,
     fetch_course,
     fetch_library_books,
     fetch_page_activity_counts,
@@ -206,14 +207,6 @@ async def serve_page(
             )
     # proceed with the knowledge that course_row is defined after this point.
 
-    rslogger.debug(f"Base course = {course_row.base_course}")
-    chapter = os.path.split(os.path.split(pagepath)[0])[1]
-    subchapter = os.path.basename(os.path.splitext(pagepath)[0])
-    if user:
-        activity_info = await fetch_page_activity_counts(
-            chapter, subchapter, course_row.base_course, course_name, user.username
-        )
-
     # The template path comes from the base course's name.
     templates = Jinja2Templates(
         directory=safe_join(
@@ -245,6 +238,19 @@ async def serve_page(
     # enable compare me can be set per course if its not set provide a default of true
     if "enable_compare_me" not in course_attrs:
         course_attrs["enable_compare_me"] = "true"
+
+    subchapter = os.path.basename(os.path.splitext(pagepath)[0])
+    rslogger.debug(f"SUBCHAPTER IS {subchapter}")
+    if course_attrs.get("markup_system", "RST") == "PreTeXt":
+        chapter = await fetch_chapter_for_subchapter(subchapter, course_row.base_course)
+    else:
+        chapter = os.path.split(os.path.split(pagepath)[0])[1]
+
+    rslogger.debug(f"CHAPTER IS {chapter} / {subchapter}")
+    if user:
+        activity_info = await fetch_page_activity_counts(
+            chapter, subchapter, course_row.base_course, course_name, user.username
+        )
 
     reading_list = []
     if RS_info:

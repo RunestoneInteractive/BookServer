@@ -125,6 +125,30 @@ async def count_useinfo_for(
         return res.all()
 
 
+async def fetch_chapter_for_subchapter(subchapter: str, base_course: str) -> str:
+    """
+    Used for pretext books where the subchapter is unique across the book
+    due to the flat structure produced by pretext build.  In this case the
+    old RST structure where we get the chapter and subchapter from the URL
+    /book/chapter/subchapter.html gives us the wrong answer of the book.
+    select chapter_label
+        from sub_chapters join chapters on chapter_id = chapters.id
+        where course_id = <base_course> and sub_chapter_label = <subchapter>
+    """
+
+    query = (
+        select(Chapter.chapter_label)
+        .join(SubChapter, Chapter.id == SubChapter.chapter_id)
+        .where(
+            (Chapter.course_id == base_course)
+            & (SubChapter.sub_chapter_label == subchapter)
+        )
+    )
+    async with async_session() as session:
+        chapter_label = await session.execute(query)
+        return chapter_label.scalars().first()
+
+
 async def fetch_page_activity_counts(
     chapter: str, subchapter: str, base_course: str, course_name: str, username: str
 ) -> Dict[str, int]:
