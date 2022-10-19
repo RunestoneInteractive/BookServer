@@ -756,3 +756,46 @@ class Library(Base, IdMixin):
 
 
 LibraryValidator = sqlalchemy_to_pydantic(Library)
+
+
+# Tables for practice feature
+#
+class CoursePractice(Base, IdMixin):
+    __tablename__ = "course_practice"
+    auth_user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
+    course_name = Column(String(512))
+    start_date = Column(Date)
+    end_date = Column(Date)
+    max_practice_days = Column(Integer)
+    max_practice_questions = Column(Integer)
+    day_points = Column(Float(53))
+    question_points = Column(Float(53))
+    questions_to_complete_day = Column(Integer)
+    graded = Column(Integer)
+    spacing = Column(Integer)
+    interleaving = Column(Integer)
+    flashcard_creation_method = Column(Integer)
+
+
+CoursePracticeValidator = sqlalchemy_to_pydantic(CoursePractice)
+
+
+class UserTopicPractice(Base, IdMixin):
+    __tablename__ = "user_topic_practice"
+
+    user_id = Column(ForeignKey("auth_user.id", ondelete="CASCADE"))
+    course_name = Column(String(512))
+    chapter_label = Column(String(512))
+    sub_chapter_label = Column(String(512))
+    question_name = Column(String(512))
+    i_interval = Column(Integer, nullable=False)
+    e_factor = Column(Float(53), nullable=False)
+    last_presented = Column(DateTime)
+    last_completed = Column(DateTime)
+    creation_time = Column(DateTime)
+    q = Column(Integer, nullable=False, server_default=text("0"))
+    next_eligible_date = Column(Date)
+    timezoneoffset = Column(Integer)
+
+
+UserTopicPracticeValidator = sqlalchemy_to_pydantic(UserTopicPractice)

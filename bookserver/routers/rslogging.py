@@ -33,6 +33,8 @@ from ..crud import (
     create_user_sub_chapter_progress_entry,
     EVENT2TABLE,
     fetch_last_page,
+    fetch_course,
+    fetch_course_practice,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
     fetch_user,
@@ -263,6 +265,7 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     if request.state.user:
         lpd = request_data.dict()
         rslogger.debug(f"{lpd=}")
+        user = request.state.user
 
         # last_page_url is going to be .../ns/books/published/course/chapter/subchapter.html
         # We will treat the second to last element as the chapter and the final element
@@ -290,8 +293,56 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         rslogger.debug("Not Authorized for update last page")
         raise HTTPException(401)
 
-        # todo: practice stuff came after this -- it does not belong here. But it needs
-        # to be ported somewhere....
+    # todo: practice stuff came after this -- it does not belong here. But it needs
+    # to be ported somewhere....
+    practice_settings = await fetch_course_practice(user.course_name)
+    if (
+        practice_settings
+        and practice_settings.flashcard_creation_method == 0
+    ):
+        # Since each authenticated user has only one active course, we retrieve the course this way.
+        course = fetch_course(user.course_name)
+
+        # We only retrieve questions to be used in flashcards if they are marked for practice purpose.
+        questions = _get_qualified_questions(
+            course.base_course, lastPageChapter, lastPageSubchapter, db
+        )
+        if len(questions) > 0:
+            now = datetime.datetime.utcnow()
+            now_local = now - datetime.timedelta(
+                hours=float(session.timezoneoffset)
+                if "timezoneoffset" in session
+                else 0
+            )
+            existing_flashcards = db(
+                (db.user_topic_practice.user_id == auth.user.id)
+                & (db.user_topic_practice.course_name == auth.user.course_name)
+                & (db.user_topic_practice.chapter_label == lastPageChapter)
+                & (db.user_topic_practice.sub_chapter_label == lastPageSubchapter)
+                & (db.user_topic_practice.question_name == questions[0].name)
+            )
+            # There is at least one qualified question in this subchapter, so insert a flashcard for the subchapter.
+            if completionFlag == "1" and existing_flashcards.isempty():
+                db.user_topic_practice.insert(
+                    user_id=auth.user.id,
+                    course_name=auth.user.course_name,
+                    chapter_label=lastPageChapter,
+                    sub_chapter_label=lastPageSubchapter,
+                    question_name=questions[0].name,
+                    # Treat it as if the first eligible question is the last one asked.
+                    i_interval=0,
+                    e_factor=2.5,
+                    next_eligible_date=now_local.date(),
+                    # add as if yesterday, so can practice right away
+                    last_presented=now - datetime.timedelta(1),
+                    last_completed=now - datetime.timedelta(1),
+                    creation_time=now,
+                    timezoneoffset=float(session.timezoneoffset)
+                    if "timezoneoffset" in session
+                    else 0,
+                )
+            if completionFlag == "0" and not existing_flashcards.isempty():
+                existing_flashcards.delete()
     return make_json_response(detail="Success")
 
 

@@ -48,6 +48,8 @@ from .models import (
     CourseAttribute,
     CourseInstructor,
     CourseInstructorValidator,
+    CoursePractice,
+    CoursePracticeValidator,
     Courses,
     CoursesValidator,
     Library,
@@ -70,6 +72,8 @@ from .models import (
     UserStateValidator,
     UserSubChapterProgress,
     UserSubChapterProgressValidator,
+    UserTopicPractice,
+    UserTopicPracticeValidator,
     runestone_component_dict,
 )
 
@@ -1007,3 +1011,32 @@ async def fetch_library_books():
 
 async def create_library_book():
     ...
+
+
+async def fetch_course_practice(course_name):
+    query = (
+        select(CoursePractice)
+        .where(CoursePractice.course_name == course_name)
+        .order_by(CoursePractice.id.desc())
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        return res.scalars().first()
+
+
+async def create_user_topic_practice():
+    """
+    Add a question for the user to practice on
+    """
+    async with async_session.begin() as session:
+        tbtext = "".join(traceback.format_tb(exc.__traceback__))
+        new_entry = UserTopicPractice(
+            traceback=tbtext,
+            timestamp=datetime.datetime.utcnow(),
+            err_message=str(exc),
+            path=request.url.path,
+            query_string=str(request.query_params),
+            hash=hashlib.md5(tbtext.encode("utf8")).hexdigest(),
+            hostname=host,
+        )
+        session.add(new_entry)
