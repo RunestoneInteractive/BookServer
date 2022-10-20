@@ -1013,7 +1013,11 @@ async def create_library_book():
     ...
 
 
-async def fetch_course_practice(course_name):
+async def fetch_course_practice(course_name: str) -> CoursePractice:
+    """
+    Fetch the course_practice row for a given course.  The course practice row
+    contains the configuration of the practice feature for the given course.
+    """
     query = (
         select(CoursePractice)
         .where(CoursePractice.course_name == course_name)
@@ -1030,6 +1034,13 @@ async def fetch_one_user_topic_practice(
     last_page_subchapter: str,
     qname: str,
 ) -> UserTopicPracticeValidator:
+    """
+    The user_topic_practice table contains information about each question (flashcard)
+    that a student is eligible to see for a given topic in a course.
+    A particular question should ony be in the table once per student.  This row also contains
+    information about scheduling and correctness to help the practice algorithm select the
+    best question to show a student.
+    """
     query = select(UserTopicPractice).where(
         (UserTopicPractice.user_id == user.id)
         & (UserTopicPractice.course_name == user.course_name)
@@ -1045,6 +1056,11 @@ async def fetch_one_user_topic_practice(
 
 
 async def delete_one_user_topic_practice(qid: int) -> None:
+    """
+    Used by ad hoc question selection.  If a student un-marks a page as completed then if there
+    is a question from the page it will be removed from the set of possible flashcards a student
+    can see.
+    """
     query = delete(UserTopicPractice).where(UserTopicPractice.id == qid)
     async with async_session.begin() as session:
         res = await session.execute(query)
@@ -1085,6 +1101,10 @@ async def create_user_topic_practice(
 async def fetch_qualified_questions(
     base_course, chapter_label, sub_chapter_label
 ) -> list[QuestionValidator]:
+    """
+    Return a list of possible questions for a given chapter and subchapter.  These
+    questions will all have the practice flag set to true.
+    """
     query = select(Question).where(
         (Question.base_course == base_course)
         & (
