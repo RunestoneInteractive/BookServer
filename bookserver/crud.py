@@ -49,7 +49,6 @@ from .models import (
     CourseInstructor,
     CourseInstructorValidator,
     CoursePractice,
-    CoursePracticeValidator,
     Courses,
     CoursesValidator,
     Library,
@@ -1063,7 +1062,7 @@ async def delete_one_user_topic_practice(qid: int) -> None:
     """
     query = delete(UserTopicPractice).where(UserTopicPractice.id == qid)
     async with async_session.begin() as session:
-        res = await session.execute(query)
+        await session.execute(query)
 
 
 async def create_user_topic_practice(
@@ -1116,7 +1115,7 @@ async def fetch_qualified_questions(
             )
         )
         & (Question.practice == True)  # noqa: E712
-        & (Question.review_flag == False)
+        & (Question.review_flag == False)  # noqa: E712
     )
     async with async_session() as session:
         res = await session.execute(query)
