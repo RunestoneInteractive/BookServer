@@ -793,7 +793,7 @@ class UserTopicPractice(Base, IdMixin):
     last_presented = Column(DateTime)
     last_completed = Column(DateTime)
     creation_time = Column(DateTime)
-    q = Column(Integer, nullable=False, server_default=text("0"))
+    q = Column(Integer, nullable=False, default=0)
     next_eligible_date = Column(Date)
     timezoneoffset = Column(Integer)
 

@@ -24,7 +24,7 @@ import traceback
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
 from sqlalchemy import and_, distinct, func, update
-from sqlalchemy.sql import select, text
+from sqlalchemy.sql import select, text, delete
 from starlette.requests import Request
 
 from . import schemas
@@ -1024,19 +1024,83 @@ async def fetch_course_practice(course_name):
         return res.scalars().first()
 
 
-async def create_user_topic_practice():
+async def fetch_one_user_topic_practice(
+    user: AuthUserValidator,
+    last_page_chapter: str,
+    last_page_subchapter: str,
+    qname: str,
+) -> UserTopicPracticeValidator:
+    query = select(UserTopicPractice).where(
+        (UserTopicPractice.user_id == user.id)
+        & (UserTopicPractice.course_name == user.course_name)
+        & (UserTopicPractice.chapter_label == last_page_chapter)
+        & (UserTopicPractice.sub_chapter_label == last_page_subchapter)
+        & (UserTopicPractice.question_name == qname)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        utp = res.scalars().one_or_none()
+        return UserTopicPracticeValidator.from_orm(utp)
+
+
+async def delete_one_user_topic_practice(qid: int) -> None:
+    query = delete(UserTopicPractice).where(UserTopicPractice.id == qid)
+    async with async_session.begin() as session:
+        res = await session.execute(query)
+
+
+async def create_user_topic_practice(
+    user: AuthUserValidator,
+    last_page_chapter: str,
+    last_page_subchapter: str,
+    qname: str,
+    now_local: datetime.datetime,
+    now: datetime.datetime,
+    tz_offset: float,
+):
     """
     Add a question for the user to practice on
     """
     async with async_session.begin() as session:
-        tbtext = "".join(traceback.format_tb(exc.__traceback__))
         new_entry = UserTopicPractice(
-            traceback=tbtext,
-            timestamp=datetime.datetime.utcnow(),
-            err_message=str(exc),
-            path=request.url.path,
-            query_string=str(request.query_params),
-            hash=hashlib.md5(tbtext.encode("utf8")).hexdigest(),
-            hostname=host,
+            user_id=user.id,
+            course_name=user.course_name,
+            chapter_label=last_page_chapter,
+            sub_chapter_label=last_page_subchapter,
+            question_name=qname,
+            # Treat it as if the first eligible question is the last one asked.
+            i_interval=0,
+            e_factor=2.5,
+            next_eligible_date=now_local.date(),
+            # add as if yesterday, so can practice right away
+            last_presented=now - datetime.timedelta(1),
+            last_completed=now - datetime.timedelta(1),
+            creation_time=now,
+            timezoneoffset=tz_offset,
         )
         session.add(new_entry)
+
+
+async def fetch_qualified_questions(
+    base_course, chapter_label, sub_chapter_label
+) -> list[QuestionValidator]:
+    query = select(Question).where(
+        (Question.base_course == base_course)
+        & (
+            (Question.topic == "{}/{}".format(chapter_label, sub_chapter_label))
+            | (
+                (Question.chapter == chapter_label)
+                & (Question.topic == None)  # noqa: E711
+                & (Question.subchapter == sub_chapter_label)
+            )
+        )
+        & (Question.practice == True)  # noqa: E712
+        & (Question.review_flag == False)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        questionlist = [QuestionValidator.from_orm(x) for x in res.scalars().fetchall()]
+
+    return questionlist

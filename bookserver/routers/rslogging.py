@@ -11,7 +11,7 @@
 # Standard library
 # ----------------
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from typing import Optional
 
@@ -31,13 +31,17 @@ from ..crud import (
     create_user_chapter_progress_entry,
     create_user_state_entry,
     create_user_sub_chapter_progress_entry,
+    create_user_topic_practice,
     EVENT2TABLE,
+    delete_one_user_topic_practice,
     fetch_last_page,
     fetch_course,
     fetch_course_practice,
+    fetch_one_user_topic_practice,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
     fetch_user,
+    fetch_qualified_questions,
     is_server_feedback,
     update_sub_chapter_progress,
     update_user_state,
@@ -259,7 +263,11 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 # --------------
 # see :ref:`processPageState`
 @router.post("/updatelastpage")
-async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
+async def updatelastpage(
+    request: Request,
+    request_data: LastPageDataIncoming,
+    RS_info: Optional[str] = Cookie(None),
+):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
     if request.state.user:
@@ -296,53 +304,42 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
     # todo: practice stuff came after this -- it does not belong here. But it needs
     # to be ported somewhere....
     practice_settings = await fetch_course_practice(user.course_name)
-    if (
-        practice_settings
-        and practice_settings.flashcard_creation_method == 0
-    ):
+    if RS_info:
+        values = json.loads(RS_info)
+        tz_offset = float(values["tz_offset"])
+    else:
+        tz_offset = 0
+    if practice_settings and practice_settings.flashcard_creation_method == 0:
+        rslogger.debug("Updating Practice Questions")
         # Since each authenticated user has only one active course, we retrieve the course this way.
-        course = fetch_course(user.course_name)
+        course = await fetch_course(user.course_name)
 
         # We only retrieve questions to be used in flashcards if they are marked for practice purpose.
-        questions = _get_qualified_questions(
-            course.base_course, lastPageChapter, lastPageSubchapter, db
+        questions = await fetch_qualified_questions(
+            course.base_course, lpd["last_page_chapter"], lpd["last_page_subchapter"]
         )
         if len(questions) > 0:
-            now = datetime.datetime.utcnow()
-            now_local = now - datetime.timedelta(
-                hours=float(session.timezoneoffset)
-                if "timezoneoffset" in session
-                else 0
-            )
-            existing_flashcards = db(
-                (db.user_topic_practice.user_id == auth.user.id)
-                & (db.user_topic_practice.course_name == auth.user.course_name)
-                & (db.user_topic_practice.chapter_label == lastPageChapter)
-                & (db.user_topic_practice.sub_chapter_label == lastPageSubchapter)
-                & (db.user_topic_practice.question_name == questions[0].name)
+            now = datetime.utcnow()
+            now_local = now - timedelta(hours=tz_offset)
+            existing_flashcards = await fetch_one_user_topic_practice(
+                user,
+                lpd["last_page_chapter"],
+                lpd["last_page_subchapter"],
+                questions[0].name,
             )
             # There is at least one qualified question in this subchapter, so insert a flashcard for the subchapter.
-            if completionFlag == "1" and existing_flashcards.isempty():
-                db.user_topic_practice.insert(
-                    user_id=auth.user.id,
-                    course_name=auth.user.course_name,
-                    chapter_label=lastPageChapter,
-                    sub_chapter_label=lastPageSubchapter,
-                    question_name=questions[0].name,
-                    # Treat it as if the first eligible question is the last one asked.
-                    i_interval=0,
-                    e_factor=2.5,
-                    next_eligible_date=now_local.date(),
-                    # add as if yesterday, so can practice right away
-                    last_presented=now - datetime.timedelta(1),
-                    last_completed=now - datetime.timedelta(1),
-                    creation_time=now,
-                    timezoneoffset=float(session.timezoneoffset)
-                    if "timezoneoffset" in session
-                    else 0,
+            if request_data.completion_flag == 1 and existing_flashcards is None:
+                await create_user_topic_practice(
+                    user,
+                    lpd["last_page_chapter"],
+                    lpd["last_page_subchapter"],
+                    questions[0].name,
+                    now_local,
+                    now,
+                    tz_offset,
                 )
-            if completionFlag == "0" and not existing_flashcards.isempty():
-                existing_flashcards.delete()
+            if request_data.completion_flag == 0 and existing_flashcards is not None:
+                await delete_one_user_topic_practice(existing_flashcards.id)
     return make_json_response(detail="Success")
 
 
