@@ -11,7 +11,7 @@
 # Standard library
 # ----------------
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from typing import Optional
 
@@ -31,11 +31,17 @@ from ..crud import (
     create_user_chapter_progress_entry,
     create_user_state_entry,
     create_user_sub_chapter_progress_entry,
+    create_user_topic_practice,
     EVENT2TABLE,
+    delete_one_user_topic_practice,
     fetch_last_page,
+    fetch_course,
+    fetch_course_practice,
+    fetch_one_user_topic_practice,
     fetch_user_chapter_progress,
     fetch_user_sub_chapter_progress,
     fetch_user,
+    fetch_qualified_questions,
     is_server_feedback,
     update_sub_chapter_progress,
     update_user_state,
@@ -257,12 +263,17 @@ async def same_class(user1: AuthUserValidator, user2: str) -> bool:
 # --------------
 # see :ref:`processPageState`
 @router.post("/updatelastpage")
-async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
+async def updatelastpage(
+    request: Request,
+    request_data: LastPageDataIncoming,
+    RS_info: Optional[str] = Cookie(None),
+):
     if request_data.last_page_url is None:
         return  # todo:  log request_data, request.args and request.env.path_info
     if request.state.user:
         lpd = request_data.dict()
         rslogger.debug(f"{lpd=}")
+        user = request.state.user
 
         # last_page_url is going to be .../ns/books/published/course/chapter/subchapter.html
         # We will treat the second to last element as the chapter and the final element
@@ -290,9 +301,59 @@ async def updatelastpage(request: Request, request_data: LastPageDataIncoming):
         rslogger.debug("Not Authorized for update last page")
         raise HTTPException(401)
 
-        # todo: practice stuff came after this -- it does not belong here. But it needs
-        # to be ported somewhere....
+    # If practice is self paced then when a student marks a page as complete
+    # we need to add flashcards.
+
+    practice_settings = await fetch_course_practice(user.course_name)
+    if RS_info:
+        values = json.loads(RS_info)
+        tz_offset = float(values["tz_offset"])
+    else:
+        tz_offset = 0
+
+    if practice_settings and practice_settings.flashcard_creation_method == 0:
+        await add_flashcard(request_data, lpd, user, tz_offset)
+
     return make_json_response(detail="Success")
+
+
+async def add_flashcard(
+    request_data: LastPageDataIncoming,
+    lpd: dict,
+    user: AuthUserValidator,
+    tz_offset: float,
+) -> None:
+
+    rslogger.debug("Updating Practice Questions")
+    # Since each authenticated user has only one active course, we retrieve the course this way.
+    course = await fetch_course(user.course_name)
+
+    # We only retrieve questions to be used in flashcards if they are marked for practice purpose.
+    questions = await fetch_qualified_questions(
+        course.base_course, lpd["last_page_chapter"], lpd["last_page_subchapter"]
+    )
+    if len(questions) > 0:
+        now = datetime.utcnow()
+        now_local = now - timedelta(hours=tz_offset)
+        existing_flashcards = await fetch_one_user_topic_practice(
+            user,
+            lpd["last_page_chapter"],
+            lpd["last_page_subchapter"],
+            questions[0].name,
+        )
+        # There is at least one qualified question in this subchapter, so insert a flashcard for the subchapter.
+        if request_data.completion_flag == 1 and existing_flashcards is None:
+            await create_user_topic_practice(
+                user,
+                lpd["last_page_chapter"],
+                lpd["last_page_subchapter"],
+                questions[0].name,
+                now_local,
+                now,
+                tz_offset,
+            )
+        if request_data.completion_flag == 0 and existing_flashcards is not None:
+            await delete_one_user_topic_practice(existing_flashcards.id)
 
 
 # _getCompletionStatus

@@ -289,6 +289,7 @@ async def serve_page(
         and course_row.base_course != "csawesome"
         and course_row.base_course != "mobilecsp"
         and course_row.courselevel != "high"
+        and course_row.course_name != course_row.base_course
         and "supporter" not in course_attrs
     ):
         show_rs_banner = True
@@ -324,6 +325,7 @@ async def serve_page(
         pagepath=pagepath,
         canonical_host=canonical_host,
         show_rs_banner=show_rs_banner,
+        show_ethical_ad=True,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.

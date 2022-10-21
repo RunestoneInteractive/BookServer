@@ -24,7 +24,7 @@ import traceback
 from fastapi.exceptions import HTTPException
 from pydal.validators import CRYPT
 from sqlalchemy import and_, distinct, func, update
-from sqlalchemy.sql import select, text
+from sqlalchemy.sql import select, text, delete
 from starlette.requests import Request
 
 from . import schemas
@@ -48,6 +48,7 @@ from .models import (
     CourseAttribute,
     CourseInstructor,
     CourseInstructorValidator,
+    CoursePractice,
     Courses,
     CoursesValidator,
     Library,
@@ -70,6 +71,8 @@ from .models import (
     UserStateValidator,
     UserSubChapterProgress,
     UserSubChapterProgressValidator,
+    UserTopicPractice,
+    UserTopicPracticeValidator,
     runestone_component_dict,
 )
 
@@ -1007,3 +1010,116 @@ async def fetch_library_books():
 
 async def create_library_book():
     ...
+
+
+async def fetch_course_practice(course_name: str) -> CoursePractice:
+    """
+    Fetch the course_practice row for a given course.  The course practice row
+    contains the configuration of the practice feature for the given course.
+    """
+    query = (
+        select(CoursePractice)
+        .where(CoursePractice.course_name == course_name)
+        .order_by(CoursePractice.id.desc())
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        return res.scalars().first()
+
+
+async def fetch_one_user_topic_practice(
+    user: AuthUserValidator,
+    last_page_chapter: str,
+    last_page_subchapter: str,
+    qname: str,
+) -> UserTopicPracticeValidator:
+    """
+    The user_topic_practice table contains information about each question (flashcard)
+    that a student is eligible to see for a given topic in a course.
+    A particular question should ony be in the table once per student.  This row also contains
+    information about scheduling and correctness to help the practice algorithm select the
+    best question to show a student.
+    """
+    query = select(UserTopicPractice).where(
+        (UserTopicPractice.user_id == user.id)
+        & (UserTopicPractice.course_name == user.course_name)
+        & (UserTopicPractice.chapter_label == last_page_chapter)
+        & (UserTopicPractice.sub_chapter_label == last_page_subchapter)
+        & (UserTopicPractice.question_name == qname)
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        utp = res.scalars().one_or_none()
+        return UserTopicPracticeValidator.from_orm(utp)
+
+
+async def delete_one_user_topic_practice(qid: int) -> None:
+    """
+    Used by ad hoc question selection.  If a student un-marks a page as completed then if there
+    is a question from the page it will be removed from the set of possible flashcards a student
+    can see.
+    """
+    query = delete(UserTopicPractice).where(UserTopicPractice.id == qid)
+    async with async_session.begin() as session:
+        await session.execute(query)
+
+
+async def create_user_topic_practice(
+    user: AuthUserValidator,
+    last_page_chapter: str,
+    last_page_subchapter: str,
+    qname: str,
+    now_local: datetime.datetime,
+    now: datetime.datetime,
+    tz_offset: float,
+):
+    """
+    Add a question for the user to practice on
+    """
+    async with async_session.begin() as session:
+        new_entry = UserTopicPractice(
+            user_id=user.id,
+            course_name=user.course_name,
+            chapter_label=last_page_chapter,
+            sub_chapter_label=last_page_subchapter,
+            question_name=qname,
+            # Treat it as if the first eligible question is the last one asked.
+            i_interval=0,
+            e_factor=2.5,
+            next_eligible_date=now_local.date(),
+            # add as if yesterday, so can practice right away
+            last_presented=now - datetime.timedelta(1),
+            last_completed=now - datetime.timedelta(1),
+            creation_time=now,
+            timezoneoffset=tz_offset,
+        )
+        session.add(new_entry)
+
+
+async def fetch_qualified_questions(
+    base_course, chapter_label, sub_chapter_label
+) -> list[QuestionValidator]:
+    """
+    Return a list of possible questions for a given chapter and subchapter.  These
+    questions will all have the practice flag set to true.
+    """
+    query = select(Question).where(
+        (Question.base_course == base_course)
+        & (
+            (Question.topic == "{}/{}".format(chapter_label, sub_chapter_label))
+            | (
+                (Question.chapter == chapter_label)
+                & (Question.topic == None)  # noqa: E711
+                & (Question.subchapter == sub_chapter_label)
+            )
+        )
+        & (Question.practice == True)  # noqa: E712
+        & (Question.review_flag == False)  # noqa: E712
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        rslogger.debug(f"{res=}")
+        questionlist = [QuestionValidator.from_orm(x) for x in res.scalars().fetchall()]
+
+    return questionlist
