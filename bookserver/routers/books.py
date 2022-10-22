@@ -325,7 +325,7 @@ async def serve_page(
         pagepath=pagepath,
         canonical_host=canonical_host,
         show_rs_banner=show_rs_banner,
-        show_ethical_ad=True,
+        show_ethical_ad=serve_ad,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
