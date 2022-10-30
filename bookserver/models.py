@@ -745,7 +745,9 @@ class Library(Base, IdMixin):
     description = Column(Text)
     authors = Column(Text)
     shelf_section = Column(String(512))
-    basecourse = Column(String(512), ForeignKey("courses.course_name"))
+    basecourse = Column(
+        String(512), ForeignKey("courses.course_name"), nullable=True, unique=True
+    )
     build_system = Column(String(20))
     for_classes = Column(Web2PyBoolean)
     is_visible = Column(Web2PyBoolean, default="T")

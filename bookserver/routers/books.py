@@ -304,6 +304,11 @@ async def serve_page(
         show_rs_banner = False
     rslogger.debug(f"After user check rs_banner is {show_rs_banner}")
 
+    # temporary
+    if course_row.base_course == "thinkcspy":
+        serve_google_ad = False
+    else:
+        serve_google_ad = serve_ad
     context = dict(
         request=request,
         course_name=course_name,
@@ -318,7 +323,7 @@ async def serve_page(
         settings=settings,
         is_logged_in=logged_in,
         subchapter_list=subchapter_list,
-        serve_ad=serve_ad,
+        serve_ad=serve_google_ad,
         is_instructor="true" if user_is_instructor else "false",
         use_services="true" if use_services else "false",
         readings=reading_list,
