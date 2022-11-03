@@ -130,14 +130,22 @@ auth_manager.not_authenticated_exception = NotAuthenticatedException
 
 # Fast API makes it very easy to handle different error types in an
 # elegant way through the use of middleware to catch particular
-# exception types.
+# exception types. The following handles the case where the Dependency
+# is not satisfied for a user on an endpoint that requires a login.
 @app.exception_handler(NotAuthenticatedException)
 def auth_exception_handler(request: Request, exc: NotAuthenticatedException):
     """
     Redirect the user to the login page if not logged in
     """
     rslogger.debug("User is not logged in, redirecting")
-    return RedirectResponse(url=f"{settings.login_url}")
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content=jsonable_encoder(
+            {"detail": "You need to be Logged in to access this resource"}
+        ),
+    )
+    # If we want to redirect the user to a login page which we really do not...
+    # return RedirectResponse(url=f"{settings.login_url}")
 
 
 # See:  https://fastapi.tiangolo.com/tutorial/handling-errors/#use-the-requestvalidationerror-body

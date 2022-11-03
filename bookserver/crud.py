@@ -54,6 +54,8 @@ from .models import (
     Library,
     LibraryValidator,
     Question,
+    QuestionGrade,
+    QuestionGradeValidator,
     QuestionValidator,
     SelectedQuestion,
     SelectedQuestionValidator,
@@ -874,6 +876,26 @@ async def fetch_assignment_question(
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
         return AssignmentQuestionValidator.from_orm(res.scalars().first())
+
+
+async def fetch_question_grade(sid: str, course_name: str, qid: str):
+    """
+    Get the grade and any comments for this question
+    """
+    query = (
+        select(QuestionGrade)
+        .where(
+            (QuestionGrade.sid == sid)
+            & (QuestionGrade.course_name == course_name)
+            & (QuestionGrade.div_id == qid)
+        )
+        .order_by(
+            QuestionGrade.id.desc(),
+        )
+    )
+    async with async_session() as session:
+        res = await session.execute(query)
+        return QuestionGradeValidator.from_orm(res.scalars().one_or_none())
 
 
 async def fetch_user_experiment(sid: str, ab_name: str) -> int:

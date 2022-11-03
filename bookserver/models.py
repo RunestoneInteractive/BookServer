@@ -553,6 +553,9 @@ class QuestionGrade(Base, IdMixin):
     answer_id = Column(Integer)
 
 
+QuestionGradeValidator = sqlalchemy_to_pydantic(QuestionGrade)
+
+
 # The Grade table holds the grade for an entire assignment
 class Grade(Base, IdMixin):
     __tablename__ = "grades"

@@ -43,6 +43,7 @@ from ..crud import (
     fetch_poll_summary,
     fetch_previous_selections,
     fetch_question,
+    fetch_question_grade,
     fetch_selected_question,
     fetch_timed_exam,
     fetch_top10_fitb,
@@ -107,6 +108,13 @@ async def get_assessment_results(
         # Use the grader to add server-side feedback to the returned dict.
         ret.update(await rcd.grader(row, feedback))
 
+    # get grade and instructor feedback if Any
+    grades = await fetch_question_grade(
+        request_data.sid, request_data.course, request_data.div_id
+    )
+    if grades:
+        ret["comment"] = grades.comment
+        ret["score"] = grades.score
     rslogger.debug(f"Returning {ret}")
     return make_json_response(detail=ret)
 
