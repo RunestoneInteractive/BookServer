@@ -18,7 +18,7 @@ from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status, Depends
 from fastapi.responses import JSONResponse
 
 # Local application imports
@@ -60,6 +60,7 @@ from ..schemas import (
     LogRunIncoming,
     TimezoneRequest,
 )
+from ..session import auth_manager
 
 # Routing
 # =======
@@ -85,21 +86,18 @@ COMMENT_MAP = {
 # -----------------------
 # See :ref:`logBookEvent`.
 @router.post("/bookevent")
-async def log_book_event(entry: LogItemIncoming, request: Request):
+async def log_book_event(
+    entry: LogItemIncoming, request: Request, user=Depends(auth_manager)
+):
     """
     This endpoint is called to log information for nearly every click that happens in the textbook.
     It uses the ``LogItemIncoming`` object to define the JSON payload it gets from a page of a book.
     """
-    # The middleware will set the user if they are logged in.
-    if request.state.user:
-        user = request.state.user
-        # if entry.sid is there use that (likely for partner or group work)
-        if not entry.sid:
-            entry.sid = user.username
-        else:
-            rslogger.info(f"user {user.username} is submitting work for {entry.sid}")
+    # if entry.sid is there use that (likely for partner or group work)
+    if not entry.sid:
+        entry.sid = user.username
     else:
-        return make_json_response(status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+        rslogger.info(f"user {user.username} is submitting work for {entry.sid}")
 
     # Always use the server's time.
     entry.timestamp = datetime.utcnow()
