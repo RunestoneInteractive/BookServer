@@ -106,7 +106,7 @@ class ConnectionManager:
         rslogger.debug(f"{os.getpid()}: {self.active_connections=} {message=}")
         to_remove = []
         for key, connection in self.active_connections.items():
-            rslogger.debug(f"{os.getpid()}: sending to {connection}")
+            rslogger.debug(f"{os.getpid()}: sending to {key}@{connection}")
             try:
                 await connection.send_json(message)
             except Exception as e:
