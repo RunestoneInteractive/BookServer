@@ -263,6 +263,7 @@ async def fetch_last_answer_table_entry(
 ) -> schemas.LogItemIncoming:
     rcd = runestone_component_dict[EVENT2TABLE[query_data.event]]
     tbl = rcd.model
+    deadline_offset_naive = query_data.deadline.replace(tzinfo=None)
     query = (
         select(tbl)
         .where(
@@ -270,7 +271,7 @@ async def fetch_last_answer_table_entry(
                 tbl.div_id == query_data.div_id,
                 tbl.course_name == query_data.course,
                 tbl.sid == query_data.sid,
-                tbl.timestamp <= query_data.deadline,
+                tbl.timestamp <= deadline_offset_naive,
             )
         )
         .order_by(tbl.timestamp.desc())
