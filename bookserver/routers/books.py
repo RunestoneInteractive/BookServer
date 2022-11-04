@@ -305,7 +305,7 @@ async def serve_page(
     rslogger.debug(f"After user check rs_banner is {show_rs_banner}")
 
     # temporary
-    if course_row.base_course == "thinkcspy":
+    if course_attrs.get("ad_server", "google") == "ethical":
         serve_google_ad = False
     else:
         serve_google_ad = serve_ad
