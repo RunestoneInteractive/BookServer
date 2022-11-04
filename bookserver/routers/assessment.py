@@ -83,17 +83,16 @@ async def get_assessment_results(
     # Otherwise if the user is an instructor then use the provided
     # sid (it could be any student in the class). If none is provided then
     # use the user objects username
-    sid = ""
+    sid = user.username
     if await is_instructor(request):
-        if not request_data.sid:
-            sid = user.username
+        if request_data.sid:
+            sid = request_data.sid
     else:
         if request_data.sid:
             # someone is attempting to spoof the api
             return make_json_response(
                 status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
             )
-        sid = user.username
 
     row = await fetch_last_answer_table_entry(request_data)
     # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
