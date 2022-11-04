@@ -270,6 +270,7 @@ async def fetch_last_answer_table_entry(
                 tbl.div_id == query_data.div_id,
                 tbl.course_name == query_data.course,
                 tbl.sid == query_data.sid,
+                tbl.timestamp <= query_data.deadline,
             )
         )
         .order_by(tbl.timestamp.desc())
