@@ -83,16 +83,17 @@ async def get_assessment_results(
     # Otherwise if the user is an instructor then use the provided
     # sid (it could be any student in the class). If none is provided then
     # use the user objects username
+    sid = ""
     if await is_instructor(request):
         if not request_data.sid:
-            request_data.sid = user.username
+            sid = user.username
     else:
         if request_data.sid:
             # someone is attempting to spoof the api
             return make_json_response(
                 status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
             )
-        request_data.sid = user.username
+        sid = user.username
 
     row = await fetch_last_answer_table_entry(request_data)
     # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
@@ -109,9 +110,7 @@ async def get_assessment_results(
         ret.update(await rcd.grader(row, feedback))
 
     # get grade and instructor feedback if Any
-    grades = await fetch_question_grade(
-        request_data.sid, request_data.course, request_data.div_id
-    )
+    grades = await fetch_question_grade(sid, request_data.course, request_data.div_id)
     if grades:
         ret["comment"] = grades.comment
         ret["score"] = grades.score
