@@ -131,10 +131,12 @@ bookserver_tables = dedent(
  course_attributes
  course_instructor
  course_lti_map
+ course_practice
  courses
  dragndrop_answers
  fitb_answers
  grades
+ library
  lp_answers
  lti_keys
  mchoice_answers
@@ -147,6 +149,7 @@ bookserver_tables = dedent(
  source_code
  sub_chapters
  timed_exam
+ traceback
  unittest_answers
  useinfo
  user_chapter_progress
@@ -154,6 +157,7 @@ bookserver_tables = dedent(
  user_experiment
  user_state
  user_sub_chapter_progress
+ user_topic_practice
 """
 ).split()
 
