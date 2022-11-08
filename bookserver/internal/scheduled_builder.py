@@ -86,6 +86,7 @@ def _scheduled_builder(
         "rust": rust_builder,
         "pic24-xc16-bullylib": xc16_builder,
         "armv7-newlib-sim": armv7_builder,
+        "verilog": verilog_builder,
     }.get(builder, None)
     if builder_func is None:
         raise RuntimeError(f"Unknown builder {builder}")
@@ -197,21 +198,21 @@ def copy_test_file_to_tmp(
     return test_file_name
 
 
-# Given an list of arguments to pass as the first parameter of ``subprocess.run``, wrap this in runguard. Return an updates list of parameters for ``subprocess.run``.
+# Given an list of arguments to pass as the first parameter of ``subprocess.run``, wrap this in runguard. Return an updated list of parameters for ``subprocess.run``.
 def runguard(
     # A list of arguments comprising the first parameter of ``subprocess.run``.
     args,
     # The directory containing the executable to run in runguard.
     cwd,
-    # Kill COMMAND after TIME seconds (float).
+    # Kill COMMAND after TIME seconds (float). Omitted if this argument is falsey.
     time_s=15,
-    # Set maximum CPU time to TIME seconds (float).
+    # Set maximum CPU time to TIME seconds (float). Omitted if this argument is falsey.
     cputime_s=10,
-    # Set all (total, stack, etc) memory limits to SIZE kB.
-    memsize_kb=100,
-    # Set maximum created filesize to SIZE kB.
+    # Set all (total, stack, etc) memory limits to SIZE kB. Omitted if this argument is falsey.
+    memsize_kb=100000,
+    # Set maximum created filesize to SIZE kB. Omitted if this argument is falsey.
     filesize_kb=50,
-    # Set maximum no. processes to N.
+    # Set maximum no. processes to N. Omitted if this argument is falsey.
     num_processes=1,
     # Disable core dumps when True
     no_core_dumps=True,
@@ -226,12 +227,12 @@ def runguard(
             "/var/www/jobe/runguard/runguard",
             f"--user={user}",
             "--group=jobe",
-            f"--time={time_s}",
-            f"--cputime={cputime_s}",
-            f"--memsize={memsize_kb}",
-            f"--filesize={filesize_kb}",
-            f"--nproc={num_processes}",
         ]
+        + ([f"--time={time_s}"] if time_s else [])
+        + ([f"--cputime={cputime_s}"] if cputime_s else [])
+        + ([f"--memsize={memsize_kb}"] if memsize_kb else [])
+        + ([f"--filesize={filesize_kb}"] if filesize_kb else [])
+        + ([f"--nproc={num_processes}"] if num_processes else [])
         + (["--no-core"] if no_core_dumps else [])
         + args
     )
@@ -264,9 +265,12 @@ def rust_builder(
     out_list = []
     report_subprocess(["rustc", "--test", run_file_name], "Compile", cwd, out_list)
 
-    # Run.
+    # Run. Experimentation shows that Rust uses two processes (perhaps one for the test harness?).
     return report_subprocess(
-        runguard(["./" + os.path.splitext(run_file_name)[0]], cwd), "Run", cwd, out_list
+        runguard(["./" + os.path.splitext(run_file_name)[0]], cwd, num_processes=2),
+        "Run",
+        cwd,
+        out_list,
     )
 
 
@@ -578,3 +582,57 @@ def armv7_builder(
     return out_list, (
         100 if correct == 100 and check_sim_out(out_list, verification_code) else 0
     )
+
+
+def verilog_builder(
+    file_path, cwd, sphinx_base_path, sphinx_source_path, sphinx_out_path, source_path
+):
+    # Build the test code with a random verification code.
+    out_list = []
+    verification_code = get_verification_code()
+    test_file_path = os.path.join(
+        sphinx_base_path,
+        sphinx_source_path,
+        os.path.splitext(source_path)[0] + "-test.v",
+    )
+    preproc_path = file_path + ".test.vp"
+    report_subprocess(
+        [
+            "iverilog",
+            # Only do preprocessing; don't compile the result.
+            "-E",
+            # Pass the verification code.
+            "-DVERIFICATION_CODE=({})".format(verification_code),
+            "-o",
+            preproc_path,
+            test_file_path,
+        ],
+        "Compile test code",
+        cwd,
+        out_list,
+    )
+
+    # Compile the source and test code.
+    exe_path = file_path + ".exe"
+    report_subprocess(
+        [
+            "iverilog",
+            "-o",
+            exe_path,
+            file_path,
+            preproc_path,
+        ],
+        "Compile",
+        cwd,
+        out_list,
+    )
+
+    # Run the simulation.
+    report_subprocess(
+        runguard([exe_path], cwd, memsize_kb=100000),
+        "Simulation",
+        cwd,
+        out_list,
+        include_stderr=True,
+    )
+    return out_list, (100 if check_sim_out(out_list, verification_code) else 0)
