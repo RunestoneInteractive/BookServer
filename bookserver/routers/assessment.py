@@ -93,6 +93,7 @@ async def get_assessment_results(
             return make_json_response(
                 status=status.HTTP_401_UNAUTHORIZED, detail="not an instructor"
             )
+    request_data.sid = sid
 
     row = await fetch_last_answer_table_entry(request_data)
     # mypy complains that ``row.id`` doesn't exist (true, but the return type wasn't exact and this does exist).
