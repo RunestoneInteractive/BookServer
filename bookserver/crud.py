@@ -1123,7 +1123,7 @@ async def create_user_topic_practice(
 
 async def fetch_qualified_questions(
     base_course, chapter_label, sub_chapter_label
-) -> list[QuestionValidator]:
+) -> List[QuestionValidator]:
     """
     Return a list of possible questions for a given chapter and subchapter.  These
     questions will all have the practice flag set to true.
