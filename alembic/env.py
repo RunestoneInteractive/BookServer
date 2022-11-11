@@ -195,6 +195,7 @@ def run_migrations_offline():
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
         include_name=include_name,
     )
@@ -214,6 +215,7 @@ def run_migrations_online():
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
+            compare_type=True,
             target_metadata=target_metadata,
             include_name=include_name,
         )
