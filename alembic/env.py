@@ -64,6 +64,9 @@ web2py_tables = dedent(
  auth_membership
  auth_permission
  auth_user
+ book_author
+ page_views
+ user_activity
  chapters
  clickablearea_answers
  code

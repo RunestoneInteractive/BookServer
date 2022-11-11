@@ -547,7 +547,7 @@ class QuestionGrade(Base, IdMixin):
     div_id = Column(String(512), nullable=False, index=True)
     # Manually-graded questions may be unscored (a NULL score).
     score = Column(Float(53))
-    comment = Column(Text, nullable=False)
+    comment = Column(Text, nullable=True)
     deadline = Column(DateTime)
     # Grades before the improved autograded and manually-scored grades lack this. Since it can refer to an ID from many different tables, don't make it a constraint.
     answer_id = Column(Integer)
@@ -749,7 +749,7 @@ class Library(Base, IdMixin):
     authors = Column(Text)
     shelf_section = Column(String(512))
     basecourse = Column(
-        String(512), ForeignKey("courses.course_name"), nullable=True, unique=True
+        String(512), ForeignKey("courses.course_name"), nullable=False, unique=True
     )
     build_system = Column(String(20))
     for_classes = Column(Web2PyBoolean)
