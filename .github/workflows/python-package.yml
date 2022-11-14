@@ -22,7 +22,8 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
     strategy:
       matrix:
-        python-version: ["3.8", "3.9"]
+        # TODO: Enable Python 3.11 tests when `asyncpg supports it <https://github.com/MagicStack/asyncpg/issues/850>`.
+        python-version: ["3.9", "3.10"]
 
     steps:
       - name: Check out bookserver from GitHub.
