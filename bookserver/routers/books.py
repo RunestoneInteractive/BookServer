@@ -15,6 +15,7 @@ import os
 import os.path
 import posixpath
 import random
+import socket
 from typing import Optional
 
 # Third-party imports
@@ -304,6 +305,7 @@ async def serve_page(
         show_rs_banner = False
     rslogger.debug(f"After user check rs_banner is {show_rs_banner}")
 
+    worker_name = os.environ.get("WORKER_NAME", socket.gethostname())
     # temporary
     if course_attrs.get("ad_server", "google") == "ethical":
         serve_google_ad = False
@@ -331,6 +333,7 @@ async def serve_page(
         canonical_host=canonical_host,
         show_rs_banner=show_rs_banner,
         show_ethical_ad=serve_ad,
+        worker_name=worker_name,
         **course_attrs,
     )
     # See `templates <https://fastapi.tiangolo.com/advanced/templates/>`_.
