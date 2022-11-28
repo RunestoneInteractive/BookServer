@@ -48,7 +48,7 @@ def canonicalize_tz(tstring: str) -> str:
 def make_json_response(
     status: int = status.HTTP_200_OK, detail: Any = None
 ) -> JSONResponse:
-    # Omit the detail if it's none.
+    # content is a required parameter for a JSONResponse
     return JSONResponse(
         status_code=status, content=jsonable_encoder({"detail": detail})
     )
