@@ -587,7 +587,7 @@ def armv7_builder(
 def verilog_builder(
     file_path, cwd, sphinx_base_path, sphinx_source_path, sphinx_out_path, source_path
 ):
-    # Build the test code with a random verification code.
+    # Preprocess the test code with a random verification code, so that the student's source code won't hae access to the verification code.
     out_list = []
     verification_code = get_verification_code()
     test_file_path = os.path.join(
@@ -612,7 +612,7 @@ def verilog_builder(
         out_list,
     )
 
-    # Compile the source and test code.
+    # Compile the source and preprocessed test code.
     exe_path = file_path + ".exe"
     report_subprocess(
         [
@@ -625,6 +625,11 @@ def verilog_builder(
         "Compile",
         cwd,
         out_list,
+    )
+
+    # Copy over any test vectors.
+    copy_test_file_to_tmp(
+        file_path, cwd, sphinx_base_path, sphinx_source_path, source_path, ".txt"
     )
 
     # Run the simulation.
