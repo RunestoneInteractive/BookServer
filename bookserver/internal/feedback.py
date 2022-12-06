@@ -250,7 +250,7 @@ def _platform_edit(
     ext = os.path.splitext(source_path)[1]
     if ext == ".c":
         fmt = '#line 1 "box {}"\n'
-    elif ext == ".s":
+    elif ext == ".s" or ext == ".S":
         # I can't get this to work in the `gnu assembler <https://gcc.gnu.org/onlinedocs/cpp/Line-Control.html>`_. I tried:
         #
         # - From Section 4.11 (Misc directives):

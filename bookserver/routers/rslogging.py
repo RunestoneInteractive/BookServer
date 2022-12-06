@@ -267,7 +267,9 @@ async def updatelastpage(
     RS_info: Optional[str] = Cookie(None),
 ):
     if request_data.last_page_url is None:
-        return  # todo:  log request_data, request.args and request.env.path_info
+        rslogger.error(f"No data for last page url {request_data}")
+        return make_json_response(detail="No Data")
+        # todo:  log request_data, request.args and request.env.path_info
     if request.state.user:
         lpd = request_data.dict()
         rslogger.debug(f"{lpd=}")

@@ -10,7 +10,7 @@
 # ================
 [tool.poetry]
 name = "bookserver"
-version = "1.3.10"
+version = "1.3.12"
 description = "A new Runestone Server Framework"
 authors = ["Brad Miller <bonelake@mac.com>", "Bryan A. Jones <bjones AT ece DOT msstate DOT edu"]
 license = "MIT"
@@ -25,7 +25,7 @@ aioredis = "^2.0.0"
 async-timeout = "^3.0.0"
 celery = {extras = ["redis"], version = "^5.0.0"}
 python = "^3.8.0"
-fastapi = "^0.78.0"
+fastapi = "^0.87.0"
 # Per the `uvicorn docs <https://www.uvicorn.org/#quickstart>`_, install the standard (as opposed to minimal) uvicorn dependencies.
 uvicorn = {extras = ["standard"], version = "^0.17.0"}
 # See the `poetry docs <https://python-poetry.org/docs/dependency-specification/#using-environment-markers>`_.
