@@ -86,7 +86,7 @@ async def return_static_asset(course, kind, filepath):
         filepath,
     )
     rslogger.debug(f"GETTING: {filepath}")
-    if os.path.exists(filepath):
+    if os.path.exists(filepath) and not os.path.isdir(filepath):
         return FileResponse(filepath)
     else:
         raise HTTPException(404)
@@ -306,8 +306,12 @@ async def serve_page(
     rslogger.debug(f"After user check rs_banner is {show_rs_banner}")
 
     worker_name = os.environ.get("WORKER_NAME", socket.gethostname())
-    # temporary
-    if course_attrs.get("ad_server", "google") == "ethical":
+    if worker_name == "":
+        worker_name = socket.gethostname()
+
+    # This makes serving ethical ads the default, but it can be overridden
+    # by adding a course attribute for the base course to set the ad_server to google
+    if course_attrs.get("ad_server", "ethical") == "ethical":
         serve_google_ad = False
     else:
         serve_google_ad = serve_ad

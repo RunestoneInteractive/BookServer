@@ -1074,7 +1074,7 @@ async def fetch_one_user_topic_practice(
     async with async_session() as session:
         res = await session.execute(query)
         rslogger.debug(f"{res=}")
-        utp = res.scalars().one_or_none()
+        utp = res.scalars().first()
         return UserTopicPracticeValidator.from_orm(utp)
 
 
