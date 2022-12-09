@@ -309,8 +309,9 @@ async def serve_page(
     if worker_name == "":
         worker_name = socket.gethostname()
 
-    # temporary
-    if course_attrs.get("ad_server", "google") == "ethical":
+    # This makes serving ethical ads the default, but it can be overridden
+    # by adding a course attribute for the base course to set the ad_server to google
+    if course_attrs.get("ad_server", "ethical") == "ethical":
         serve_google_ad = False
     else:
         serve_google_ad = serve_ad
