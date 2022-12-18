@@ -171,5 +171,12 @@ class Settings(BaseSettings):
     # development and test ``book_server_config`` settings.
     drop_tables: str = "No"
 
+    # needed for using Spaces / AWS S3 for file uploads
+    # see
+    spaces_key = "key"
+    spaces_secret = "secret"
+    region = "nyc3"  # this is the DO data center or AWS region
+    bucket = "runestonefiles"
+
 
 settings = Settings()
