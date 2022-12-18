@@ -18,12 +18,24 @@ from typing import Optional
 
 # Third-party imports
 # -------------------
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status, Depends
+from fastapi import (
+    APIRouter,
+    Cookie,
+    HTTPException,
+    Request,
+    Response,
+    status,
+    Depends,
+    UploadFile,
+)
+import boto3
+import botocore
 from fastapi.responses import JSONResponse
 
 # Local application imports
 # -------------------------
 from ..applogger import rslogger
+from ..config import settings
 from ..crud import (
     create_answer_table_entry,
     create_code_entry,
@@ -450,3 +462,40 @@ async def getlastpage(request: Request, course: str):
         rslogger.debug("Creating user state entry")
         res = await create_user_state_entry(request.state.user.id, course)
         return make_json_response(detail=res)
+
+
+#
+# Use the AWS S3 API to manage updloaded files.
+# The files should be stored in their bucket -- stored in Environment
+# using coursename/student_id/div_id_filename.ext
+# this will allow for easy recovery.
+@router.post("/upload/{div_id:str}")
+async def create_upload_file(request: Request, file: UploadFile, div_id: str):
+
+    if not request.state.user:
+        raise HTTPException(401)
+
+    session = boto3.session.Session()
+    client = session.client(
+        "s3",
+        config=botocore.config.Config(s3={"addressing_style": "virtual"}),
+        region_name=settings.region,
+        endpoint_url="https://nyc3.digitaloceanspaces.com",
+        aws_access_key_id=settings.spaces_key,
+        aws_secret_access_key=settings.spaces_secret,
+    )
+
+    contents = await file.read()  # these contents are bytes not a string
+
+    # create the file Key
+    fkey = f"{request.state.user.course_name}/{div_id}/{request.state.user.username}/{file.filename}"
+    rslogger.debug("file key = {fkey} {settings.spaces_key} {settings.spaces_secret}")
+    client.put_object(
+        Bucket=settings.bucket,
+        Key=fkey,
+        Body=contents,
+        ACL="private",
+        Metadata={"x-amz-meta-my-key": "your-value"},
+    )
+
+    return {"filename": file.filename}
