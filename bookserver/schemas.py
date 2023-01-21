@@ -183,6 +183,7 @@ class LastPageDataIncoming(BaseModelNone):
     course_id: str = Field(alias="course")
     completion_flag: int
     last_page_scroll_location: int
+    is_ptx_book: bool
     # todo: this should really be an int
 
     # We can automatically create the aliases!
