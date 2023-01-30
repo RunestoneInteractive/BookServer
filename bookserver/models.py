@@ -41,6 +41,7 @@ from sqlalchemy import (
     String,
     Date,
     DateTime,
+    JSON,
     Text,
     types,
     Float,
@@ -285,6 +286,14 @@ class UnittestAnswers(Base, CorrectAnswerMixin):
 
 
 UnittestAnswersValidation = sqlalchemy_to_pydantic(UnittestAnswers)
+
+# An answer to a fill-in-the-blank question.
+@register_answer_table
+class WebWorkAnswers(Base, CorrectAnswerMixin):
+    __tablename__ = "webwork_answers"
+    # See answer_. TODO: what is the format?
+    answer = Column(JSON, nullable=False)
+    __table_args__ = (Index("idx_div_sid_course_ww", "sid", "div_id", "course_name"),)
 
 
 @register_answer_table
