@@ -149,7 +149,7 @@ async def log_book_event(
                 entry.incorrect = 0
                 entry.skipped = 0
                 entry.time_taken = 0
-        elif entry.event == "webwork":
+        elif entry.event == "webwork" or entry.event == "hparsonsAnswer":
             entry.answer = json.loads(useinfo_dict["answer"])
 
         valid_table = rcd.validator.from_orm(entry)  # type: ignore
