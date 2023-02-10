@@ -22,7 +22,7 @@ from typing import Optional, Dict, Any
 # Third-party imports
 # -------------------
 from bleach import clean
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 # Local application imports
@@ -56,7 +56,8 @@ from ..crud import (
 from ..internal.utils import make_json_response
 from ..models import runestone_component_dict
 from ..schemas import AssessmentRequest, SelectQRequest
-from ..session import is_instructor
+from ..session import is_instructor, auth_manager
+
 
 # Routing
 # =======
@@ -73,12 +74,8 @@ router = APIRouter(
 async def get_assessment_results(
     request_data: AssessmentRequest,
     request: Request,
+    user=Depends(auth_manager),
 ):
-    user = request.state.user
-    if not user:
-        return make_json_response(
-            status=status.HTTP_401_UNAUTHORIZED, detail="not logged in"
-        )
     # if the user is not logged in an HTTP 401 will be returned.
     # Otherwise if the user is an instructor then use the provided
     # sid (it could be any student in the class). If none is provided then
@@ -129,7 +126,9 @@ class HistoryRequest(BaseModel):
 
 
 @router.post("/gethist")
-async def get_history(request: Request, request_data: HistoryRequest):
+async def get_history(
+    request: Request, request_data: HistoryRequest, user=Depends(auth_manager)
+):
     """
     return the history of saved code by this user for a particular
     active code id (acid) -- known as div_id elsewhere
@@ -154,20 +153,18 @@ async def get_history(request: Request, request_data: HistoryRequest):
     # if request_data.sid then we know this is being called from the grading interface
     # so verify that the actual user is an instructor.
     if sid:
-        if request.state.user and request.state.user.username != sid:
+        if user.username != sid:
             if await is_instructor(request):
-                course_id = request.state.user.course_id
+                course_id = user.course_id
             else:
                 raise HTTPException(401)
         else:
             raise HTTPException(401)
     # In this case, the request is simply from a student, so we will use
     # their logged in username
-    elif request.state.user:
-        sid = request.state.user.username
-        course_id = request.state.user.course_id
     else:
-        raise HTTPException(401)
+        sid = user.username
+        course_id = user.course_id
 
     res: Dict[str, Any] = {}
     res["acid"] = acid
