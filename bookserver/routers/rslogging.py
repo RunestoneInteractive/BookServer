@@ -129,6 +129,7 @@ async def log_book_event(
     idx = await create_useinfo_entry(useinfo_entry)
     response_dict = dict(timestamp=entry.timestamp)
     if entry.event in EVENT2TABLE:
+        create_answer_table = True
         rcd = runestone_component_dict[EVENT2TABLE[entry.event]]
         if entry.event == "unittest":
             # info we need looks like: "act":"percent:100.0:passed:2:failed:0"
@@ -144,23 +145,22 @@ async def log_book_event(
             entry.correct = ppf[1] == "100.0"
             entry.percent = float(ppf[1])
         elif entry.event == "timedExam":
-            if entry.act == "start":
-                entry.correct = 0
-                entry.incorrect = 0
-                entry.skipped = 0
-                entry.time_taken = 0
+            if entry.act in ["start", "pause", "resume"]:
+                # We don't need these in the answer table but want the event to be timedExam.
+                create_answer_table = False
         elif entry.event == "webwork" or entry.event == "hparsonsAnswer":
             entry.answer = json.loads(useinfo_dict["answer"])
 
-        valid_table = rcd.validator.from_orm(entry)  # type: ignore
-        # Do server-side grading if needed.
-        if feedback := await is_server_feedback(entry.div_id, user.course_name):
-            # The grader should also be defined if there's feedback.
-            assert rcd.grader
-            response_dict.update(await rcd.grader(valid_table, feedback))
+        if create_answer_table:
+            valid_table = rcd.validator.from_orm(entry)  # type: ignore
+            # Do server-side grading if needed.
+            if feedback := await is_server_feedback(entry.div_id, user.course_name):
+                # The grader should also be defined if there's feedback.
+                assert rcd.grader
+                response_dict.update(await rcd.grader(valid_table, feedback))
 
-        ans_idx = await create_answer_table_entry(valid_table, entry.event)
-        rslogger.debug(ans_idx)
+            ans_idx = await create_answer_table_entry(valid_table, entry.event)
+            rslogger.debug(ans_idx)
 
     if idx:
         return make_json_response(status=status.HTTP_201_CREATED, detail=response_dict)
