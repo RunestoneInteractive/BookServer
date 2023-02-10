@@ -42,7 +42,6 @@ async def _load_user(user_id: str) -> AuthUserValidator:
     original web2py auth_user schema but make it easier to migrate to a new
     database by simply returning a user object.
     """
-    rslogger.debug(f"Going to fetch {user_id}")
     return await fetch_user(user_id)
 
 
