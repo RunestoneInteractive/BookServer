@@ -27,7 +27,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
 from pydantic import constr
-from pyflakes import (reporter, checker)
+from pyflakes import checker as pyflakes_checker
 
 # Local application imports
 # -------------------------
@@ -58,16 +58,14 @@ router = APIRouter(
     tags=["books"],
 )
 
-    
+
+
 @router.post("/python_check")
 async def python_check(request: Request):
     """
     Takes a chunk of Python code and runs a syntax checker (currently
     Pyflakes) on it to provide more detailed advice than is available
     via Skulpt.
-
-    Caller must provide:
-    * ``code`` -- the Python code to check
     """
     code_bytes = await request.body()
     code = code_bytes.decode("utf-8")
@@ -77,13 +75,12 @@ async def python_check(request: Request):
     resultMessage = ""
     try:
         tree = ast.parse(code, filename=filename)
-        w = checker.Checker(tree, filename=filename)
+        w = pyflakes_checker.Checker(tree, filename=filename)
+        w.messages.sort(key=lambda m: m.lineno)
+        for m in w.messages:
+            resultMessage = resultMessage + str(m) + "\n"
     except SyntaxError as e:
-        textOut = io.StringIO()
-        reporter = reporter.Reporter(textOut, textOut)
-        reporter.syntaxError(filename, e.args[0], e.lineno, e.offset, e.text)
-        textOut.seek(0)
-        resultMessage = textOut.read()
+        resultMessage = filename + ":" + str(e.lineno) + ":" + str(e.offset) + ": " + e.args[0] + "\n"
 
     return resultMessage
 
