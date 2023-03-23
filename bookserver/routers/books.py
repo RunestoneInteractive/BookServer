@@ -17,8 +17,6 @@ import posixpath
 import random
 import socket
 from typing import Optional
-import ast
-import io
 
 # Third-party imports
 # -------------------
@@ -27,7 +25,6 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
 from pydantic import constr
-from pyflakes import checker as pyflakes_checker
 
 # Local application imports
 # -------------------------
@@ -57,33 +54,6 @@ router = APIRouter(
     # groups all logger `tags <https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags>`_ together in the docs.
     tags=["books"],
 )
-
-
-
-@router.post("/python_check")
-async def python_check(request: Request):
-    """
-    Takes a chunk of Python code and runs a syntax checker (currently
-    Pyflakes) on it to provide more detailed advice than is available
-    via Skulpt.
-    """
-    code_bytes = await request.body()
-    code = code_bytes.decode("utf-8")
-
-    filename = "program.py" 
-
-    resultMessage = ""
-    try:
-        tree = ast.parse(code, filename=filename)
-        w = pyflakes_checker.Checker(tree, filename=filename)
-        w.messages.sort(key=lambda m: m.lineno)
-        for m in w.messages:
-            resultMessage = resultMessage + str(m) + "\n"
-    except SyntaxError as e:
-        resultMessage = filename + ":" + str(e.lineno) + ":" + str(e.offset) + ": " + e.args[0] + "\n"
-
-    return resultMessage
-
 
 # Options for static asset renderers:
 #

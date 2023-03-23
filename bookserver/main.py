@@ -36,6 +36,7 @@ from .routers import auth
 from .routers import books
 from .routers import rslogging
 from .routers import discuss
+from .routers import coach
 from .session import auth_manager
 
 
@@ -64,6 +65,7 @@ app.include_router(books.router)
 app.include_router(assessment.router)
 app.include_router(auth.router)
 app.include_router(discuss.router)
+app.include_router(coach.router)
 
 # We can mount various "apps" with mount.  Anything that gets to this server with /staticAssets
 # will serve staticfiles - StaticFiles class implements the same interface as a FastAPI app.
