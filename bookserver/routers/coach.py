@@ -33,7 +33,6 @@ router = APIRouter(
 )
 
 
-
 @router.post("/python_check")
 async def python_check(request: Request):
     """
@@ -44,7 +43,7 @@ async def python_check(request: Request):
     code_bytes = await request.body()
     code = code_bytes.decode("utf-8")
 
-    filename = "program.py" 
+    filename = "program.py"
 
     resultMessage = ""
     try:
@@ -54,6 +53,15 @@ async def python_check(request: Request):
         for m in w.messages:
             resultMessage = resultMessage + str(m) + "\n"
     except SyntaxError as e:
-        resultMessage = filename + ":" + str(e.lineno) + ":" + str(e.offset) + ": " + e.args[0] + "\n"
+        resultMessage = (
+            filename
+            + ":"
+            + str(e.lineno)
+            + ":"
+            + str(e.offset)
+            + ": "
+            + e.args[0]
+            + "\n"
+        )
 
     return resultMessage
