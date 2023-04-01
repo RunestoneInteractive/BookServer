@@ -55,7 +55,6 @@ router = APIRouter(
     tags=["books"],
 )
 
-
 # Options for static asset renderers:
 #
 # - `StaticFiles <https://fastapi.tiangolo.com/tutorial/static-files/?h=+staticfiles#use-staticfiles>`_. However, this assumes the static routes are known *a priori*, in contrast to books (with their static assets) that are dynamically added and removed.
