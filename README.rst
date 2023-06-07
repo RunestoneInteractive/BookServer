@@ -1,6 +1,9 @@
 *******************************************
 New FastAPI-based Book Server for Runestone
 *******************************************
+
+**This Repository is Archived -- See the rs repository for future development**
+
 The BookServer is a next-generation server for the `Runestone platform <https://runestone.academy/>`_. The goal of this project is to replace the parts of the web2py-based RunestoneServer. For more information, see the `full documentation <https://bookserver.readthedocs.io/en/latest/>`_.
 
 We would love development help on this; see the `developer docs <https://bookserver.readthedocs.io/en/latest/docs/dev_toctree.html>`_.
