@@ -87,7 +87,7 @@ async def startup():
     os.makedirs(settings.error_path, exist_ok=True)
     assert (
         settings.runestone_path.exists()
-    ), f"Runestone appplication in web2py path {settings.runestone_path} does not exist."
+    ), f"Runestone application in web2py path {settings.runestone_path} does not exist."
 
     await init_models()
     init_graders()
